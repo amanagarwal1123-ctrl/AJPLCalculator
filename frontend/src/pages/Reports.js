@@ -92,6 +92,26 @@ export default function Reports() {
     loadInitialData();
   };
 
+  const fetchInactiveCustomers = async (days) => {
+    try {
+      setLoadingInactive(true);
+      const res = await apiClient.get(`/analytics/customers/inactive?days=${days}`);
+      setInactiveCustomers(res.data);
+    } catch (err) {
+      toast.error('Failed to load inactive customers');
+    } finally {
+      setLoadingInactive(false);
+    }
+  };
+
+  const handleInactiveDaysChange = (val) => {
+    const num = parseInt(val, 10);
+    if (!isNaN(num) && num > 0) {
+      setInactiveDays(num);
+      fetchInactiveCustomers(num);
+    }
+  };
+
   const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
 
   const exportCSV = (data, filename) => {
