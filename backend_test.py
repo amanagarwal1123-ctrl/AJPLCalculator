@@ -540,6 +540,84 @@ class GoldJewelleryAPITester:
             self.log(f"   Analytics: Today's Sales=₹{today_sales}, Bills Count={today_count}")
         return success
 
+    def test_customer_frequency_analytics(self):
+        """Test new customer frequency analytics endpoint"""
+        success, response = self.run_test("Customer Frequency Analytics", "GET", "/analytics/customers/frequency", 200)
+        if success:
+            frequency_cohorts = response.get('frequency_cohorts', [])
+            spending_tiers = response.get('spending_tiers', [])
+            total_customers = response.get('total_customers', 0)
+            avg_visits = response.get('avg_visits', 0)
+            avg_spending = response.get('avg_spending', 0)
+            
+            self.log(f"   Customer Analytics: {total_customers} customers, Avg visits: {avg_visits}, Avg spending: ₹{avg_spending}")
+            self.log(f"   Frequency cohorts: {len(frequency_cohorts)} cohorts")
+            self.log(f"   Spending tiers: {len(spending_tiers)} tiers")
+            
+            # Validate response structure
+            expected_cohort_names = ["1 visit", "2-3 visits", "4-5 visits", "6+ visits"]
+            expected_tier_names = ["Under 25K", "25K - 50K", "50K - 1L", "1L - 2L", "Above 2L"]
+            
+            cohort_names = [c.get('name') for c in frequency_cohorts]
+            tier_names = [t.get('name') for t in spending_tiers]
+            
+            valid_cohorts = all(name in expected_cohort_names for name in cohort_names)
+            valid_tiers = all(name in expected_tier_names for name in tier_names)
+            
+            if valid_cohorts and valid_tiers:
+                self.log("   ✓ Response structure valid")
+                return True
+            else:
+                self.log(f"   ✗ Invalid structure - Cohorts: {cohort_names}, Tiers: {tier_names}")
+                return False
+        return False
+
+    def test_inactive_customers_analytics(self):
+        """Test new inactive customers analytics endpoint with various thresholds"""
+        # Test default threshold (30 days)
+        success, response = self.run_test("Inactive Customers (30 days)", "GET", "/analytics/customers/inactive?days=30", 200)
+        if not success:
+            return False
+            
+        threshold_days = response.get('threshold_days', 0)
+        inactive_count = response.get('inactive_count', 0)
+        total_customers = response.get('total_customers', 0)
+        inactive_customers = response.get('inactive_customers', [])
+        
+        self.log(f"   Inactive (30d): {inactive_count}/{total_customers} customers")
+        
+        # Test custom threshold (60 days)
+        success2, response2 = self.run_test("Inactive Customers (60 days)", "GET", "/analytics/customers/inactive?days=60", 200)
+        if success2:
+            inactive_count_60 = response2.get('inactive_count', 0)
+            self.log(f"   Inactive (60d): {inactive_count_60}/{total_customers} customers")
+            
+            # Validate that longer threshold should have same or more inactive customers
+            if inactive_count_60 >= inactive_count:
+                self.log("   ✓ Threshold logic working correctly")
+                return True
+            else:
+                self.log("   ✗ Threshold logic error: 60d count should be >= 30d count")
+                return False
+        
+        return success
+
+    def test_basic_customer_analytics(self):
+        """Test basic customer analytics endpoint"""
+        success, response = self.run_test("Basic Customer Analytics", "GET", "/analytics/customers", 200)
+        if success and isinstance(response, list):
+            customer_count = len(response)
+            self.log(f"   Found {customer_count} customers in analytics")
+            
+            # Check if days_since_last_visit is calculated
+            if customer_count > 0:
+                sample_customer = response[0]
+                has_days_calc = 'days_since_last_visit' in sample_customer
+                self.log(f"   Days since last visit calculation: {'✓' if has_days_calc else '✗'}")
+                return has_days_calc
+            return True
+        return False
+
     def run_all_tests(self):
         """Execute all test methods"""
         self.log("🚀 Starting Gold Jewellery API Testing...")
