@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { Gem, ArrowLeft, KeyRound, User, Loader2, ShieldCheck, Lock } from 'lucide-react';
+import { ArrowLeft, KeyRound, User, Loader2, ShieldCheck, Lock } from 'lucide-react';
 
 export default function LoginPage() {
   const [step, setStep] = useState('username'); // 'username', 'otp', 'admin-password'
