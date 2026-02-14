@@ -248,6 +248,108 @@ export default function ManagerDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Summary Dialog */}
+        <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
+          <DialogContent className="bg-card border-border max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="heading text-xl">Visit Summary</DialogTitle>
+              {summaryData && (
+                <div className="text-sm text-muted-foreground space-y-1 mt-2">
+                  <p><strong>Customer:</strong> {summaryData.customer_name} ({summaryData.customer_phone})</p>
+                  <p><strong>Date:</strong> {summaryData.date} | <strong>Executive:</strong> {summaryData.executive_name}</p>
+                  <p><strong>Bill:</strong> {summaryData.bill_number}</p>
+                </div>
+              )}
+            </DialogHeader>
+            {summaryData && (
+              <div className="space-y-4 mt-2">
+                {summaryData.items.map((item, idx) => (
+                  <Card key={idx} className="bg-secondary/20 border-border">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="heading text-lg font-bold">{item.item_name}</span>
+                          <span className={`px-2 py-0.5 rounded text-xs ${item.item_type === 'diamond' ? 'bg-[hsl(196,70%,52%)]/20 text-[hsl(196,70%,52%)]' : 'bg-primary/20 text-primary'}`}>{item.item_type}</span>
+                        </div>
+                        <span className="text-primary font-medium">{item.purity_name}</span>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Gross Weight</p>
+                          <p className="mono font-medium">{item.gross_weight.toFixed(3)}g</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Less</p>
+                          <p className="mono font-medium">{item.less.toFixed(3)}g</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Net Weight</p>
+                          <p className="mono font-bold text-primary">{item.net_weight.toFixed(3)}g</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Rate/10g</p>
+                          <p className="mono font-medium">{formatCurrency(item.rate_per_10g)}</p>
+                        </div>
+                      </div>
+
+                      {item.making_charges.length > 0 && (
+                        <>
+                          <Separator className="bg-border" />
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1.5 uppercase tracking-widest">Making Charges</p>
+                            {item.making_charges.map((mc, mi) => (
+                              <div key={mi} className="text-sm flex items-center gap-2">
+                                <span className="capitalize text-muted-foreground">{mc.type === 'percentage' ? '% of 24KT' : mc.type === 'per_gram' ? 'Per Gram' : 'Per Piece'}:</span>
+                                <span className="mono font-medium">{mc.value}{mc.type === 'percentage' ? '%' : mc.type === 'per_gram' ? '/g' : ''}</span>
+                                {mc.type === 'per_piece' && <span className="text-muted-foreground">x {mc.quantity} pcs</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      {item.stone_charges.length > 0 && (
+                        <>
+                          <Separator className="bg-border" />
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1.5 uppercase tracking-widest">Stone Charges</p>
+                            {item.stone_charges.map((sc, si) => (
+                              <div key={si} className="text-sm flex items-center gap-2">
+                                <span className="capitalize text-muted-foreground">{sc.type}:</span>
+                                <span className="mono font-medium">{sc.value}</span>
+                                {sc.type === 'kundan' && <span className="text-muted-foreground">x {sc.quantity} pcs</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      {item.studded_charges.length > 0 && (
+                        <>
+                          <Separator className="bg-border" />
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1.5 uppercase tracking-widest">Diamond / Studded</p>
+                            {item.studded_charges.map((sc, si) => (
+                              <div key={si} className="text-sm flex items-center gap-2">
+                                <span className="capitalize text-muted-foreground">{sc.type.replace('_', ' ')}:</span>
+                                <span className="mono font-medium">{sc.carats} ct</span>
+                                <span className="text-muted-foreground">@</span>
+                                <span className="mono font-medium">{formatCurrency(sc.rate_per_carat)}/ct</span>
+                                {sc.less_type === 'L' && <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary">L</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
