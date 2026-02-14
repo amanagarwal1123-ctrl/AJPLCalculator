@@ -458,7 +458,7 @@ export default function Reports() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {referenceData.sort((a, b) => b.total - a.total).map((r, i) => (
+                      {[...referenceData].sort((a, b) => b.total - a.total).map((r, i) => (
                         <TableRow key={i} className="border-border">
                           <TableCell>{r.name}</TableCell>
                           <TableCell className="mono text-right">{r.customers}</TableCell>
