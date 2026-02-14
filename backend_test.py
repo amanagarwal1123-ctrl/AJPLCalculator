@@ -67,10 +67,91 @@ class AJPLTestRunner:
             return False, {}
 
     def test_authentication(self):
-        """Test admin login"""
-        print("\n🔐 Testing Authentication...")
+        """Test OTP-based authentication flow"""
+        print("\n🔐 Testing OTP Authentication Flow...")
+        
+        # Step 1: Request OTP for admin user
         success, response = self.run_test(
-            "Admin Login",
+            "Request OTP for Admin",
+            "POST",
+            "/auth/request-otp",
+            200,
+            data={"username": "admin"}
+        )
+        
+        if not success:
+            print("❌ Failed to request OTP, falling back to legacy login")
+            return self.test_legacy_login()
+        
+        print("✅ OTP requested successfully")
+        
+        # Step 2: Get the OTP from admin endpoint
+        # First try legacy login to get admin token
+        legacy_success, legacy_response = self.run_test(
+            "Legacy Admin Login (to get pending OTPs)",
+            "POST",
+            "/auth/login",
+            200,
+            data={"username": "admin", "password": "admin1123"}
+        )
+        
+        if not legacy_success:
+            print("❌ Cannot get admin token to fetch OTP")
+            return False
+        
+        admin_token = legacy_response.get('token')
+        if not admin_token:
+            print("❌ No admin token received")
+            return False
+        
+        # Step 3: Get pending OTPs using admin token
+        success, otps = self.run_test(
+            "Get Pending OTPs",
+            "GET",
+            "/admin/pending-otps",
+            200,
+            headers={'Authorization': f'Bearer {admin_token}'}
+        )
+        
+        if not success or not otps:
+            print("❌ Failed to get pending OTPs")
+            return False
+        
+        # Find OTP for admin user
+        admin_otp = None
+        for otp_record in otps:
+            if otp_record.get('username') == 'admin':
+                admin_otp = otp_record.get('otp')
+                break
+        
+        if not admin_otp:
+            print("❌ No OTP found for admin user")
+            return False
+        
+        print(f"✅ Found OTP for admin: {admin_otp}")
+        
+        # Step 4: Verify OTP
+        success, response = self.run_test(
+            "Verify OTP for Admin",
+            "POST",
+            "/auth/verify-otp",
+            200,
+            data={"username": "admin", "otp": admin_otp}
+        )
+        
+        if success and 'token' in response:
+            self.token = response['token']
+            print(f"✅ OTP verification successful! Token obtained: {self.token[:20]}...")
+            return True
+        else:
+            print("❌ OTP verification failed")
+            return False
+    
+    def test_legacy_login(self):
+        """Fallback to legacy password login"""
+        print("\n🔐 Testing Legacy Authentication...")
+        success, response = self.run_test(
+            "Legacy Admin Login",
             "POST",
             "/auth/login",
             200,
@@ -78,7 +159,7 @@ class AJPLTestRunner:
         )
         if success and 'token' in response:
             self.token = response['token']
-            print(f"✅ Token obtained: {self.token[:20]}...")
+            print(f"✅ Legacy token obtained: {self.token[:20]}...")
             return True
         return False
 
