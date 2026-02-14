@@ -1,30 +1,22 @@
 [
   {
-    "content": "UI Update: Rename to 'AJPL Calculator' across all files",
-    "status": "completed"
+    "content": "Fix Report Tabs: Add data-testid to TabsContent elements for reliable automated testing",
+    "status": "pending"
   },
   {
-    "content": "UI Update: Change to bright velvet blue color scheme",
-    "status": "completed"
+    "content": "Backend: Add /api/analytics/customers/frequency endpoint (visit frequency cohorts)",
+    "status": "pending"
   },
   {
-    "content": "Phase 3: Manager bill review/edit workflow with proper locking",
-    "status": "completed"
+    "content": "Backend: Add /api/analytics/customers/inactive endpoint (inactive customer lookup with configurable days)",
+    "status": "pending"
   },
   {
-    "content": "Phase 3: Refine admin screens (rates, items, branches, users)",
-    "status": "completed"
+    "content": "Frontend: Enhance Reports Customers tab with frequency cohort chart, inactive customers section, and spending tier breakdown",
+    "status": "pending"
   },
   {
-    "content": "Phase 3: Enhanced Reports & Analytics (date filters, branch/exec analytics, CSV export)",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 3: Bill audit trail and approval workflow",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 3: End to End Testing using Testing Agent",
-    "status": "completed"
+    "content": "Run comprehensive tests to verify all changes",
+    "status": "pending"
   }
 ]
