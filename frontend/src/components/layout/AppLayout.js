@@ -11,6 +11,8 @@ const adminLinks = [
   { to: '/admin/branches', label: 'Branches', icon: GitBranch },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/items', label: 'Item Names', icon: Tag },
+  { to: '/admin/customers', label: 'Customers', icon: Users },
+  { to: '/admin/bills', label: 'All Bills', icon: FileText },
   { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
 ];
 
