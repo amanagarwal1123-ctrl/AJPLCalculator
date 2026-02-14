@@ -5,11 +5,11 @@
   },
   {
     "content": "Backend: Add /api/analytics/customers/frequency and /api/analytics/customers/inactive endpoints",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Frontend: Enhance Reports Customers tab with frequency cohort chart, inactive customers section, and spending tier breakdown",
-    "status": "pending"
+    "status": "in_progress"
   },
   {
     "content": "Run comprehensive tests to verify all changes",
