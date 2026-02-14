@@ -1,7 +1,7 @@
 [
   {
     "content": "Fix Report Tabs: Add data-testid to TabsContent elements for reliable automated testing",
-    "status": "pending"
+    "status": "in_progress"
   },
   {
     "content": "Backend: Add /api/analytics/customers/frequency endpoint (visit frequency cohorts)",
