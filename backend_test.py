@@ -532,6 +532,7 @@ class GoldJewelleryAPITester:
             self.test_create_branch,
             self.test_list_branches,
             self.test_create_executive_user,
+            self.test_create_manager_user,
             self.test_list_users,
             self.test_add_item_names,
             self.test_list_item_names,
@@ -543,6 +544,11 @@ class GoldJewelleryAPITester:
             self.test_add_item_to_bill,
             self.test_send_bill_to_manager,
             self.test_get_bills,
+            
+            # Manager operations (Phase 3)
+            self.test_manager_login,
+            self.test_manager_approve_bill,
+            self.test_get_bill_with_audit_trail,
             
             # Admin final operations
             self.test_admin_login_again,
