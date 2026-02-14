@@ -52,7 +52,7 @@ export default function BillPrintView() {
         <div className="bill-border">
           {/* Header */}
           <div className="text-center mb-6">
-            <h1 className="bill-header" style={{ fontFamily: 'Cormorant Garamond, serif' }}>GOLD JEWELLERY</h1>
+            <h1 className="bill-header" style={{ fontFamily: 'Cormorant Garamond, serif' }}>AJPL JEWELLERY</h1>
             <p style={{ fontFamily: 'Cormorant Garamond, serif', letterSpacing: '0.15em', fontSize: '1rem', color: '#666', marginTop: '4px' }}>INVOICE</p>
             <div style={{ height: '2px', background: 'linear-gradient(90deg, transparent, #C5A55A, transparent)', margin: '12px auto', maxWidth: '300px' }} />
             <p className="text-sm" style={{ color: '#666' }}>Bill No: <strong>{bill.bill_number}</strong></p>
