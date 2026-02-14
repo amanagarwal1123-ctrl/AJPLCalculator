@@ -471,6 +471,7 @@ if __name__ == '__main__':
         test_studded_charges,
         test_gold_item_full,
         test_diamond_item_full,
+        test_diamond_item_with_less,
         test_bill_totals,
         test_multiple_making_charges,
         test_manual_rates,
