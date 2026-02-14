@@ -218,23 +218,50 @@ def calculate_diamond_item(item: Dict[str, Any]) -> Dict[str, Any]:
     
     item has all gold fields PLUS:
       - studded_charges: List[Dict] - list of studded entries
+        Each studded entry may have:
+          - less_type: 'L' or 'NL' (default 'NL')
+          - If 'L', the carat weight is converted to grams (1 carat = 0.2g)
+            and subtracted from gross weight before net weight calculation.
     
     Returns item with gold calculations PLUS:
       - studded_details
       - total_studded
+      - studded_less_grams (total grams subtracted due to L-type entries)
+      - adjusted_net_weight (net weight after studded less deduction)
       - total_amount (gold_total + studded_total)
     """
-    # First calculate the gold portion
-    gold_calc = calculate_gold_item(item)
+    # Calculate studded less weight first (L-type entries)
+    # 1 carat = 0.2 grams
+    CARAT_TO_GRAM = Decimal('0.2')
+    studded_charges = item.get('studded_charges', [])
+    studded_less_grams = Decimal('0')
+    for sc in studded_charges:
+        if sc.get('less_type', 'NL') == 'L':
+            carats = to_decimal(sc.get('carats', 0))
+            studded_less_grams += carats * CARAT_TO_GRAM
+    studded_less_grams_float = float(studded_less_grams.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP))
+    
+    # Adjust the item's "less" to include studded less before calculating gold portion
+    original_less = to_decimal(item.get('less', 0))
+    adjusted_less = float(round_currency(original_less + studded_less_grams))
+    
+    # Create a modified item with adjusted less for gold calculation
+    adjusted_item = {**item, 'less': adjusted_less}
+    
+    # Calculate the gold portion with adjusted net weight
+    gold_calc = calculate_gold_item(adjusted_item)
     gold_total = to_decimal(gold_calc['total_amount'])
     
-    # Studded charges
-    studded_charges = item.get('studded_charges', [])
+    # Studded charges (monetary)
     studded_details = []
     total_studded = Decimal('0')
     for sc in studded_charges:
         charge = calculate_studded_charge(sc)
-        studded_details.append({**sc, 'calculated_amount': charge})
+        detail = {**sc, 'calculated_amount': charge}
+        # Add gram equivalent for display
+        carats = to_decimal(sc.get('carats', 0))
+        detail['weight_grams'] = float((carats * CARAT_TO_GRAM).quantize(Decimal('0.001'), rounding=ROUND_HALF_UP))
+        studded_details.append(detail)
         total_studded += to_decimal(charge)
     total_studded = float(round_currency(total_studded))
     
@@ -244,6 +271,8 @@ def calculate_diamond_item(item: Dict[str, Any]) -> Dict[str, Any]:
     return {
         **gold_calc,
         'item_type': 'diamond',
+        'original_less': float(original_less),
+        'studded_less_grams': studded_less_grams_float,
         'studded_charges': studded_details,
         'total_studded': total_studded,
         'total_amount': total_amount,
