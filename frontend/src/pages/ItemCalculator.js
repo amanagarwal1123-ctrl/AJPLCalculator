@@ -102,7 +102,18 @@ export default function ItemCalculator() {
   };
 
   // Real-time calculation
-  const netWeight = Math.max(0, (parseFloat(grossWeight) || 0) - (parseFloat(less) || 0));
+  // Calculate studded less weight (L-type entries: 1 carat = 0.2 grams)
+  const studdedLessGrams = itemType === 'diamond'
+    ? studdedCharges.reduce((sum, sc) => {
+        if (sc.less_type === 'L') {
+          return sum + (parseFloat(sc.carats) || 0) * 0.2;
+        }
+        return sum;
+      }, 0)
+    : 0;
+  
+  const baseNetWeight = Math.max(0, (parseFloat(grossWeight) || 0) - (parseFloat(less) || 0));
+  const netWeight = Math.max(0, baseNetWeight - studdedLessGrams);
   const rateNum = parseFloat(rate) || 0;
   const purityPercent = selectedPurity?.percent || 100;
 
