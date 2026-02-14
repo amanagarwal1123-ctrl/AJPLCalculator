@@ -196,17 +196,17 @@ def test_gold_item_full():
 
 
 def test_diamond_item_full():
-    """Test a complete diamond item calculation."""
-    print("\n=== Test: Full Diamond Item ===")
+    """Test a complete diamond item calculation (NL default - no studded less)."""
+    print("\n=== Test: Full Diamond Item (NL default) ===")
     
     # 18KT Diamond Ring
     # Rate: 45000/10g (18KT), Purity: 76%
-    # Gross: 8.0g, Less: 0.3g -> Net: 7.7g
+    # Gross: 8.0g, Less: 0.3g -> Net: 7.7g (no L-type studded)
     # Gold value: 7.7 * 45000/10 = 34650
     # Making: ₹400/gram -> 400 * 7.7 = 3080
     # Stone: Moti flat ₹800
     # Gold total: 34650 + 3080 + 800 = 38530
-    # Studded:
+    # Studded (all NL):
     #   Diamond: 0.25ct × ₹90000 = 22500
     #   Solitaire: 0.8ct × ₹200000 = 160000
     # Studded total: 182500
@@ -225,8 +225,8 @@ def test_diamond_item_full():
             {'type': 'moti', 'value': 800}
         ],
         'studded_charges': [
-            {'type': 'diamond', 'carats': 0.25, 'rate_per_carat': 90000},
-            {'type': 'solitaire', 'carats': 0.8, 'rate_per_carat': 200000},
+            {'type': 'diamond', 'carats': 0.25, 'rate_per_carat': 90000, 'less_type': 'NL'},
+            {'type': 'solitaire', 'carats': 0.8, 'rate_per_carat': 200000, 'less_type': 'NL'},
         ],
     }
     
@@ -234,6 +234,7 @@ def test_diamond_item_full():
     
     print(f"  Item: {result['item_name']}")
     print(f"  Net Weight: {result['net_weight']}g (expected 7.7)")
+    print(f"  Studded Less: {result['studded_less_grams']}g (expected 0)")
     print(f"  Gold Value: ₹{result['gold_value']} (expected 34650)")
     print(f"  Total Making: ₹{result['total_making']} (expected 3080)")
     print(f"  Total Stone: ₹{result['total_stone']} (expected 800)")
@@ -241,13 +242,77 @@ def test_diamond_item_full():
     print(f"  Total Amount: ₹{result['total_amount']} (expected 221030)")
     
     assert approx_equal(result['net_weight'], 7.7, 0.01)
+    assert approx_equal(result['studded_less_grams'], 0, 0.001)
     assert approx_equal(result['gold_value'], 34650, 1)
     assert approx_equal(result['total_making'], 3080, 1)
     assert approx_equal(result['total_stone'], 800, 0.01)
     assert approx_equal(result['total_studded'], 182500, 1)
     assert approx_equal(result['total_amount'], 221030, 5)
     
-    print("  ✅ Full diamond item test passed")
+    print("  ✅ Full diamond item test passed (NL)")
+
+
+def test_diamond_item_with_less():
+    """Test diamond item with L-type studded entries (weight subtracted from net)."""
+    print("\n=== Test: Diamond Item with L (Less) Studded ===")
+    
+    # 18KT Diamond Ring
+    # Rate: 45000/10g (18KT), Purity: 76%
+    # Gross: 8.0g, Original Less: 0.3g
+    # Studded:
+    #   Diamond: 0.25ct (L) -> 0.25 * 0.2 = 0.050g subtracted
+    #   Solitaire: 0.8ct (NL) -> NOT subtracted
+    # Studded less = 0.050g
+    # Adjusted less = 0.3 + 0.05 = 0.35g
+    # Adjusted Net Weight = 8.0 - 0.35 = 7.65g
+    # Gold value: 7.65 * 45000/10 = 34425
+    # Making: ₹400/gram -> 400 * 7.65 = 3060
+    # Stone: Moti flat ₹800
+    # Gold portion: 34425 + 3060 + 800 = 38285
+    # Studded amounts (unchanged by L/NL):
+    #   Diamond: 0.25ct × ₹90000 = 22500
+    #   Solitaire: 0.8ct × ₹200000 = 160000
+    # Studded total: 182500
+    # Grand item total: 38285 + 182500 = 220785
+    
+    item = {
+        'item_name': 'Diamond Ring L-Test',
+        'rate_per_10g': 45000,
+        'purity_percent': 76,
+        'gross_weight': 8.0,
+        'less': 0.3,
+        'making_charges': [
+            {'type': 'per_gram', 'value': 400}
+        ],
+        'stone_charges': [
+            {'type': 'moti', 'value': 800}
+        ],
+        'studded_charges': [
+            {'type': 'diamond', 'carats': 0.25, 'rate_per_carat': 90000, 'less_type': 'L'},
+            {'type': 'solitaire', 'carats': 0.8, 'rate_per_carat': 200000, 'less_type': 'NL'},
+        ],
+    }
+    
+    result = calculate_diamond_item(item)
+    
+    print(f"  Item: {result['item_name']}")
+    print(f"  Original Less: {result['original_less']}g")
+    print(f"  Studded Less: {result['studded_less_grams']}g (expected 0.050)")
+    print(f"  Adjusted Net Weight: {result['net_weight']}g (expected 7.65)")
+    print(f"  Gold Value: ₹{result['gold_value']} (expected 34425)")
+    print(f"  Total Making: ₹{result['total_making']} (expected 3060)")
+    print(f"  Total Stone: ₹{result['total_stone']} (expected 800)")
+    print(f"  Total Studded: ₹{result['total_studded']} (expected 182500)")
+    print(f"  Total Amount: ₹{result['total_amount']} (expected 220785)")
+    
+    assert approx_equal(result['studded_less_grams'], 0.050, 0.001), f"Studded less wrong: {result['studded_less_grams']}"
+    assert approx_equal(result['net_weight'], 7.65, 0.01), f"Net weight wrong: {result['net_weight']}"
+    assert approx_equal(result['gold_value'], 34425, 1), f"Gold value wrong: {result['gold_value']}"
+    assert approx_equal(result['total_making'], 3060, 1), f"Making wrong: {result['total_making']}"
+    assert approx_equal(result['total_studded'], 182500, 1), f"Studded wrong: {result['total_studded']}"
+    assert approx_equal(result['total_amount'], 220785, 10), f"Total wrong: {result['total_amount']}"
+    
+    print("  ✅ Diamond item with L (Less) test passed")
 
 
 def test_bill_totals():
