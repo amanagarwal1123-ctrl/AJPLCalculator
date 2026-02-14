@@ -323,7 +323,7 @@ class GoldJewelleryAPITester:
                         "rate_mode": "normal",
                         "purity_name": "22KT",
                         "purity_percent": 92,
-                        "rate_per_10g": 55000,
+                        "rate_per_10g": 60000,
                         "gross_weight": 10.5,
                         "less": 0.5,
                         "making_charges": [
