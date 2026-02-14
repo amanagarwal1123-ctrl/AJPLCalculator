@@ -1,18 +1,14 @@
 [
   {
-    "content": "Backend: Update calc_engine.py to handle studded 'less_type' (L/NL) - subtract L-type carat weights (1 carat = 0.2g) from net weight before gold/making calculations",
-    "status": "in_progress"
+    "content": "Backend: Update calc_engine.py to handle studded 'less_type' (L/NL)",
+    "status": "completed"
   },
   {
     "content": "Frontend: Add L/NL radio buttons to each studded charge entry in ItemCalculator.js, update net weight calculation",
-    "status": "pending"
+    "status": "in_progress"
   },
   {
     "content": "Update BillPage/BillPrintView to display L/NL info and adjusted weights",
-    "status": "pending"
-  },
-  {
-    "content": "Update backend test file and verify calculations",
     "status": "pending"
   },
   {
