@@ -228,7 +228,7 @@ export default function Reports() {
           </TabsList>
 
           {/* Overview */}
-          <TabsContent value="overview">
+          <TabsContent value="overview" data-testid="tab-content-overview">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="bg-card border-border">
                 <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -279,7 +279,7 @@ export default function Reports() {
           </TabsContent>
 
           {/* KT Analysis */}
-          <TabsContent value="kt">
+          <TabsContent value="kt" data-testid="tab-content-kt">
             <Card className="bg-card border-border">
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-base">Sales by KT Category</CardTitle>
@@ -305,7 +305,7 @@ export default function Reports() {
           </TabsContent>
 
           {/* Branch Sales */}
-          <TabsContent value="branches">
+          <TabsContent value="branches" data-testid="tab-content-branches">
             <Card className="bg-card border-border">
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-base">Branch-wise Sales</CardTitle>
@@ -351,7 +351,7 @@ export default function Reports() {
           </TabsContent>
 
           {/* Executive Sales */}
-          <TabsContent value="executives">
+          <TabsContent value="executives" data-testid="tab-content-executives">
             <Card className="bg-card border-border">
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-base">Executive Performance</CardTitle>
@@ -398,7 +398,7 @@ export default function Reports() {
           </TabsContent>
 
           {/* References */}
-          <TabsContent value="reference">
+          <TabsContent value="reference" data-testid="tab-content-reference">
             <Card className="bg-card border-border">
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-base">Customer References</CardTitle>
@@ -443,7 +443,7 @@ export default function Reports() {
           </TabsContent>
 
           {/* Customer Analytics */}
-          <TabsContent value="customers">
+          <TabsContent value="customers" data-testid="tab-content-customers">
             <Card className="bg-card border-border">
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-base">Customer Visit Analytics</CardTitle>
@@ -493,7 +493,7 @@ export default function Reports() {
           </TabsContent>
 
           {/* Top Items */}
-          <TabsContent value="items">
+          <TabsContent value="items" data-testid="tab-content-items">
             <Card className="bg-card border-border">
               <CardHeader className="pb-2 flex flex-row items-center justify-between">
                 <CardTitle className="text-base">Top Selling Items</CardTitle>
