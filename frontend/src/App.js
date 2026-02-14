@@ -110,6 +110,10 @@ function App() {
             <Route path="/admin/branches" element={<PrivateRoute roles={['admin']}><BranchManagement /></PrivateRoute>} />
             <Route path="/admin/users" element={<PrivateRoute roles={['admin']}><UserManagement /></PrivateRoute>} />
             <Route path="/admin/items" element={<PrivateRoute roles={['admin']}><ItemNameManagement /></PrivateRoute>} />
+            <Route path="/admin/items/:itemName" element={<PrivateRoute roles={['admin']}><ItemHistoryPage /></PrivateRoute>} />
+            <Route path="/admin/customers" element={<PrivateRoute roles={['admin']}><CustomerListPage /></PrivateRoute>} />
+            <Route path="/admin/customers/:customerId" element={<PrivateRoute roles={['admin']}><CustomerHistoryPage /></PrivateRoute>} />
+            <Route path="/admin/bills" element={<PrivateRoute roles={['admin']}><AllBillsPage /></PrivateRoute>} />
             <Route path="/admin/reports" element={<PrivateRoute roles={['admin', 'manager']}><Reports /></PrivateRoute>} />
             <Route path="/manager" element={<PrivateRoute roles={['manager']}><ManagerDashboard /></PrivateRoute>} />
             <Route path="/sales" element={<PrivateRoute roles={['executive']}><SalesExecDashboard /></PrivateRoute>} />
