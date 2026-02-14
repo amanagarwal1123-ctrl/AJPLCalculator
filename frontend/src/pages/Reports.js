@@ -132,9 +132,9 @@ export default function Reports() {
   const goldVsDiamond = analytics ? [{ name: 'Gold', value: Math.round(analytics.gold_total) }, { name: 'Diamond', value: Math.round(analytics.diamond_total) }].filter(d => d.value > 0) : [];
   const referenceData = analytics ? Object.entries(analytics.reference_analysis || {}).map(([k, v]) => ({ name: k, customers: v.count, total: Math.round(v.total) })) : [];
   const dailySales = analytics?.daily_sales || [];
-  const topItems = (analytics?.item_analysis || []).sort((a, b) => b.total - a.total).slice(0, 10);
-  const branchSales = analytics?.branch_sales || [];
-  const execSales = analytics?.executive_sales || [];
+  const topItems = [...(analytics?.item_analysis || [])].sort((a, b) => b.total - a.total).slice(0, 10);
+  const branchSales = [...(analytics?.branch_sales || [])];
+  const execSales = [...(analytics?.executive_sales || [])];
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
