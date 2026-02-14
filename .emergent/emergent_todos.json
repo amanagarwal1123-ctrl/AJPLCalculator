@@ -5,11 +5,11 @@
   },
   {
     "content": "Frontend: Add L/NL radio buttons to each studded charge entry in ItemCalculator.js, update net weight calculation",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Update BillPage/BillPrintView to display L/NL info and adjusted weights",
-    "status": "pending"
+    "status": "in_progress"
   },
   {
     "content": "Test the full diamond item flow end-to-end",
