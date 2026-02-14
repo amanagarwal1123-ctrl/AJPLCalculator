@@ -76,7 +76,7 @@ export default function SalesExecDashboard() {
       <div className="relative z-10">
         <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="flex items-center justify-between px-4 py-3 max-w-5xl mx-auto">
-            <h1 className="heading text-lg font-bold text-primary tracking-wider">Gold Suite</h1>
+            <h1 className="heading text-lg font-bold text-primary tracking-wider">AJPL Calculator</h1>
             <div className="flex items-center gap-3">
               <span className="text-sm text-muted-foreground">{user?.full_name}</span>
               <Button variant="ghost" size="sm" onClick={() => { localStorage.removeItem('token'); window.location.href = '/login'; }} data-testid="logout-button">

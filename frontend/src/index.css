@@ -31,12 +31,12 @@
     --chart-4: 14 78% 62%;
     --chart-5: 160 52% 46%;
     --radius: 0.8rem;
-    --shadow-elev-1: 0 1px 0 hsl(226 38% 6% / 0.6), 0 12px 30px hsl(226 38% 4% / 0.45);
-    --shadow-elev-2: 0 1px 0 hsl(226 38% 6% / 0.65), 0 24px 70px hsl(226 38% 4% / 0.55);
+    --shadow-elev-1: 0 1px 0 hsl(224 50% 8% / 0.6), 0 12px 30px hsl(224 50% 6% / 0.45);
+    --shadow-elev-2: 0 1px 0 hsl(224 50% 8% / 0.65), 0 24px 70px hsl(224 50% 6% / 0.55);
     --gold-foil: 44 90% 58%;
     --gold-dim: 42 40% 45%;
     --ivory: 40 35% 96%;
-    --ink: 226 45% 9%;
+    --ink: 224 58% 16%;
     --font-heading: 'Cormorant Garamond', ui-serif, Georgia, serif;
     --font-body: 'Manrope', ui-sans-serif, system-ui, sans-serif;
     --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;

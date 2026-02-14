@@ -35,7 +35,7 @@ export default function AppLayout({ children }) {
   const NavContent = () => (
     <div className="flex flex-col h-full">
       <div className="p-6 border-b border-border">
-        <h1 className="heading text-xl font-bold text-primary tracking-wider">Gold Suite</h1>
+        <h1 className="heading text-xl font-bold text-primary tracking-wider">AJPL Calculator</h1>
         <p className="text-xs text-muted-foreground mt-1 capitalize">{user?.role} Panel</p>
       </div>
       <nav className="flex-1 p-4 space-y-1">
@@ -84,7 +84,7 @@ export default function AppLayout({ children }) {
         <div className="relative z-10">
           <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
             <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
-              <h1 className="heading text-lg font-bold text-primary tracking-wider">Gold Suite</h1>
+              <h1 className="heading text-lg font-bold text-primary tracking-wider">AJPL Calculator</h1>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground">{user?.full_name}</span>
                 <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="logout-button">
@@ -120,7 +120,7 @@ export default function AppLayout({ children }) {
                 <NavContent />
               </SheetContent>
             </Sheet>
-            <h1 className="heading text-lg font-bold text-primary">Gold Suite</h1>
+            <h1 className="heading text-lg font-bold text-primary">AJPL Calculator</h1>
             <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut size={16} /></Button>
           </div>
         </div>
