@@ -48,11 +48,11 @@ export default function LoginPage() {
             <Gem className="w-10 h-10 text-primary" />
           </div>
           <h1 className="heading text-5xl font-bold text-foreground tracking-tight mb-4">
-            Gold Jewellery<br />
-            <span className="text-primary">Sales Suite</span>
+            AJPL<br />
+            <span className="text-primary">Calculator</span>
           </h1>
           <p className="text-muted-foreground text-lg max-w-md mx-auto leading-relaxed">
-            Premium sales management for distinguished jewellery showrooms. Track, calculate, and report with elegance.
+            Premium sales management for distinguished jewellery showrooms. Track, calculate, and analyse with elegance.
           </p>
           <div className="mt-8 flex justify-center gap-4">
             <div className="px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
