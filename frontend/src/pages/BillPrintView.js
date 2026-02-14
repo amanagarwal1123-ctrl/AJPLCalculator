@@ -34,13 +34,15 @@ export default function BillPrintView() {
 
   const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val || 0);
 
+  const hasDiamond = bill?.items?.some(i => i.item_type === 'diamond');
+
   if (!bill) return <div className="kintsugi-page flex items-center justify-center min-h-screen"><div className="kintsugi-veins" /><p className="relative z-10 heading text-xl text-primary">Loading...</p></div>;
 
   return (
     <div>
       {/* Action bar - no print */}
       <div className="no-print bg-card border-b border-border p-4 flex items-center justify-between sticky top-0 z-50">
-        <Button variant="ghost" onClick={() => navigate(`/bill/${billId}`)}><ArrowLeft size={18} className="mr-2" /> Back</Button>
+        <Button variant="ghost" onClick={() => navigate(`/bill/${billId}`)} data-testid="back-from-print"><ArrowLeft size={18} className="mr-2" /> Back</Button>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={handlePrint} data-testid="print-action-button"><Printer size={16} className="mr-2" /> Print</Button>
           <Button onClick={downloadPdf} data-testid="pdf-download-button"><Download size={16} className="mr-2" /> Download PDF</Button>
@@ -68,46 +70,72 @@ export default function BillPrintView() {
               <div><strong>Location:</strong> {bill.customer_location || '-'}</div>
               <div><strong>Reference:</strong> {bill.customer_reference || '-'}</div>
               <div><strong>Executive:</strong> {bill.executive_name}</div>
+              <div><strong>Status:</strong> {(bill.status || 'draft').toUpperCase()}</div>
             </div>
           </div>
 
           {/* Items Table */}
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Item</th>
-                <th>KT</th>
-                <th>Net Wt (g)</th>
-                <th style={{ textAlign: 'right' }}>Rate/10g</th>
-                <th style={{ textAlign: 'right' }}>Gold Value</th>
-                <th style={{ textAlign: 'right' }}>Making</th>
-                <th style={{ textAlign: 'right' }}>Stone</th>
-                {bill.items?.some(i => i.item_type === 'diamond') && <th style={{ textAlign: 'right' }}>Studded</th>}
-                <th style={{ textAlign: 'right' }}>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bill.items?.map((item, idx) => (
-                <tr key={idx}>
-                  <td>{idx + 1}</td>
-                  <td>{item.item_name}</td>
-                  <td>{item.purity_name}</td>
-                  <td style={{ fontFamily: 'IBM Plex Mono, monospace' }}>{item.net_weight?.toFixed(3)}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(item.rate_per_10g)}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(item.gold_value)}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(item.total_making)}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(item.total_stone)}</td>
-                  {bill.items?.some(i => i.item_type === 'diamond') && <td style={{ textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(item.total_studded || 0)}</td>}
-                  <td style={{ textAlign: 'right', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700 }}>{formatCurrency(item.total_amount)}</td>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: '4%' }} />
+                <col style={{ width: hasDiamond ? '12%' : '14%' }} />
+                <col style={{ width: '5%' }} />
+                <col style={{ width: '8%' }} />
+                <col style={{ width: '7%' }} />
+                <col style={{ width: '8%' }} />
+                <col style={{ width: hasDiamond ? '11%' : '13%' }} />
+                <col style={{ width: hasDiamond ? '11%' : '13%' }} />
+                <col style={{ width: hasDiamond ? '9%' : '11%' }} />
+                <col style={{ width: hasDiamond ? '8%' : '10%' }} />
+                {hasDiamond && <col style={{ width: '8%' }} />}
+                <col style={{ width: hasDiamond ? '9%' : '11%' }} />
+              </colgroup>
+              <thead>
+                <tr style={{ background: '#f0ebe0' }}>
+                  <th style={{ padding: '8px 3px', textAlign: 'left', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', borderBottom: '2px solid #C5A55A', fontWeight: 700 }}>#</th>
+                  <th style={{ padding: '8px 3px', textAlign: 'left', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', borderBottom: '2px solid #C5A55A', fontWeight: 700 }}>Item</th>
+                  <th style={{ padding: '8px 3px', textAlign: 'left', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', borderBottom: '2px solid #C5A55A', fontWeight: 700 }}>KT</th>
+                  <th style={{ padding: '8px 3px', textAlign: 'right', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', borderBottom: '2px solid #C5A55A', fontWeight: 700 }}>Gross(g)</th>
+                  <th style={{ padding: '8px 3px', textAlign: 'right', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', borderBottom: '2px solid #C5A55A', fontWeight: 700 }}>Less(g)</th>
+                  <th style={{ padding: '8px 3px', textAlign: 'right', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', borderBottom: '2px solid #C5A55A', fontWeight: 700 }}>Net(g)</th>
+                  <th style={{ padding: '8px 3px', textAlign: 'right', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', borderBottom: '2px solid #C5A55A', fontWeight: 700 }}>Rate/10g</th>
+                  <th style={{ padding: '8px 3px', textAlign: 'right', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', borderBottom: '2px solid #C5A55A', fontWeight: 700 }}>Gold Val</th>
+                  <th style={{ padding: '8px 3px', textAlign: 'right', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', borderBottom: '2px solid #C5A55A', fontWeight: 700 }}>Making</th>
+                  <th style={{ padding: '8px 3px', textAlign: 'right', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', borderBottom: '2px solid #C5A55A', fontWeight: 700 }}>Stone</th>
+                  {hasDiamond && <th style={{ padding: '8px 3px', textAlign: 'right', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', borderBottom: '2px solid #C5A55A', fontWeight: 700 }}>Studded</th>}
+                  <th style={{ padding: '8px 3px', textAlign: 'right', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#666', borderBottom: '2px solid #C5A55A', fontWeight: 700 }}>Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {bill.items?.map((item, idx) => (
+                  <tr key={idx} style={{ background: idx % 2 === 1 ? '#faf8f3' : 'transparent' }}>
+                    <td style={{ padding: '6px 3px', fontSize: '0.8rem', borderBottom: '1px solid #eee', color: '#666' }}>{idx + 1}</td>
+                    <td style={{ padding: '6px 3px', fontSize: '0.8rem', borderBottom: '1px solid #eee', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.item_name}</td>
+                    <td style={{ padding: '6px 3px', fontSize: '0.8rem', borderBottom: '1px solid #eee', color: '#8B6914', fontWeight: 600 }}>{item.purity_name}</td>
+                    <td style={{ textAlign: 'right', padding: '6px 3px', fontSize: '0.8rem', borderBottom: '1px solid #eee', fontFamily: 'IBM Plex Mono, monospace', color: '#555' }}>{(item.gross_weight || 0).toFixed(3)}</td>
+                    <td style={{ textAlign: 'right', padding: '6px 3px', fontSize: '0.8rem', borderBottom: '1px solid #eee', fontFamily: 'IBM Plex Mono, monospace', color: '#888' }}>{(item.less || 0).toFixed(3)}</td>
+                    <td style={{ textAlign: 'right', padding: '6px 3px', fontSize: '0.8rem', borderBottom: '1px solid #eee', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 600 }}>{(item.net_weight || 0).toFixed(3)}</td>
+                    <td style={{ textAlign: 'right', padding: '6px 3px', fontSize: '0.8rem', borderBottom: '1px solid #eee', fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(item.rate_per_10g)}</td>
+                    <td style={{ textAlign: 'right', padding: '6px 3px', fontSize: '0.8rem', borderBottom: '1px solid #eee', fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(item.gold_value)}</td>
+                    <td style={{ textAlign: 'right', padding: '6px 3px', fontSize: '0.8rem', borderBottom: '1px solid #eee', fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(item.total_making)}</td>
+                    <td style={{ textAlign: 'right', padding: '6px 3px', fontSize: '0.8rem', borderBottom: '1px solid #eee', fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(item.total_stone)}</td>
+                    {hasDiamond && <td style={{ textAlign: 'right', padding: '6px 3px', fontSize: '0.8rem', borderBottom: '1px solid #eee', fontFamily: 'IBM Plex Mono, monospace' }}>{formatCurrency(item.total_studded || 0)}</td>}
+                    <td style={{ textAlign: 'right', padding: '6px 3px', fontSize: '0.8rem', borderBottom: '1px solid #eee', fontFamily: 'IBM Plex Mono, monospace', fontWeight: 700 }}>{formatCurrency(item.total_amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Making Charge Note */}
+          <div style={{ marginTop: '6px', fontSize: '0.7rem', color: '#999', fontStyle: 'italic' }}>
+            * Making charges are calculated on net weight
+          </div>
 
           {/* Totals */}
           <div className="mt-6" style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <div style={{ minWidth: '350px' }}>
+            <div style={{ minWidth: '320px', maxWidth: '380px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '0.9rem' }}>
                 <span>Items Total:</span>
                 <span style={{ fontFamily: 'IBM Plex Mono, monospace', fontWeight: 500 }}>{formatCurrency(bill.items_total)}</span>
