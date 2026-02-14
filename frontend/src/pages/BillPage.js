@@ -499,13 +499,13 @@ export default function BillPage() {
         </main>
 
         {/* ====== MOBILE FIXED BOTTOM ACTION BAR ====== */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 no-print" data-testid="mobile-bottom-bar">
-          <div className="bg-card/95 backdrop-blur-md border-t border-border px-3 py-3 safe-area-bottom">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] no-print" data-testid="mobile-bottom-bar" style={{paddingBottom: 'env(safe-area-inset-bottom, 0px)'}}>
+          <div className="bg-card border-t-2 border-primary/40 px-4 pt-3 pb-4 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
             <div className="flex items-center gap-3 max-w-6xl mx-auto">
               {/* Grand Total - always visible */}
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Grand Total</p>
-                <p className="mono text-xl font-bold text-primary truncate">{formatCurrency(bill.grand_total)}</p>
+                <p className="mono text-lg font-bold text-primary truncate">{formatCurrency(bill.grand_total)}</p>
               </div>
               {/* Primary Action */}
               {primaryAction ? (
