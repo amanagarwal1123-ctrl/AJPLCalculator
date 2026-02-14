@@ -994,125 +994,259 @@ async def generate_bill_pdf(bill_id: str, user=Depends(get_current_user)):
     width, height = A4
     c = pdf_canvas.Canvas(buffer, pagesize=A4)
     
-    # Gold border
+    # Margins and content area
+    margin_left = 20*mm
+    margin_right = width - 20*mm
+    content_width = margin_right - margin_left
+    
+    # Gold double border
     c.setStrokeColor(rl_colors.HexColor('#C5A55A'))
-    c.setLineWidth(3)
-    c.rect(15*mm, 15*mm, width - 30*mm, height - 30*mm)
-    c.setLineWidth(1)
-    c.rect(17*mm, 17*mm, width - 34*mm, height - 34*mm)
+    c.setLineWidth(2.5)
+    c.rect(14*mm, 14*mm, width - 28*mm, height - 28*mm)
+    c.setLineWidth(0.6)
+    c.rect(16*mm, 16*mm, width - 32*mm, height - 32*mm)
     
     # Header
-    y = height - 35*mm
-    c.setFont('Helvetica-Bold', 20)
+    y = height - 32*mm
+    c.setFont('Helvetica-Bold', 22)
     c.setFillColor(rl_colors.HexColor('#1a1a3e'))
-    c.drawCentredString(width/2, y, 'AJPL JEWELLERY INVOICE')
+    c.drawCentredString(width/2, y, 'AJPL JEWELLERY')
     
-    y -= 8*mm
-    c.setFont('Helvetica', 10)
-    c.drawCentredString(width/2, y, f"Bill No: {bill_data.get('bill_number', '')}")
+    y -= 7*mm
+    c.setFont('Helvetica', 11)
+    c.setFillColor(rl_colors.HexColor('#666666'))
+    c.drawCentredString(width/2, y, 'INVOICE')
     
+    # Gold divider
     y -= 5*mm
+    c.setStrokeColor(rl_colors.HexColor('#C5A55A'))
+    c.setLineWidth(1.2)
+    c.line(width/2 - 50*mm, y, width/2 + 50*mm, y)
+    
+    y -= 6*mm
+    c.setFont('Helvetica', 9)
+    c.setFillColor(rl_colors.HexColor('#444444'))
+    c.drawCentredString(width/2, y, f"Bill No: {bill_data.get('bill_number', '')}")
+    y -= 4*mm
     c.drawCentredString(width/2, y, f"Date: {bill_data.get('created_at', '')[:10]}")
     
-    # Gold line
-    y -= 5*mm
-    c.setStrokeColor(rl_colors.HexColor('#C5A55A'))
-    c.setLineWidth(1.5)
-    c.line(25*mm, y, width - 25*mm, y)
-    
-    # Customer details
+    # Customer details box
     y -= 8*mm
-    c.setFont('Helvetica-Bold', 11)
+    box_top = y + 3*mm
+    box_bottom = y - 28*mm
+    c.setStrokeColor(rl_colors.HexColor('#C5A55A'))
+    c.setLineWidth(0.5)
+    c.setFillColor(rl_colors.HexColor('#f8f4ec'))
+    c.rect(margin_left, box_bottom, content_width, box_top - box_bottom, fill=1, stroke=1)
+    
+    y -= 2*mm
+    c.setFont('Helvetica-Bold', 10)
     c.setFillColor(rl_colors.HexColor('#1a1a3e'))
-    c.drawString(25*mm, y, 'Customer Details')
+    c.drawString(margin_left + 4*mm, y, 'Customer Details')
     y -= 5*mm
     c.setFont('Helvetica', 9)
-    c.drawString(25*mm, y, f"Name: {bill_data.get('customer_name', '')}")
-    c.drawString(110*mm, y, f"Phone: {bill_data.get('customer_phone', '')}")
-    y -= 4*mm
-    c.drawString(25*mm, y, f"Location: {bill_data.get('customer_location', '')}")
-    c.drawString(110*mm, y, f"Reference: {bill_data.get('customer_reference', '')}")
-    y -= 4*mm
-    c.drawString(25*mm, y, f"Executive: {bill_data.get('executive_name', '')}")
+    c.setFillColor(rl_colors.HexColor('#333333'))
+    c.drawString(margin_left + 4*mm, y, f"Name: {bill_data.get('customer_name', '')}")
+    c.drawString(width/2, y, f"Phone: {bill_data.get('customer_phone', '')}")
+    y -= 4.5*mm
+    c.drawString(margin_left + 4*mm, y, f"Location: {bill_data.get('customer_location', '-')}")
+    c.drawString(width/2, y, f"Reference: {bill_data.get('customer_reference', '-')}")
+    y -= 4.5*mm
+    c.drawString(margin_left + 4*mm, y, f"Executive: {bill_data.get('executive_name', '')}")
+    status_str = bill_data.get('status', 'draft').upper()
+    c.drawString(width/2, y, f"Status: {status_str}")
     
-    # Items table header
-    y -= 8*mm
+    # Items table
+    y = box_bottom - 6*mm
+    
+    # Check if any diamond items
+    has_diamond = any(item.get('item_type') == 'diamond' for item in bill_data.get('items', []))
+    
+    # Define columns to fit within margins
+    # Columns: #, Item, KT, Gross, Less, Net, Rate/10g, Gold Val, Making, Stone, [Studded], Total
+    if has_diamond:
+        cols = [
+            (margin_left, 6*mm, 'L', '#'),
+            (margin_left + 6*mm, 22*mm, 'L', 'Item'),
+            (margin_left + 28*mm, 10*mm, 'L', 'KT'),
+            (margin_left + 38*mm, 12*mm, 'R', 'Gross(g)'),
+            (margin_left + 50*mm, 10*mm, 'R', 'Less(g)'),
+            (margin_left + 60*mm, 12*mm, 'R', 'Net(g)'),
+            (margin_left + 72*mm, 18*mm, 'R', 'Rate/10g'),
+            (margin_left + 90*mm, 18*mm, 'R', 'Gold Val'),
+            (margin_left + 108*mm, 16*mm, 'R', 'Making'),
+            (margin_left + 124*mm, 14*mm, 'R', 'Stone'),
+            (margin_left + 138*mm, 14*mm, 'R', 'Studded'),
+            (margin_left + 152*mm, content_width - 152*mm, 'R', 'Total'),
+        ]
+    else:
+        cols = [
+            (margin_left, 7*mm, 'L', '#'),
+            (margin_left + 7*mm, 26*mm, 'L', 'Item'),
+            (margin_left + 33*mm, 11*mm, 'L', 'KT'),
+            (margin_left + 44*mm, 14*mm, 'R', 'Gross(g)'),
+            (margin_left + 58*mm, 12*mm, 'R', 'Less(g)'),
+            (margin_left + 70*mm, 14*mm, 'R', 'Net(g)'),
+            (margin_left + 84*mm, 20*mm, 'R', 'Rate/10g'),
+            (margin_left + 104*mm, 20*mm, 'R', 'Gold Val'),
+            (margin_left + 124*mm, 18*mm, 'R', 'Making'),
+            (margin_left + 142*mm, 14*mm, 'R', 'Stone'),
+            (margin_left + 156*mm, content_width - 156*mm, 'R', 'Total'),
+        ]
+    
+    # Table header background
+    c.setFillColor(rl_colors.HexColor('#f0ebe0'))
+    c.rect(margin_left, y - 4*mm, content_width, 6*mm, fill=1, stroke=0)
+    
+    # Table header text
+    c.setFont('Helvetica-Bold', 7)
+    c.setFillColor(rl_colors.HexColor('#666666'))
+    for (x, w, align, header) in cols:
+        if align == 'R':
+            c.drawRightString(x + w, y - 2.5*mm, header.upper())
+        else:
+            c.drawString(x + 1*mm, y - 2.5*mm, header.upper())
+    
+    # Header bottom line
+    y -= 4.5*mm
     c.setStrokeColor(rl_colors.HexColor('#C5A55A'))
-    c.line(25*mm, y, width - 25*mm, y)
-    y -= 5*mm
-    c.setFont('Helvetica-Bold', 8)
-    headers = ['#', 'Item', 'KT', 'Wt(g)', 'Rate/10g', 'Gold Val', 'Making', 'Stone', 'Studded', 'Total']
-    x_positions = [25, 32, 60, 72, 84, 100, 118, 136, 152, 170]
-    for i, h in enumerate(headers):
-        c.drawString(x_positions[i]*mm, y, h)
-    
-    y -= 3*mm
-    c.line(25*mm, y, width - 25*mm, y)
+    c.setLineWidth(1)
+    c.line(margin_left, y, margin_right, y)
     
     # Items
     c.setFont('Helvetica', 8)
+    c.setFillColor(rl_colors.HexColor('#1a1a3e'))
     for idx, item in enumerate(bill_data.get('items', [])):
-        y -= 5*mm
-        if y < 40*mm:  # New page if needed
+        y -= 5.5*mm
+        if y < 40*mm:
             c.showPage()
             y = height - 25*mm
+            # Redraw border on new page
+            c.setStrokeColor(rl_colors.HexColor('#C5A55A'))
+            c.setLineWidth(2.5)
+            c.rect(14*mm, 14*mm, width - 28*mm, height - 28*mm)
+            c.setLineWidth(0.6)
+            c.rect(16*mm, 16*mm, width - 32*mm, height - 32*mm)
         
-        c.drawString(25*mm, y, str(idx + 1))
-        c.drawString(32*mm, y, str(item.get('item_name', ''))[:15])
-        c.drawString(60*mm, y, str(item.get('purity_name', '')))
-        c.drawString(72*mm, y, f"{item.get('net_weight', 0):.2f}")
-        c.drawString(84*mm, y, f"{item.get('rate_per_10g', 0):,.0f}")
-        c.drawString(100*mm, y, f"{item.get('gold_value', 0):,.0f}")
-        c.drawString(118*mm, y, f"{item.get('total_making', 0):,.0f}")
-        c.drawString(136*mm, y, f"{item.get('total_stone', 0):,.0f}")
-        c.drawString(152*mm, y, f"{item.get('total_studded', 0):,.0f}")
-        c.drawString(170*mm, y, f"{item.get('total_amount', 0):,.0f}")
+        # Alternate row background
+        if idx % 2 == 1:
+            c.setFillColor(rl_colors.HexColor('#faf8f3'))
+            c.rect(margin_left, y - 1.5*mm, content_width, 5*mm, fill=1, stroke=0)
+        
+        c.setFillColor(rl_colors.HexColor('#1a1a3e'))
+        c.setFont('Helvetica', 8)
+        
+        # Truncate item name to fit column
+        item_name = str(item.get('item_name', ''))
+        max_chars = 16 if has_diamond else 20
+        if len(item_name) > max_chars:
+            item_name = item_name[:max_chars-1] + '..'
+        
+        gross_wt = item.get('gross_weight', 0)
+        less_wt = item.get('less', 0)
+        net_wt = item.get('net_weight', 0)
+        
+        row_data = [
+            str(idx + 1),
+            item_name,
+            str(item.get('purity_name', '')),
+            f"{gross_wt:.3f}",
+            f"{less_wt:.3f}",
+            f"{net_wt:.3f}",
+            f"{item.get('rate_per_10g', 0):,.0f}",
+            f"{item.get('gold_value', 0):,.0f}",
+            f"{item.get('total_making', 0):,.0f}",
+            f"{item.get('total_stone', 0):,.0f}",
+        ]
+        
+        if has_diamond:
+            row_data.append(f"{item.get('total_studded', 0):,.0f}")
+        
+        row_data.append(f"{item.get('total_amount', 0):,.0f}")
+        
+        for i, (x, w, align, _) in enumerate(cols):
+            if i < len(row_data):
+                if align == 'R':
+                    c.drawRightString(x + w, y, row_data[i])
+                else:
+                    c.drawString(x + 1*mm, y, row_data[i])
+        
+        # Light row separator
+        c.setStrokeColor(rl_colors.HexColor('#e8e0d0'))
+        c.setLineWidth(0.3)
+        c.line(margin_left, y - 2*mm, margin_right, y - 2*mm)
     
-    # Totals
-    y -= 5*mm
+    # Bottom line of items table
+    y -= 4*mm
     c.setStrokeColor(rl_colors.HexColor('#C5A55A'))
-    c.line(25*mm, y, width - 25*mm, y)
+    c.setLineWidth(1)
+    c.line(margin_left, y, margin_right, y)
     
-    y -= 6*mm
+    # Totals section (right aligned)
+    totals_x = margin_right - 70*mm
+    
+    y -= 7*mm
+    c.setFont('Helvetica', 9)
+    c.setFillColor(rl_colors.HexColor('#444444'))
+    c.drawString(totals_x, y, 'Items Total:')
     c.setFont('Helvetica-Bold', 9)
-    c.drawString(120*mm, y, 'Items Total:')
-    c.drawRightString(width - 25*mm, y, f"Rs. {bill_data.get('items_total', 0):,.2f}")
+    c.drawRightString(margin_right - 2*mm, y, f"Rs. {bill_data.get('items_total', 0):,.2f}")
     
     # External charges
     for ec in bill_data.get('external_charges', []):
         y -= 5*mm
+        c.setFont('Helvetica', 8.5)
+        c.setFillColor(rl_colors.HexColor('#666666'))
+        c.drawString(totals_x, y, f"{ec.get('name', '')}:")
+        c.drawRightString(margin_right - 2*mm, y, f"Rs. {ec.get('amount', 0):,.2f}")
+    
+    if bill_data.get('external_charges_total', 0) > 0:
+        y -= 5*mm
         c.setFont('Helvetica', 9)
-        c.drawString(120*mm, y, f"{ec.get('name', '')}:")
-        c.drawRightString(width - 25*mm, y, f"Rs. {ec.get('amount', 0):,.2f}")
+        c.setFillColor(rl_colors.HexColor('#444444'))
+        c.drawString(totals_x, y, 'External Charges:')
+        c.drawRightString(margin_right - 2*mm, y, f"Rs. {bill_data.get('external_charges_total', 0):,.2f}")
     
-    y -= 5*mm
-    c.drawString(120*mm, y, 'External Charges Total:')
-    c.drawRightString(width - 25*mm, y, f"Rs. {bill_data.get('external_charges_total', 0):,.2f}")
+    # Divider
+    y -= 4*mm
+    c.setStrokeColor(rl_colors.HexColor('#C5A55A'))
+    c.setLineWidth(0.8)
+    c.line(totals_x, y, margin_right - 2*mm, y)
     
-    y -= 5*mm
+    y -= 6*mm
     c.setFont('Helvetica-Bold', 10)
-    c.drawString(120*mm, y, 'Subtotal (without GST):')
-    c.drawRightString(width - 25*mm, y, f"Rs. {bill_data.get('subtotal_without_gst', 0):,.2f}")
+    c.setFillColor(rl_colors.HexColor('#1a1a3e'))
+    c.drawString(totals_x, y, 'Subtotal (without GST):')
+    c.drawRightString(margin_right - 2*mm, y, f"Rs. {bill_data.get('subtotal_without_gst', 0):,.2f}")
     
     y -= 5*mm
     c.setFont('Helvetica', 9)
-    c.drawString(120*mm, y, f"GST ({bill_data.get('gst_percent', 3)}%):")
-    c.drawRightString(width - 25*mm, y, f"Rs. {bill_data.get('gst_amount', 0):,.2f}")
+    c.setFillColor(rl_colors.HexColor('#666666'))
+    c.drawString(totals_x, y, f"GST ({bill_data.get('gst_percent', 3)}%):")
+    c.drawRightString(margin_right - 2*mm, y, f"Rs. {bill_data.get('gst_amount', 0):,.2f}")
     
-    y -= 6*mm
+    # Grand total double line
+    y -= 4*mm
     c.setStrokeColor(rl_colors.HexColor('#C5A55A'))
-    c.line(120*mm, y, width - 25*mm, y)
-    y -= 6*mm
-    c.setFont('Helvetica-Bold', 12)
+    c.setLineWidth(1.5)
+    c.line(totals_x, y, margin_right - 2*mm, y)
+    c.setLineWidth(0.5)
+    c.line(totals_x, y - 1.5*mm, margin_right - 2*mm, y - 1.5*mm)
+    
+    y -= 7*mm
+    c.setFont('Helvetica-Bold', 13)
     c.setFillColor(rl_colors.HexColor('#1a1a3e'))
-    c.drawString(120*mm, y, 'GRAND TOTAL:')
-    c.drawRightString(width - 25*mm, y, f"Rs. {bill_data.get('grand_total', 0):,.2f}")
+    c.drawString(totals_x, y, 'GRAND TOTAL:')
+    c.drawRightString(margin_right - 2*mm, y, f"Rs. {bill_data.get('grand_total', 0):,.2f}")
     
     # Footer
-    y -= 15*mm
-    c.setFont('Helvetica-Oblique', 8)
-    c.setFillColor(rl_colors.HexColor('#666666'))
-    c.drawCentredString(width/2, y, 'Thank you for your purchase!')
+    y -= 14*mm
+    c.setStrokeColor(rl_colors.HexColor('#e0d6c4'))
+    c.setLineWidth(0.5)
+    c.line(margin_left + 20*mm, y + 4*mm, margin_right - 20*mm, y + 4*mm)
+    c.setFont('Helvetica-Oblique', 8.5)
+    c.setFillColor(rl_colors.HexColor('#888888'))
+    c.drawCentredString(width/2, y, 'Thank you for your valuable patronage!')
     
     c.save()
     buffer.seek(0)
