@@ -304,6 +304,36 @@ class AJPLTestRunner:
         # Test users
         self.run_test("Get Users", "GET", "/users", 200)
 
+    def test_otp_endpoints(self):
+        """Test OTP-specific endpoints"""
+        print("\n🔑 Testing OTP Endpoints...")
+        
+        # Test requesting OTP for non-existent user
+        self.run_test(
+            "Request OTP for Non-existent User",
+            "POST",
+            "/auth/request-otp",
+            404,
+            data={"username": "nonexistent"}
+        )
+        
+        # Test verifying invalid OTP
+        self.run_test(
+            "Verify Invalid OTP",
+            "POST",
+            "/auth/verify-otp",
+            401,
+            data={"username": "admin", "otp": "0000"}
+        )
+        
+        # Test admin pending OTPs endpoint without auth
+        self.run_test(
+            "Get Pending OTPs Without Auth",
+            "GET",
+            "/admin/pending-otps",
+            401
+        )
+
     def run_all_tests(self):
         """Run all tests"""
         print("🚀 Starting AJPL Calculator Backend API Tests...")
@@ -314,6 +344,9 @@ class AJPLTestRunner:
         if not self.test_authentication():
             print("❌ Authentication failed, stopping tests")
             return False
+        
+        # Test OTP-specific endpoints
+        self.test_otp_endpoints()
         
         # Test all endpoint categories
         self.test_basic_crud_endpoints()
