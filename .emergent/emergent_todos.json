@@ -1,42 +1,26 @@
 [
   {
-    "content": "Phase 1: Build calc_engine module + test with Python script",
-    "status": "completed"
+    "content": "UI Update: Rename to 'AJPL Calculator' across all files",
+    "status": "in_progress"
   },
   {
-    "content": "Phase 1: Test calc engine POC - all calculation vectors pass",
-    "status": "completed"
+    "content": "UI Update: Change to bright velvet blue color scheme",
+    "status": "in_progress"
   },
   {
-    "content": "Phase 2: Get design guidelines from design agent",
-    "status": "completed"
+    "content": "Phase 3: Manager bill review/edit workflow with proper locking",
+    "status": "pending"
   },
   {
-    "content": "Phase 2: Install all dependencies (backend + frontend)",
-    "status": "completed"
+    "content": "Phase 3: Refine admin screens (rates, items, branches, users)",
+    "status": "pending"
   },
   {
-    "content": "Phase 2: Build complete backend (auth, models, CRUD, calculations, reports)",
-    "status": "completed"
+    "content": "Phase 3: Enhanced Reports & Analytics (date filters, PDF export)",
+    "status": "pending"
   },
   {
-    "content": "Phase 2: Build complete frontend (all pages, flows, Kintsugi design)",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: All user stories covered in Development",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: End to End Testing using Testing Agent",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Fix bill ID serialization bug",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 3: Continue with advanced features if user requests",
+    "content": "Phase 3: End to End Testing using Testing Agent",
     "status": "pending"
   }
 ]
