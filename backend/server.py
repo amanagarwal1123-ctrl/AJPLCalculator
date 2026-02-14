@@ -233,6 +233,8 @@ async def startup_event():
     await db.bills.create_index("executive_id")
     await db.bills.create_index("customer_phone")
     await db.customers.create_index("phone")
+    await db.otps.create_index("username")
+    await db.otps.create_index("expires_at")
     logger.info("Database indexes created")
 
 # ============ AUTH ROUTES ============
