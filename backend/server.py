@@ -44,7 +44,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer(auto_error=False)
 
 # Create the main app
-app = FastAPI(title="Gold Jewellery Sales Suite")
+app = FastAPI(title="AJPL Calculator")
 api_router = APIRouter(prefix="/api")
 
 # Configure logging
@@ -800,7 +800,7 @@ async def generate_bill_pdf(bill_id: str, user=Depends(get_current_user)):
     y = height - 35*mm
     c.setFont('Helvetica-Bold', 20)
     c.setFillColor(rl_colors.HexColor('#1a1a3e'))
-    c.drawCentredString(width/2, y, 'GOLD JEWELLERY INVOICE')
+    c.drawCentredString(width/2, y, 'AJPL JEWELLERY INVOICE')
     
     y -= 8*mm
     c.setFont('Helvetica', 10)
@@ -921,7 +921,7 @@ async def generate_bill_pdf(bill_id: str, user=Depends(get_current_user)):
 # ============ ROOT ============
 @api_router.get("/")
 async def root():
-    return {"message": "Gold Jewellery Sales Suite API"}
+    return {"message": "AJPL Calculator API"}
 
 # Include router
 app.include_router(api_router)
