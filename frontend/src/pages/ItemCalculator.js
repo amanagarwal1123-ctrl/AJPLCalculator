@@ -188,7 +188,7 @@ export default function ItemCalculator() {
 
   // Studded charge helpers
   const addStuddedCharge = (type) => {
-    setStuddedCharges([...studdedCharges, { type, carats: '', rate_per_carat: '' }]);
+    setStuddedCharges([...studdedCharges, { type, carats: '', rate_per_carat: '', less_type: 'NL' }]);
   };
 
   const updateStuddedCharge = (idx, field, value) => {
