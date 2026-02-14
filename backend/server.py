@@ -800,6 +800,8 @@ async def get_dashboard_analytics(
     
     # Daily sales trend (last 30 days)
     daily_sales = {}
+    branch_sales = {}
+    executive_sales = {}
     for bill in all_bills:
         date_str = bill.get('created_at', '')[:10]
         if date_str:
@@ -807,9 +809,33 @@ async def get_dashboard_analytics(
                 daily_sales[date_str] = {'date': date_str, 'total': 0, 'count': 0}
             daily_sales[date_str]['total'] += bill.get('grand_total', 0)
             daily_sales[date_str]['count'] += 1
+        
+        # Branch-wise sales
+        bid = bill.get('branch_id', 'unassigned')
+        if bid not in branch_sales:
+            branch_sales[bid] = {'branch_id': bid, 'total': 0, 'count': 0}
+        branch_sales[bid]['total'] += bill.get('grand_total', 0)
+        branch_sales[bid]['count'] += 1
+        
+        # Executive-wise sales
+        eid = bill.get('executive_id', '')
+        ename = bill.get('executive_name', 'Unknown')
+        if eid not in executive_sales:
+            executive_sales[eid] = {'executive_id': eid, 'executive_name': ename, 'total': 0, 'count': 0}
+        executive_sales[eid]['total'] += bill.get('grand_total', 0)
+        executive_sales[eid]['count'] += 1
+    
+    # Get branch names for branch_sales
+    branches = await db.branches.find({}).to_list(100)
+    branch_map = {b['id']: b.get('name', 'Unknown') for b in branches}
+    for bs in branch_sales.values():
+        bs['branch_name'] = branch_map.get(bs['branch_id'], 'Unassigned')
     
     # Customer analytics
     total_customers = await db.customers.count_documents({})
+    
+    # All-time total 
+    all_time_total = sum(b.get('grand_total', 0) for b in all_bills)
     
     return {
         "today_sales": round(today_sales, 2),
@@ -822,8 +848,11 @@ async def get_dashboard_analytics(
         "diamond_total": round(diamond_total, 2),
         "reference_analysis": reference_analysis,
         "daily_sales": sorted(daily_sales.values(), key=lambda x: x['date']),
+        "branch_sales": list(branch_sales.values()),
+        "executive_sales": sorted(executive_sales.values(), key=lambda x: x['total'], reverse=True),
         "total_customers": total_customers,
         "total_bills": len(all_bills),
+        "all_time_total": round(all_time_total, 2),
     }
 
 @api_router.get("/analytics/customers")
