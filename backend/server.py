@@ -249,6 +249,15 @@ async def request_otp(req: OTPRequest):
     if not user.get("is_active", True):
         raise HTTPException(status_code=403, detail="Account disabled")
 
+    # Clean up expired/old OTPs for this user
+    now = datetime.now(timezone.utc).isoformat()
+    await db.otps.delete_many({
+        "$or": [
+            {"username": req.username, "verified": True},
+            {"username": req.username, "expires_at": {"$lt": now}},
+        ]
+    })
+
     # Generate 4-digit OTP
     otp_code = str(random.randint(1000, 9999))
 
