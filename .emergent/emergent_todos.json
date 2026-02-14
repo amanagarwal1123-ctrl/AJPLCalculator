@@ -9,10 +9,14 @@
   },
   {
     "content": "Frontend: Enhance Reports Customers tab with frequency cohort chart, inactive customers section, and spending tier breakdown",
-    "status": "in_progress"
+    "status": "completed"
+  },
+  {
+    "content": "Fix Array.sort() mutation bug causing crash on tab navigation",
+    "status": "completed"
   },
   {
     "content": "Run comprehensive tests to verify all changes",
-    "status": "pending"
+    "status": "in_progress"
   }
 ]
