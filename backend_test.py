@@ -660,6 +660,11 @@ class GoldJewelleryAPITester:
             self.test_admin_login_again,
             self.test_bill_pdf_generation,
             self.test_dashboard_analytics,
+            
+            # New customer analytics endpoints (as per review request)
+            self.test_customer_frequency_analytics,
+            self.test_inactive_customers_analytics,
+            self.test_basic_customer_analytics,
         ]
 
         passed_tests = []
