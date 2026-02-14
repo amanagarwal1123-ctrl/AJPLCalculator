@@ -7,7 +7,7 @@ from datetime import datetime
 
 class GoldJewelleryAPITester:
     def __init__(self):
-        self.base_url = "https://gold-sales-hub-1.preview.emergentagent.com/api"
+        self.base_url = "https://ajpl-calc.preview.emergentagent.com/api"
         self.token = None
         self.tests_run = 0
         self.tests_passed = 0
