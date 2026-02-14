@@ -155,7 +155,91 @@ class GoldJewelleryAPITester:
             return len(response) > 0
         return False
 
-    def test_create_executive_user(self):
+    def test_create_manager_user(self):
+        """Test creating a manager user"""
+        manager_username = f"manager_{datetime.now().strftime('%H%M%S')}"
+        manager_password = "manager123"
+        
+        success, response = self.run_test(
+            "Create Manager User",
+            "POST",
+            "/users",
+            200,
+            {
+                "username": manager_username,
+                "password": manager_password,
+                "full_name": "Test Manager",
+                "role": "manager",
+                "branch_id": self.created_resources['branch_id']
+            }
+        )
+        if success:
+            self.created_resources['manager_user_id'] = response.get('id')
+            self.created_resources['manager_username'] = manager_username
+            self.created_resources['manager_password'] = manager_password
+            self.log(f"   Created manager: {manager_username}")
+        return success
+
+    def test_manager_login(self):
+        """Test logging in as the created manager"""
+        if not self.created_resources['manager_username']:
+            self.log("❌ Manager Login - No manager user created")
+            return False
+            
+        success, response = self.run_test(
+            "Manager Login",
+            "POST",
+            "/auth/login", 
+            200,
+            {
+                "username": self.created_resources['manager_username'],
+                "password": self.created_resources['manager_password']
+            },
+            auth_required=False
+        )
+        if success and 'token' in response:
+            self.token = response['token']  # Switch to manager token
+            self.log(f"   Logged in as manager: {response['user']['full_name']}")
+            return True
+        return False
+
+    def test_manager_approve_bill(self):
+        """Test manager approving a bill using the new approve endpoint"""
+        if not self.created_resources['bill_id']:
+            self.log("❌ Manager Approve Bill - No bill to approve")
+            return False
+            
+        success, response = self.run_test(
+            "Manager Approve Bill",
+            "PUT",
+            f"/bills/{self.created_resources['bill_id']}/approve",
+            200
+        )
+        if success:
+            self.log("   Bill successfully approved by manager")
+        return success
+
+    def test_get_bill_with_audit_trail(self):
+        """Test fetching bill to verify audit trail after approval"""
+        if not self.created_resources['bill_id']:
+            return False
+            
+        success, response = self.run_test(
+            "Get Bill with Audit Trail",
+            "GET",
+            f"/bills/{self.created_resources['bill_id']}",
+            200
+        )
+        if success:
+            change_log = response.get('change_log', [])
+            status = response.get('status')
+            self.log(f"   Bill status: {status}")
+            self.log(f"   Change log entries: {len(change_log)}")
+            if change_log:
+                last_change = change_log[-1]
+                self.log(f"   Last change: {last_change.get('action')} by {last_change.get('user')}")
+            return status == 'approved' and len(change_log) > 0
+        return False
         """Test creating a sales executive user"""
         exec_username = f"exec_{datetime.now().strftime('%H%M%S')}"
         exec_password = "exec123"
