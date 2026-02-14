@@ -219,7 +219,7 @@ export default function BillPage() {
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-xs text-muted-foreground">
                                 <span>Gross: {item.gross_weight}g</span>
                                 <span>Less: {item.less}g</span>
-                                <span>Net: <span className="mono text-foreground">{item.net_weight}g</span></span>
+                                <span>Net: <span className="mono text-foreground">{item.net_weight}g</span>{item.studded_less_grams > 0 && <span className="text-primary ml-1">(incl. diamond: -{item.studded_less_grams}g)</span>}</span>
                                 <span>Rate: <span className="mono">{formatCurrency(item.rate_per_10g)}/10g</span></span>
                               </div>
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-1 text-xs">
