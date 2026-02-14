@@ -109,6 +109,17 @@ export default function BillPage() {
     }
   };
 
+  const approveBill = async () => {
+    if (!window.confirm('Approve this bill?')) return;
+    try {
+      await apiClient.put(`/bills/${billId}/approve`);
+      toast.success('Bill approved!');
+      loadBill();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to approve');
+    }
+  };
+
   const downloadPdf = async () => {
     try {
       const res = await apiClient.get(`/bills/${billId}/pdf`, { responseType: 'blob' });
