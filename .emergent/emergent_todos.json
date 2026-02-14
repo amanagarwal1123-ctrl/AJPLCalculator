@@ -1,18 +1,14 @@
 [
   {
-    "content": "Backend: Update calc_engine.py to handle studded 'less_type' (L/NL)",
-    "status": "completed"
+    "content": "Fix .gitignore: Remove *.env and *.env.* lines so deployment can include .env files",
+    "status": "in_progress"
   },
   {
-    "content": "Frontend: Add L/NL radio buttons to each studded charge entry in ItemCalculator.js, update net weight calculation",
-    "status": "completed"
+    "content": "Fix JWT secret hardcoded fallback in server.py",
+    "status": "pending"
   },
   {
-    "content": "Update BillPage/BillPrintView to display L/NL info and adjusted weights",
-    "status": "completed"
-  },
-  {
-    "content": "Test the full diamond item flow end-to-end",
-    "status": "completed"
+    "content": "Verify all services healthy and app accessible after fixes",
+    "status": "pending"
   }
 ]
