@@ -120,8 +120,15 @@
 div[style*="Made with Emergent"],
 a[href*="emergentagent"],
 div[class*="emergent-badge"],
-body > div:last-child:not(.App):not(#root) {
+iframe[src*="emergent"] {
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
 }
 
 /* Scrollbar styling */
