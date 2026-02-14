@@ -1,26 +1,30 @@
 [
   {
     "content": "UI Update: Rename to 'AJPL Calculator' across all files",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "UI Update: Change to bright velvet blue color scheme",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Phase 3: Manager bill review/edit workflow with proper locking",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 3: Refine admin screens (rates, items, branches, users)",
-    "status": "pending"
+    "status": "completed"
   },
   {
-    "content": "Phase 3: Enhanced Reports & Analytics (date filters, PDF export)",
-    "status": "pending"
+    "content": "Phase 3: Enhanced Reports & Analytics (date filters, branch/exec analytics, CSV export)",
+    "status": "completed"
+  },
+  {
+    "content": "Phase 3: Bill audit trail and approval workflow",
+    "status": "completed"
   },
   {
     "content": "Phase 3: End to End Testing using Testing Agent",
-    "status": "pending"
+    "status": "in_progress"
   }
 ]
