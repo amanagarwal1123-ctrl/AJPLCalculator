@@ -108,9 +108,16 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
+class OTPRequest(BaseModel):
+    username: str
+
+class OTPVerify(BaseModel):
+    username: str
+    otp: str
+
 class UserCreate(BaseModel):
     username: str
-    password: str
+    password: Optional[str] = None
     full_name: str
     role: str  # admin, manager, executive
     branch_id: Optional[str] = None
