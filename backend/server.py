@@ -513,14 +513,16 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
         "gst_percent": totals["gst_percent"],
         "gst_amount": totals["gst_amount"],
         "grand_total": totals["grand_total"],
-        "status": "draft",  # draft, sent, approved, edited
+        "status": "draft",  # draft, sent, edited, approved
         "executive_id": user.get('id'),
         "executive_name": user.get('full_name', ''),
         "branch_id": user.get('branch_id', ''),
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "sent_at": None,
+        "approved_at": None,
         "last_modified_by": user.get('full_name', ''),
+        "change_log": [],
     }
     await db.bills.insert_one(bill_doc)
     return serialize_doc(bill_doc)
