@@ -432,6 +432,11 @@ export default function ItemCalculator() {
                         <div className="h-11 px-3 flex items-center rounded-md bg-muted/50 border border-border mono font-bold text-primary" data-testid="net-weight-display">
                           {netWeight.toFixed(3)}
                         </div>
+                        {studdedLessGrams > 0 && (
+                          <p className="text-xs text-primary mt-0.5" data-testid="studded-less-note">
+                            Incl. diamond less: -{studdedLessGrams.toFixed(3)}g
+                          </p>
+                        )}
                       </div>
                     </div>
                   </CardContent>
