@@ -474,52 +474,275 @@ export default function Reports() {
 
           {/* Customer Analytics */}
           <TabsContent value="customers" data-testid="tab-content-customers">
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-base">Customer Visit Analytics</CardTitle>
-                <Button variant="ghost" size="sm" className="text-xs" onClick={() => exportCSV(customers, 'customers')}><Download size={12} className="mr-1" /> CSV</Button>
-              </CardHeader>
-              <CardContent>
-                {customers.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">No customer data yet</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="border-border">
-                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Name</TableHead>
-                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Phone</TableHead>
-                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Location</TableHead>
-                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Reference</TableHead>
-                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Visits</TableHead>
-                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total Spent</TableHead>
-                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Days Since Last Visit</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {customers.sort((a, b) => (b.total_spent || 0) - (a.total_spent || 0)).map((c, i) => (
-                          <TableRow key={i} className="border-border">
-                            <TableCell className="font-medium">{c.name}</TableCell>
-                            <TableCell className="mono text-sm">{c.phone}</TableCell>
-                            <TableCell className="text-muted-foreground">{c.location || '-'}</TableCell>
-                            <TableCell className="text-muted-foreground">{c.reference || '-'}</TableCell>
-                            <TableCell className="mono text-right">{c.total_visits || 1}</TableCell>
-                            <TableCell className="mono text-right font-medium text-primary">{formatCurrency(c.total_spent)}</TableCell>
-                            <TableCell className="mono text-right">
-                              <span className={`px-2 py-0.5 rounded text-xs ${
-                                c.days_since_last_visit > 30 ? 'bg-red-500/20 text-red-400' :
-                                c.days_since_last_visit > 14 ? 'bg-yellow-500/20 text-yellow-400' :
-                                'bg-green-500/20 text-green-400'
-                              }`}>{c.days_since_last_visit ?? '-'} days</span>
-                            </TableCell>
+            <div className="space-y-6">
+              {/* KPI Summary Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-testid="customer-kpi-cards">
+                <Card className="bg-card border-border">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Users size={14} className="text-primary" />
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground">Total Customers</p>
+                    </div>
+                    <p className="mono text-2xl font-bold text-primary" data-testid="total-customers-count">{customerFrequency?.total_customers || customers.length || 0}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card border-border">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendingUp size={14} className="text-[hsl(160,52%,46%)]" />
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground">Avg Visits</p>
+                    </div>
+                    <p className="mono text-2xl font-bold text-[hsl(160,52%,46%)]" data-testid="avg-visits">{customerFrequency?.avg_visits || '-'}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card border-border">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendingUp size={14} className="text-[hsl(196,70%,52%)]" />
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground">Avg Spending</p>
+                    </div>
+                    <p className="mono text-xl font-bold text-[hsl(196,70%,52%)]" data-testid="avg-spending">{formatCurrency(customerFrequency?.avg_spending)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card border-border">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <UserX size={14} className="text-[hsl(14,78%,62%)]" />
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground">Inactive ({inactiveDays}d)</p>
+                    </div>
+                    <p className="mono text-2xl font-bold text-[hsl(14,78%,62%)]" data-testid="inactive-count">{inactiveCustomers?.inactive_count || 0}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row: Visit Frequency + Spending Tiers */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Visit Frequency Cohorts */}
+                <Card className="bg-card border-border">
+                  <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                    <CardTitle className="text-base">Visit Frequency Cohorts</CardTitle>
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => exportCSV(customerFrequency?.frequency_cohorts || [], 'visit-frequency')} data-testid="export-frequency-csv">
+                      <Download size={12} className="mr-1" /> CSV
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-64" data-testid="frequency-chart">
+                      {customerFrequency?.frequency_cohorts?.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={customerFrequency.frequency_cohorts}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(224, 30%, 30%)" />
+                            <XAxis dataKey="name" stroke="hsl(220, 15%, 75%)" fontSize={11} />
+                            <YAxis stroke="hsl(220, 15%, 75%)" fontSize={10} />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Bar dataKey="count" fill={GOLD_COLOR} radius={[4, 4, 0, 0]} name="Customers" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : <div className="flex items-center justify-center h-full text-muted-foreground">No data yet</div>}
+                    </div>
+                    {customerFrequency?.frequency_cohorts?.length > 0 && (
+                      <Table className="mt-3">
+                        <TableHeader>
+                          <TableRow className="border-border">
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Cohort</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Customers</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total Spent</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {customerFrequency.frequency_cohorts.map((c, i) => (
+                            <TableRow key={i} className="border-border">
+                              <TableCell className="font-medium">{c.name}</TableCell>
+                              <TableCell className="mono text-right">{c.count}</TableCell>
+                              <TableCell className="mono text-right text-primary font-medium">{formatCurrency(c.total_spent)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Spending Tiers */}
+                <Card className="bg-card border-border">
+                  <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                    <CardTitle className="text-base">Customer Spending Tiers</CardTitle>
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => exportCSV(customerFrequency?.spending_tiers || [], 'spending-tiers')} data-testid="export-spending-csv">
+                      <Download size={12} className="mr-1" /> CSV
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-64" data-testid="spending-chart">
+                      {customerFrequency?.spending_tiers?.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie 
+                              data={customerFrequency.spending_tiers.filter(t => t.count > 0)} 
+                              cx="50%" cy="50%" 
+                              innerRadius={55} outerRadius={85} 
+                              paddingAngle={4} 
+                              dataKey="count"
+                              label={({ name, count }) => count > 0 ? `${name}: ${count}` : ''}
+                              labelLine={false}
+                            >
+                              {customerFrequency.spending_tiers.filter(t => t.count > 0).map((_, i) => (
+                                <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      ) : <div className="flex items-center justify-center h-full text-muted-foreground">No data yet</div>}
+                    </div>
+                    {customerFrequency?.spending_tiers?.length > 0 && (
+                      <Table className="mt-3">
+                        <TableHeader>
+                          <TableRow className="border-border">
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Tier</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Customers</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total Spent</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {customerFrequency.spending_tiers.map((t, i) => (
+                            <TableRow key={i} className="border-border">
+                              <TableCell className="font-medium">{t.name}</TableCell>
+                              <TableCell className="mono text-right">{t.count}</TableCell>
+                              <TableCell className="mono text-right text-primary font-medium">{formatCurrency(t.total_spent)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Inactive Customers Section */}
+              <Card className="bg-card border-border">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <AlertTriangle size={16} className="text-[hsl(14,78%,62%)]" />
+                        Inactive Customers
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-muted-foreground whitespace-nowrap">Not visited in</Label>
+                        <Input 
+                          type="number" 
+                          value={inactiveDays} 
+                          onChange={e => handleInactiveDaysChange(e.target.value)}
+                          className="h-8 w-20 bg-secondary/50 mono text-sm text-center" 
+                          min="1"
+                          data-testid="inactive-days-input"
+                        />
+                        <Label className="text-xs text-muted-foreground whitespace-nowrap">days</Label>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => exportCSV(inactiveCustomers?.inactive_customers || [], 'inactive-customers')} data-testid="export-inactive-csv">
+                      <Download size={12} className="mr-1" /> CSV
+                    </Button>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent>
+                  {loadingInactive ? (
+                    <p className="text-muted-foreground text-center py-6">Loading...</p>
+                  ) : (!inactiveCustomers || inactiveCustomers.inactive_count === 0) ? (
+                    <div className="text-center py-8" data-testid="inactive-empty-state">
+                      <Users size={36} className="mx-auto mb-3 text-[hsl(160,52%,46%)] opacity-60" />
+                      <p className="text-muted-foreground">All customers have visited within the last {inactiveDays} days</p>
+                      <p className="text-xs text-muted-foreground mt-1">Try increasing the threshold to find less active customers</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto" data-testid="inactive-customers-table">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-border">
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Name</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Phone</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Location</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Reference</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total Visits</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total Spent</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Days Inactive</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {inactiveCustomers.inactive_customers.map((c, i) => (
+                            <TableRow key={i} className="border-border">
+                              <TableCell className="font-medium">{c.name}</TableCell>
+                              <TableCell className="mono text-sm">{c.phone}</TableCell>
+                              <TableCell className="text-muted-foreground">{c.location || '-'}</TableCell>
+                              <TableCell className="text-muted-foreground">{c.reference || '-'}</TableCell>
+                              <TableCell className="mono text-right">{c.total_visits || 1}</TableCell>
+                              <TableCell className="mono text-right font-medium text-primary">{formatCurrency(c.total_spent)}</TableCell>
+                              <TableCell className="mono text-right">
+                                <span className={`px-2 py-0.5 rounded text-xs ${
+                                  c.days_since_last_visit > 60 ? 'bg-destructive/20 text-[hsl(0,72%,60%)]' :
+                                  c.days_since_last_visit > 30 ? 'bg-[hsl(38,85%,55%)]/20 text-[hsl(38,85%,55%)]' :
+                                  'bg-[hsl(196,70%,52%)]/20 text-[hsl(196,70%,52%)]'
+                                }`}>{c.days_since_last_visit} days</span>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Full Customer Directory */}
+              <Card className="bg-card border-border">
+                <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                  <CardTitle className="text-base">All Customers</CardTitle>
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => exportCSV(customers, 'all-customers')} data-testid="export-all-customers-csv">
+                    <Download size={12} className="mr-1" /> CSV
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {customers.length === 0 ? (
+                    <p className="text-muted-foreground text-center py-8">No customer data yet</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-border">
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Name</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Phone</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Location</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Reference</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Visits</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total Spent</TableHead>
+                            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Days Since Last Visit</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {customers.sort((a, b) => (b.total_spent || 0) - (a.total_spent || 0)).map((c, i) => (
+                            <TableRow key={i} className="border-border">
+                              <TableCell className="font-medium">{c.name}</TableCell>
+                              <TableCell className="mono text-sm">{c.phone}</TableCell>
+                              <TableCell className="text-muted-foreground">{c.location || '-'}</TableCell>
+                              <TableCell className="text-muted-foreground">{c.reference || '-'}</TableCell>
+                              <TableCell className="mono text-right">{c.total_visits || 1}</TableCell>
+                              <TableCell className="mono text-right font-medium text-primary">{formatCurrency(c.total_spent)}</TableCell>
+                              <TableCell className="mono text-right">
+                                <span className={`px-2 py-0.5 rounded text-xs ${
+                                  c.days_since_last_visit > 30 ? 'bg-destructive/20 text-[hsl(0,72%,60%)]' :
+                                  c.days_since_last_visit > 14 ? 'bg-[hsl(38,85%,55%)]/20 text-[hsl(38,85%,55%)]' :
+                                  'bg-[hsl(160,52%,46%)]/20 text-[hsl(160,52%,46%)]'
+                                }`}>{c.days_since_last_visit ?? '-'} days</span>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Top Items */}
