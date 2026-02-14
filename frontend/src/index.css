@@ -116,6 +116,14 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Hide the Made with Emergent badge */
+div[style*="Made with Emergent"],
+a[href*="emergentagent"],
+div[class*="emergent-badge"],
+body > div:last-child:not(.App):not(#root) {
+  display: none !important;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
