@@ -236,10 +236,72 @@ async def startup_event():
     logger.info("Database indexes created")
 
 # ============ AUTH ROUTES ============
+import random
+
+@api_router.post("/auth/request-otp")
+async def request_otp(req: OTPRequest):
+    """Generate a 4-digit OTP for the given username."""
+    user = await db.users.find_one({"username": req.username})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not user.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Account disabled")
+
+    # Generate 4-digit OTP
+    otp_code = str(random.randint(1000, 9999))
+
+    # Store OTP in database with 5-minute expiry
+    otp_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "username": req.username,
+        "full_name": user.get("full_name", req.username),
+        "role": user.get("role", ""),
+        "otp": otp_code,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
+        "verified": False,
+    }
+    await db.otps.insert_one(otp_doc)
+    logger.info(f"OTP generated for user '{req.username}': {otp_code}")
+
+    return {"message": "OTP sent", "username": req.username}
+
+@api_router.post("/auth/verify-otp")
+async def verify_otp(req: OTPVerify):
+    """Verify OTP and return JWT token."""
+    user = await db.users.find_one({"username": req.username})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not user.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Account disabled")
+
+    # Find valid OTP (not expired, not used)
+    now = datetime.now(timezone.utc).isoformat()
+    otp_doc = await db.otps.find_one({
+        "username": req.username,
+        "otp": req.otp,
+        "verified": False,
+        "expires_at": {"$gt": now},
+    })
+
+    if not otp_doc:
+        raise HTTPException(status_code=401, detail="Invalid or expired OTP")
+
+    # Mark OTP as used
+    await db.otps.update_one({"id": otp_doc["id"]}, {"$set": {"verified": True}})
+
+    # Generate JWT token
+    token = create_token({"sub": user["id"], "role": user["role"]})
+    user_data = serialize_doc(user)
+    user_data.pop('password', None)
+    return {"token": token, "user": user_data}
+
 @api_router.post("/auth/login")
 async def login(req: LoginRequest):
+    """Legacy password login (kept for backward compatibility)."""
     user = await db.users.find_one({"username": req.username})
-    if not user or not pwd_context.verify(req.password, user["password"]):
+    if not user or not user.get("password") or not pwd_context.verify(req.password, user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     if not user.get("is_active", True):
         raise HTTPException(status_code=403, detail="Account disabled")
@@ -252,6 +314,18 @@ async def login(req: LoginRequest):
 async def get_me(user=Depends(get_current_user)):
     user.pop('password', None)
     return user
+
+@api_router.get("/admin/pending-otps")
+async def get_pending_otps(user=Depends(get_current_user)):
+    """Admin endpoint to see recent OTP requests."""
+    await require_role(user, ["admin"])
+    now = datetime.now(timezone.utc).isoformat()
+    # Get OTPs from last 10 minutes (both pending and used)
+    ten_min_ago = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
+    otps = await db.otps.find({
+        "created_at": {"$gt": ten_min_ago},
+    }).sort("created_at", -1).to_list(50)
+    return [serialize_doc(o) for o in otps]
 
 # ============ USER MANAGEMENT ============
 @api_router.post("/users")
