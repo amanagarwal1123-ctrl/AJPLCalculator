@@ -344,12 +344,9 @@ export default function LoginPage() {
       {/* Left brand panel - desktop only */}
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center">
         <div className="relative z-10 text-center px-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/30 mb-6">
-            <Gem className="w-10 h-10 text-primary" />
-          </div>
-          <h1 className="heading text-5xl font-bold text-foreground tracking-tight mb-4">
-            AJPL<br />
-            <span className="text-primary">Calculator</span>
+          <img src="/ajpl-logo.png" alt="AJPL by Yash" className="h-28 w-auto object-contain mx-auto mb-6" />
+          <h1 className="heading text-4xl font-bold text-foreground tracking-tight mb-4">
+            <span className="text-primary">AJPL Calculator</span>
           </h1>
           <p className="text-muted-foreground text-lg max-w-md mx-auto leading-relaxed">
             Premium sales management for distinguished jewellery showrooms. Track, calculate, and analyse with elegance.
