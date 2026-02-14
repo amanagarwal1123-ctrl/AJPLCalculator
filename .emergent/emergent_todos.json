@@ -1,15 +1,11 @@
 [
   {
     "content": "Fix Report Tabs: Add data-testid to TabsContent elements for reliable automated testing",
+    "status": "completed"
+  },
+  {
+    "content": "Backend: Add /api/analytics/customers/frequency and /api/analytics/customers/inactive endpoints",
     "status": "in_progress"
-  },
-  {
-    "content": "Backend: Add /api/analytics/customers/frequency endpoint (visit frequency cohorts)",
-    "status": "pending"
-  },
-  {
-    "content": "Backend: Add /api/analytics/customers/inactive endpoint (inactive customer lookup with configurable days)",
-    "status": "pending"
   },
   {
     "content": "Frontend: Enhance Reports Customers tab with frequency cohort chart, inactive customers section, and spending tier breakdown",
