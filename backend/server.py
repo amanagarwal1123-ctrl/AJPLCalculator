@@ -420,6 +420,61 @@ async def delete_item_name(item_id: str, user=Depends(get_current_user)):
     await db.item_names.delete_one({"id": item_id})
     return {"status": "deleted"}
 
+@api_router.get("/item-names/{item_name}/sales")
+async def get_item_sales_history(item_name: str, user=Depends(get_current_user)):
+    """Get complete sales history for a specific item name."""
+    await require_role(user, ["admin", "manager"])
+    
+    # Find all bills containing this item
+    all_bills = await db.bills.find({}).sort("created_at", -1).to_list(10000)
+    
+    sales = []
+    total_quantity = 0
+    total_weight = 0
+    total_revenue = 0
+    
+    for bill in all_bills:
+        bill_data = serialize_doc(bill)
+        for idx, item in enumerate(bill.get('items', [])):
+            if item.get('item_name', '').lower() == item_name.lower():
+                total_quantity += 1
+                total_weight += item.get('net_weight', 0)
+                total_revenue += item.get('total_amount', 0)
+                sales.append({
+                    "bill_id": bill_data.get('id'),
+                    "bill_number": bill_data.get('bill_number'),
+                    "customer_name": bill_data.get('customer_name'),
+                    "customer_phone": bill_data.get('customer_phone'),
+                    "executive_name": bill_data.get('executive_name'),
+                    "branch_id": bill_data.get('branch_id'),
+                    "date": bill_data.get('created_at', '')[:10],
+                    "status": bill_data.get('status'),
+                    "item_index": idx,
+                    "item_type": item.get('item_type', 'gold'),
+                    "purity_name": item.get('purity_name'),
+                    "rate_mode": item.get('rate_mode'),
+                    "gross_weight": item.get('gross_weight', 0),
+                    "less": item.get('less', 0),
+                    "net_weight": item.get('net_weight', 0),
+                    "rate_per_10g": item.get('rate_per_10g', 0),
+                    "gold_value": item.get('gold_value', 0),
+                    "total_making": item.get('total_making', 0),
+                    "total_stone": item.get('total_stone', 0),
+                    "total_studded": item.get('total_studded', 0),
+                    "total_amount": item.get('total_amount', 0),
+                    "making_charges": item.get('making_charges', []),
+                    "stone_charges": item.get('stone_charges', []),
+                    "studded_charges": item.get('studded_charges', []),
+                })
+    
+    return {
+        "item_name": item_name,
+        "total_sold": total_quantity,
+        "total_weight": round(total_weight, 3),
+        "total_revenue": round(total_revenue, 2),
+        "sales": sales,
+    }
+
 # ============ CUSTOMER MANAGEMENT ============
 @api_router.get("/customers")
 async def list_customers(user=Depends(get_current_user)):
