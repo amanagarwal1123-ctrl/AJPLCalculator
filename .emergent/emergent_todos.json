@@ -9,23 +9,23 @@
   },
   {
     "content": "Phase 2: Get design guidelines from design agent",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Phase 2: Install all dependencies (backend + frontend)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 2: Build complete backend (auth, models, CRUD, calculations, reports)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 2: Build complete frontend (all pages, flows, Kintsugi design)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 2: All user stories covered in Development",
-    "status": "pending"
+    "status": "in_progress"
   },
   {
     "content": "Phase 2: End to End Testing using Testing Agent",
