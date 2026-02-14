@@ -35,7 +35,9 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ.get('DB_NAME', 'gold_jewellery_sales')]
 
 # JWT Config
-SECRET_KEY = os.environ.get('JWT_SECRET', 'gold-jewellery-secret-key-2024-kintsugi')
+SECRET_KEY = os.environ.get('JWT_SECRET')
+if not SECRET_KEY:
+    raise RuntimeError("JWT_SECRET environment variable is required")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
