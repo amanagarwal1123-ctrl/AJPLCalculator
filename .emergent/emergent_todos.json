@@ -1,30 +1,34 @@
 [
   {
-    "content": "Backend: Add endpoints for customer history, item sales history, and enhanced bill listing",
-    "status": "completed"
+    "content": "Phase 1: Add mobile fixed bottom action bar to BillPage (Send to Manager visible)",
+    "status": "in_progress"
   },
   {
-    "content": "Frontend: Build Customer List + Customer History page",
-    "status": "completed"
+    "content": "Phase 1: Add executive bill switcher component to BillPage",
+    "status": "pending"
   },
   {
-    "content": "Frontend: Build All Bills page for admin",
-    "status": "completed"
+    "content": "Phase 2: Mobile card list for SalesExecDashboard (replace table on mobile)",
+    "status": "pending"
   },
   {
-    "content": "Frontend: Build Item Sales History page",
-    "status": "completed"
+    "content": "Phase 2: Mobile card list for ManagerDashboard (replace table on mobile)",
+    "status": "pending"
   },
   {
-    "content": "Frontend: Update Manager Dashboard with visit summary",
-    "status": "completed"
+    "content": "Phase 2: Mobile layout tweaks for all pages (spacing, touch targets)",
+    "status": "pending"
   },
   {
-    "content": "Update navigation/routing",
-    "status": "completed"
+    "content": "Phase 3: Active Drafts section in SalesExecDashboard",
+    "status": "pending"
   },
   {
-    "content": "Test all new features end-to-end",
-    "status": "completed"
+    "content": "Phase 3: Enhance bill switcher with New Bill action",
+    "status": "pending"
+  },
+  {
+    "content": "Testing: Verify all changes on mobile viewport",
+    "status": "pending"
   }
 ]
