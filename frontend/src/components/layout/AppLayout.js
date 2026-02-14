@@ -21,6 +21,21 @@ const managerLinks = [
   { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
 ];
 
+const AppLogo = ({ size = 'default' }) => {
+  const sizes = {
+    sm: 'h-7',
+    default: 'h-9',
+    lg: 'h-12',
+  };
+  return (
+    <div className="flex items-center gap-2">
+      <img src="/ajpl-logo.png" alt="AJPL" className={`${sizes[size]} w-auto object-contain`} />
+    </div>
+  );
+};
+
+export { AppLogo };
+
 export default function AppLayout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -36,9 +51,12 @@ export default function AppLayout({ children }) {
 
   const NavContent = () => (
     <div className="flex flex-col h-full">
-      <div className="p-6 border-b border-border">
-        <h1 className="heading text-xl font-bold text-primary tracking-wider">AJPL Calculator</h1>
-        <p className="text-xs text-muted-foreground mt-1 capitalize">{user?.role} Panel</p>
+      <div className="p-5 border-b border-border flex items-center gap-3">
+        <img src="/ajpl-logo.png" alt="AJPL" className="h-10 w-auto object-contain" />
+        <div>
+          <h1 className="heading text-base font-bold text-primary tracking-wider leading-tight">AJPL Calculator</h1>
+          <p className="text-[10px] text-muted-foreground capitalize">{user?.role} Panel</p>
+        </div>
       </div>
       <nav className="flex-1 p-4 space-y-1">
         {links.map(link => {
@@ -85,17 +103,20 @@ export default function AppLayout({ children }) {
         <div className="kintsugi-veins" />
         <div className="relative z-10">
           <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
-            <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
-              <h1 className="heading text-lg font-bold text-primary tracking-wider">AJPL Calculator</h1>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">{user?.full_name}</span>
+            <div className="flex items-center justify-between px-3 sm:px-4 py-2 max-w-7xl mx-auto">
+              <div className="flex items-center gap-2">
+                <img src="/ajpl-logo.png" alt="AJPL" className="h-8 w-auto object-contain" />
+                <span className="heading text-sm sm:text-base font-bold text-primary tracking-wider hidden sm:inline">AJPL Calculator</span>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">{user?.full_name}</span>
                 <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="logout-button">
                   <LogOut size={16} />
                 </Button>
               </div>
             </div>
           </header>
-          <main className="px-4 py-6 max-w-7xl mx-auto">
+          <main className="px-3 sm:px-4 py-4 sm:py-6 max-w-7xl mx-auto">
             {children}
           </main>
         </div>
@@ -113,7 +134,7 @@ export default function AppLayout({ children }) {
         </aside>
         {/* Mobile header */}
         <div className="lg:hidden border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center justify-between px-3 py-2">
             <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="sm"><Menu size={20} /></Button>
@@ -122,7 +143,10 @@ export default function AppLayout({ children }) {
                 <NavContent />
               </SheetContent>
             </Sheet>
-            <h1 className="heading text-lg font-bold text-primary">AJPL Calculator</h1>
+            <div className="flex items-center gap-2">
+              <img src="/ajpl-logo.png" alt="AJPL" className="h-7 w-auto object-contain" />
+              <span className="heading text-sm font-bold text-primary">AJPL Calculator</span>
+            </div>
             <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut size={16} /></Button>
           </div>
         </div>
