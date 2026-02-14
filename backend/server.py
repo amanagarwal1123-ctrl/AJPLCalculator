@@ -722,26 +722,44 @@ async def calculate_bill(data: dict, user=Depends(get_current_user)):
 
 # ============ REPORTS/ANALYTICS ============
 @api_router.get("/analytics/dashboard")
-async def get_dashboard_analytics(user=Depends(get_current_user)):
+async def get_dashboard_analytics(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    branch_id: Optional[str] = None,
+    executive_id: Optional[str] = None,
+    user=Depends(get_current_user)
+):
     await require_role(user, ["admin", "manager"])
     
     today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0).isoformat()
     
     # Build branch filter for managers
-    branch_filter = {}
+    base_filter = {}
     if user.get('role') == 'manager' and user.get('branch_id'):
-        branch_filter = {"branch_id": user.get('branch_id')}
+        base_filter = {"branch_id": user.get('branch_id')}
+    if branch_id:
+        base_filter["branch_id"] = branch_id
+    if executive_id:
+        base_filter["executive_id"] = executive_id
     
-    # Today's bills
-    today_query = {**branch_filter, "created_at": {"$gte": today}}
+    # Today's bills (always unfiltered by date range for KPIs)
+    today_query = {**base_filter, "created_at": {"$gte": today}}
     today_bills = await db.bills.find(today_query).to_list(5000)
     today_sales = sum(b.get('grand_total', 0) for b in today_bills)
     today_count = len(today_bills)
     today_gst = sum(b.get('gst_amount', 0) for b in today_bills)
     avg_ticket = today_sales / today_count if today_count > 0 else 0
     
-    # All bills for analytics
-    all_bills = await db.bills.find(branch_filter).to_list(10000)
+    # All bills for analytics (with date range if provided)
+    analytics_filter = {**base_filter}
+    if date_from or date_to:
+        analytics_filter.setdefault('created_at', {})
+        if date_from:
+            analytics_filter['created_at']['$gte'] = date_from
+        if date_to:
+            analytics_filter['created_at']['$lte'] = date_to + 'T23:59:59'
+    
+    all_bills = await db.bills.find(analytics_filter).to_list(10000)
     
     # KT category analysis
     kt_analysis = {}
