@@ -95,8 +95,8 @@ export default function UserManagement() {
                 <Input value={form.username} onChange={e => setForm({...form, username: e.target.value})} placeholder="Username" className="h-10 bg-secondary/50" data-testid="user-username-input" />
               </div>
               <div className="space-y-1">
-                <Label>Password *</Label>
-                <Input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="Password" className="h-10 bg-secondary/50" data-testid="user-password-input" />
+                <Label>Password <span className="text-muted-foreground text-xs">(optional, OTP login used)</span></Label>
+                <Input type="password" value={form.password} onChange={e => setForm({...form, password: e.target.value})} placeholder="Optional legacy password" className="h-10 bg-secondary/50" data-testid="user-password-input" />
               </div>
               <div className="space-y-1">
                 <Label>Full Name *</Label>
