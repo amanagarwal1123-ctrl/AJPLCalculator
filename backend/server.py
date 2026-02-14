@@ -874,6 +874,112 @@ async def get_customer_analytics(user=Depends(get_current_user)):
         result.append(c_data)
     return result
 
+@api_router.get("/analytics/customers/frequency")
+async def get_customer_frequency(user=Depends(get_current_user)):
+    """Get customer visit frequency cohorts."""
+    await require_role(user, ["admin", "manager"])
+    customers = await db.customers.find({}).to_list(5000)
+    
+    # Define cohort buckets
+    cohorts = {
+        "1 visit": {"count": 0, "total_spent": 0},
+        "2-3 visits": {"count": 0, "total_spent": 0},
+        "4-5 visits": {"count": 0, "total_spent": 0},
+        "6+ visits": {"count": 0, "total_spent": 0},
+    }
+    
+    for c in customers:
+        visits = c.get('total_visits', 1)
+        spent = c.get('total_spent', 0)
+        if visits <= 1:
+            cohorts["1 visit"]["count"] += 1
+            cohorts["1 visit"]["total_spent"] += spent
+        elif visits <= 3:
+            cohorts["2-3 visits"]["count"] += 1
+            cohorts["2-3 visits"]["total_spent"] += spent
+        elif visits <= 5:
+            cohorts["4-5 visits"]["count"] += 1
+            cohorts["4-5 visits"]["total_spent"] += spent
+        else:
+            cohorts["6+ visits"]["count"] += 1
+            cohorts["6+ visits"]["total_spent"] += spent
+    
+    # Spending tiers
+    spending_tiers = {
+        "Under 25K": {"count": 0, "total_spent": 0},
+        "25K - 50K": {"count": 0, "total_spent": 0},
+        "50K - 1L": {"count": 0, "total_spent": 0},
+        "1L - 2L": {"count": 0, "total_spent": 0},
+        "Above 2L": {"count": 0, "total_spent": 0},
+    }
+    
+    for c in customers:
+        spent = c.get('total_spent', 0)
+        if spent < 25000:
+            spending_tiers["Under 25K"]["count"] += 1
+            spending_tiers["Under 25K"]["total_spent"] += spent
+        elif spent < 50000:
+            spending_tiers["25K - 50K"]["count"] += 1
+            spending_tiers["25K - 50K"]["total_spent"] += spent
+        elif spent < 100000:
+            spending_tiers["50K - 1L"]["count"] += 1
+            spending_tiers["50K - 1L"]["total_spent"] += spent
+        elif spent < 200000:
+            spending_tiers["1L - 2L"]["count"] += 1
+            spending_tiers["1L - 2L"]["total_spent"] += spent
+        else:
+            spending_tiers["Above 2L"]["count"] += 1
+            spending_tiers["Above 2L"]["total_spent"] += spent
+    
+    return {
+        "frequency_cohorts": [
+            {"name": k, "count": v["count"], "total_spent": round(v["total_spent"], 2)} 
+            for k, v in cohorts.items()
+        ],
+        "spending_tiers": [
+            {"name": k, "count": v["count"], "total_spent": round(v["total_spent"], 2)} 
+            for k, v in spending_tiers.items()
+        ],
+        "total_customers": len(customers),
+        "avg_visits": round(sum(c.get('total_visits', 1) for c in customers) / max(len(customers), 1), 1),
+        "avg_spending": round(sum(c.get('total_spent', 0) for c in customers) / max(len(customers), 1), 2),
+    }
+
+@api_router.get("/analytics/customers/inactive")
+async def get_inactive_customers(
+    days: int = Query(default=30, ge=1, description="Number of days of inactivity"),
+    user=Depends(get_current_user)
+):
+    """Get customers who haven't visited in X days."""
+    await require_role(user, ["admin", "manager"])
+    customers = await db.customers.find({}).to_list(5000)
+    
+    inactive = []
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    
+    for c in customers:
+        last_visit = c.get('last_visit', '')
+        if last_visit:
+            try:
+                lv = datetime.fromisoformat(last_visit.replace('Z', '+00:00'))
+                if lv < cutoff:
+                    c_data = serialize_doc(c)
+                    c_data['days_since_last_visit'] = (datetime.now(timezone.utc) - lv).days
+                    inactive.append(c_data)
+            except Exception:
+                pass
+    
+    # Sort by days_since_last_visit descending (most inactive first)
+    inactive.sort(key=lambda x: x.get('days_since_last_visit', 0), reverse=True)
+    
+    return {
+        "threshold_days": days,
+        "inactive_count": len(inactive),
+        "total_customers": len(customers),
+        "inactive_customers": inactive,
+    }
+
+
 # ============ BILL PDF GENERATION ============
 @api_router.get("/bills/{bill_id}/pdf")
 async def generate_bill_pdf(bill_id: str, user=Depends(get_current_user)):
