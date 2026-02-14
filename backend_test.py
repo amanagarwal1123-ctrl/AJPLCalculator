@@ -108,20 +108,20 @@ class GoldJewelleryAPITester:
         return False
 
     def test_update_normal_rates(self):
-        """Test updating normal gold rates"""
+        """Test updating normal gold rates - Set 24KT to 60000 as per test requirements"""
         # First get current rates
         success, response = self.run_test("Get Normal Rates", "GET", "/rates/normal", 200)
         if not success:
             return False
         
-        # Update 22KT rate to 55000 as specified in test requirements
+        # Update 24KT rate to 60000 as specified in test requirements
         purities = response.get('purities', [])
         for purity in purities:
-            if purity.get('purity_name') == '22KT':
-                purity['rate_per_10g'] = 55000
+            if purity.get('purity_name') == '24KT':
+                purity['rate_per_10g'] = 60000
         
         success, _ = self.run_test(
-            "Update Normal Rates (22KT = 55000)", 
+            "Update Normal Rates (24KT = 60000)", 
             "PUT", 
             "/rates/normal",
             200,
