@@ -4,27 +4,27 @@
     "status": "completed"
   },
   {
-    "content": "Frontend: Build Customer List + Customer History page (admin - full bill history, modify/delete)",
+    "content": "Frontend: Build Customer List + Customer History page",
     "status": "completed"
   },
   {
-    "content": "Frontend: Build All Bills page for admin (chronological, full details, modify/delete)",
+    "content": "Frontend: Build All Bills page for admin",
     "status": "completed"
   },
   {
-    "content": "Frontend: Build Item Sales History page (per-item sales details)",
+    "content": "Frontend: Build Item Sales History page",
     "status": "completed"
   },
   {
-    "content": "Frontend: Update Manager Dashboard with simplified customer visit summary (items, rates, making, carat rates - no amounts)",
+    "content": "Frontend: Update Manager Dashboard with visit summary",
     "status": "completed"
   },
   {
-    "content": "Update navigation/routing in App.js and AdminDashboard sidebar",
+    "content": "Update navigation/routing",
     "status": "completed"
   },
   {
     "content": "Test all new features end-to-end",
-    "status": "in_progress"
+    "status": "completed"
   }
 ]
