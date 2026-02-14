@@ -131,6 +131,9 @@ export default function BillPrintView() {
           {/* Making Charge Note */}
           <div style={{ marginTop: '6px', fontSize: '0.7rem', color: '#999', fontStyle: 'italic' }}>
             * Making charges are calculated on net weight
+            {bill.items?.some(i => i.studded_less_grams > 0) && (
+              <span> | Net weight includes diamond weight deductions (L entries: 1 carat = 0.2g)</span>
+            )}
           </div>
 
           {/* Totals */}
