@@ -64,6 +64,14 @@ function AuthProvider({ children }) {
     return userData;
   };
 
+  const loginWithToken = (newToken, userData) => {
+    localStorage.setItem('token', newToken);
+    apiClient.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+    setToken(newToken);
+    setUser(userData);
+    return userData;
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     delete apiClient.defaults.headers.common['Authorization'];
