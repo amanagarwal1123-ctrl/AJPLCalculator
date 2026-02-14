@@ -337,7 +337,51 @@ export default function BillPage() {
                         <Send size={16} className="mr-2" /> Send to Manager
                       </Button>
                     )}
+                    {(bill.status === 'sent' || bill.status === 'edited') && (user?.role === 'admin' || user?.role === 'manager') && (
+                      <Button className="w-full h-11 text-base font-semibold rounded-xl bg-[hsl(160,52%,46%)] hover:bg-[hsl(160,52%,40%)] text-white" onClick={approveBill} data-testid="approve-bill-button">
+                        <CheckCircle size={16} className="mr-2" /> Approve Bill
+                      </Button>
+                    )}
                   </div>
+
+                  {/* Audit Trail */}
+                  {bill.change_log && bill.change_log.length > 0 && (
+                    <>
+                      <Separator className="bg-border" />
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <History size={14} className="text-muted-foreground" />
+                          <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Change Log</span>
+                        </div>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {bill.change_log.slice().reverse().map((log, idx) => (
+                            <div key={idx} className="text-xs p-2 rounded bg-secondary/30 border border-border">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">{log.user}</span>
+                                <span className={`px-1.5 py-0.5 rounded text-[10px] capitalize ${
+                                  log.action === 'approved' ? 'bg-green-500/20 text-green-400' :
+                                  'bg-orange-500/20 text-orange-400'
+                                }`}>{log.action}</span>
+                              </div>
+                              <p className="text-muted-foreground mt-0.5">{log.timestamp?.slice(0, 16).replace('T', ' ')}</p>
+                              {log.old_total !== log.new_total && (
+                                <p className="mono text-muted-foreground">
+                                  {formatCurrency(log.old_total)} &rarr; {formatCurrency(log.new_total)}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Last modified info */}
+                  {bill.last_modified_by && (
+                    <p className="text-xs text-muted-foreground text-center pt-1">
+                      Last modified by: {bill.last_modified_by}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </div>
