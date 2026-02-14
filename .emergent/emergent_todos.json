@@ -1,14 +1,30 @@
 [
   {
-    "content": "Fix .gitignore: Remove *.env and *.env.* lines so deployment can include .env files",
-    "status": "completed"
+    "content": "Backend: Add endpoints for customer history, item sales history, and enhanced bill listing",
+    "status": "in_progress"
   },
   {
-    "content": "Fix JWT secret hardcoded fallback in server.py",
-    "status": "completed"
+    "content": "Frontend: Build Customer List + Customer History page (admin - full bill history, modify/delete)",
+    "status": "pending"
   },
   {
-    "content": "Verify all services healthy and app accessible after fixes",
-    "status": "completed"
+    "content": "Frontend: Build All Bills page for admin (chronological, full details, modify/delete)",
+    "status": "pending"
+  },
+  {
+    "content": "Frontend: Build Item Sales History page (per-item sales details)",
+    "status": "pending"
+  },
+  {
+    "content": "Frontend: Update Manager Dashboard with simplified customer visit summary (items, rates, making, carat rates - no amounts)",
+    "status": "pending"
+  },
+  {
+    "content": "Update navigation/routing in App.js and AdminDashboard sidebar",
+    "status": "pending"
+  },
+  {
+    "content": "Test all new features end-to-end",
+    "status": "pending"
   }
 ]
