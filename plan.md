@@ -9,10 +9,13 @@
   - Visit frequency cohorts
   - Inactive-customer tracking (X days)
   - Spending tiers
+- Ensure billing calculations and outputs adhere to business rules:
+  - **Making charges must be charged on net weight** (confirmed and communicated in print output).
+  - Print/PDF formatting must keep **all table content inside borders** with professional alignment.
 
 **Branding/UI status:** Renamed to **AJPL Calculator** across the app and updated global theme tokens to **bright velvet blue**.
 
-**Current status:** Phases **1–5 are complete and verified**. The system is usable end-to-end:
+**Current status:** Phases **1–6 are complete and verified**. The system is usable end-to-end:
 - Admin setup → executive billing → print/PDF → send to manager → manager edits/approves → audit trail + reports.
 
 **Live status check (confirmed):**
@@ -20,6 +23,9 @@
 - Login works (`admin / admin1123`).
 - Reports page is functional; all tabs render and navigate reliably.
 - Reports → Customers tab contains enhanced customer analytics (cohorts, tiers, inactive tracking, directory).
+- Print outputs improved:
+  - Browser Print view contains **Gross/Less/Net** columns and a clear making-charge rule note.
+  - PDF invoice has strict margins + column layout so content stays inside borders.
 
 ---
 
@@ -30,7 +36,7 @@
 
 **Delivered**
 - Implemented standalone `calc_engine.py` using Decimal-safe arithmetic:
-  - Gold: net wt, rate usage, making charges (percentage of extrapolated 24KT, per gram, per piece)
+  - Gold: net wt, rate usage, making charges (**percentage of extrapolated 24KT, per gram, per piece**)
   - Stones: kundan (per piece), stone (per gram × less weight), moti (flat)
   - Diamond: studded entries (diamond/solitaire/colored stones)
   - Bill totals: external charges + 3% GST + grand total
@@ -96,7 +102,7 @@
 ---
 
 ### Phase 5 — Report Tabs Bug Fix + Customer-Centric Analytics ✅ COMPLETE
-**Goal:** Remove any residual test flakiness around Reports tabs and deliver enhanced customer analytics for retention and segmentation.
+**Goal:** Remove residual test flakiness around Reports tabs and deliver enhanced customer analytics for retention/segmentation.
 
 #### 5.1 Report Tabs Test Fix (P2) ✅ COMPLETE
 **Delivered**
@@ -104,7 +110,7 @@
   - `overview`, `kt`, `branches`, `executives`, `reference`, `customers`, `items`
 - Fixed a runtime crash when switching tabs:
   - Root cause: mutating state arrays via `Array.sort()`.
-  - Fix: use non-mutating patterns (`[...arr].sort(...)`) wherever sorting was needed.
+  - Fix: use non-mutating patterns (`[...arr].sort(...)`).
 - Verified: all 7 tabs navigate reliably in automated tests.
 
 **Exit criteria met**
@@ -137,11 +143,6 @@
 - Full Customer Directory:
   - Table with “Days Since Last Visit” badges
 
-**Exit criteria met**
-- Reports → Customers tab includes cohorts + inactive tracking + spending tiers.
-- Backend endpoints return correct payloads.
-- Tabs remain stable and testable.
-
 **Testing status (Phase 5)**
 - End-to-end + API verification completed.
 - Overall pass rate: **91.5%**
@@ -151,23 +152,73 @@
 
 ---
 
+### Phase 6 — Net-Weight Making Confirmation + Print/PDF Layout Hardening ✅ COMPLETE
+**Goal:** Ensure business rule adherence (making on net weight) and premium print/PDF formatting (everything inside borders).
+
+#### 6.1 Making Charges on Net Weight ✅ COMPLETE
+**Findings (verified)**
+- Backend: `calc_engine.calculate_making_charge(..., net_weight, ...)` uses **net weight**.
+- Frontend: `ItemCalculator.js` computes making totals using `netWeight` (gross - less).
+
+**Delivered**
+- Added a visible note in print view:
+  - `* Making charges are calculated on net weight`
+
+**Exit criteria met**
+- Business rule confirmed at calculation level and communicated on invoice output.
+
+#### 6.2 PDF Invoice Layout Fix (Item name outside borders) ✅ COMPLETE
+**Delivered (backend: `server.py` PDF generation rewrite)**
+- Rebuilt invoice layout with:
+  - Strict **20mm content margins** inside a gold double border
+  - Customer details box (ivory panel)
+  - Table columns that fit within borders, including **Gross / Less / Net weight**
+  - Conditional “Studded” column when diamond items exist
+  - Alternating row background
+  - Item-name truncation to avoid overflow
+  - Right-aligned totals block with premium dividers
+
+**Exit criteria met**
+- Item name column and all table content render inside borders.
+
+#### 6.3 Browser Print View Layout Fix ✅ COMPLETE
+**Delivered (frontend: `BillPrintView.js`)**
+- Upgraded items table:
+  - `table-layout: fixed` + `colgroup` widths to prevent overflow
+  - Added **Gross / Less / Net** columns
+  - Ellipsis truncation for long item names
+  - Alternating row background
+  - KT highlighted in gold
+  - Added `Status` to customer box
+  - Added making charge note
+
+**Testing**
+- Re-verified multiple bills in browser print view.
+- Re-ran calculation engine tests: **10/10 passed**.
+
+---
+
 ## 3) Next Actions
 Recommended future work (optional):
-- **Analytics filters for customer endpoints:**
+- **Customer analytics filters:**
   - Extend `/analytics/customers/frequency` and `/analytics/customers/inactive` to respect date range / branch / executive filters (and manager branch scoping).
 - **Pagination & performance hardening:**
   - Add server-side pagination for bills/customers and optimize analytics queries.
 - **Report exports:**
-  - Add PDF export for reports (not only bills).
+  - Add PDF export for report pages (not only bills).
 - **Security improvements:**
   - Optional refresh tokens and better session-expiry UX.
+- **Print/PDF QA:**
+  - Test PDF layout with very long item names and multiple diamond items across multiple pages.
 
 ---
 
 ## 4) Success Criteria
 - **Calculation correctness:** `calc_engine` tests remain green; totals match between UI, print, and PDF.
+- **Business rules:** making charges computed on **net weight**.
 - **Workflow correctness:** executive cannot edit after “Sent”; manager/admin can edit and approve; audit trail captured.
 - **Usability:** end-to-end bill creation < 2 minutes; tablet-friendly; clear validation.
 - **Reporting:** charts + tables with robust filters; CSV export everywhere; report tabs fully testable without flakiness.
 - **Customer analytics:** frequency cohorts + inactive customer tracking + spending tiers available and accurate.
+- **Print/PDF quality:** all table content stays inside borders; professional alignment and truncation behavior.
 - **Security & data isolation:** JWT + RBAC enforced; managers limited to branch; admin global; no cross-branch leaks.

@@ -1,18 +1,22 @@
 [
   {
-    "content": "Verify making charge uses net weight (CONFIRMED: both backend calc_engine.py and frontend ItemCalculator.js already use net weight)",
-    "status": "completed"
+    "content": "Backend: Update calc_engine.py to handle studded 'less_type' (L/NL) - subtract L-type carat weights (1 carat = 0.2g) from net weight before gold/making calculations",
+    "status": "in_progress"
   },
   {
-    "content": "Fix PDF generation: Ensure all columns inside borders, fix column positions, beautify layout",
-    "status": "completed"
+    "content": "Frontend: Add L/NL radio buttons to each studded charge entry in ItemCalculator.js, update net weight calculation",
+    "status": "pending"
   },
   {
-    "content": "Fix browser print view (BillPrintView.js): Add gross/less/net weight display, improve table layout, beautify",
-    "status": "completed"
+    "content": "Update BillPage/BillPrintView to display L/NL info and adjusted weights",
+    "status": "pending"
   },
   {
-    "content": "Take screenshots and verify both print outputs",
-    "status": "completed"
+    "content": "Update backend test file and verify calculations",
+    "status": "pending"
+  },
+  {
+    "content": "Test the full diamond item flow end-to-end",
+    "status": "pending"
   }
 ]
