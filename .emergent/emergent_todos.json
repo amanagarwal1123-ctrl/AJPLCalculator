@@ -9,10 +9,10 @@
   },
   {
     "content": "Update BillPage/BillPrintView to display L/NL info and adjusted weights",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Test the full diamond item flow end-to-end",
-    "status": "pending"
+    "status": "in_progress"
   }
 ]
