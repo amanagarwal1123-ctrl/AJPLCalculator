@@ -106,9 +106,12 @@ export default function SalesExecDashboard() {
       <div className="relative z-10">
         <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="flex items-center justify-between px-3 sm:px-4 py-3 max-w-5xl mx-auto">
-            <div className="min-w-0">
-              <h1 className="heading text-base sm:text-lg font-bold text-primary tracking-wider">AJPL Calculator</h1>
-              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{userBranch?.name || 'Branch'} &middot; {user?.full_name}</p>
+            <div className="min-w-0 flex items-center gap-2">
+              <img src="/ajpl-logo.png" alt="AJPL" className="h-8 w-auto object-contain" />
+              <div>
+                <h1 className="heading text-sm sm:text-base font-bold text-primary tracking-wider leading-tight">AJPL Calculator</h1>
+                <p className="text-[10px] text-muted-foreground truncate">{userBranch?.name || 'Branch'} &middot; {user?.full_name}</p>
+              </div>
             </div>
             <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="logout-button" className="shrink-0">
               <LogOut size={16} className="mr-1" /> <span className="hidden sm:inline">Logout</span>
