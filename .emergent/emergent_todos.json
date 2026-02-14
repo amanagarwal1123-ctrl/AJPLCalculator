@@ -5,14 +5,14 @@
   },
   {
     "content": "Fix PDF generation: Ensure all columns inside borders, fix column positions, beautify layout",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Fix browser print view (BillPrintView.js): Add gross/less/net weight display, improve table layout, beautify",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Take screenshots and verify both print outputs",
-    "status": "pending"
+    "status": "completed"
   }
 ]
