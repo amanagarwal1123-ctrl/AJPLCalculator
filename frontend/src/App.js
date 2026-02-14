@@ -14,6 +14,10 @@ import BranchManagement from "@/pages/BranchManagement";
 import UserManagement from "@/pages/UserManagement";
 import ItemNameManagement from "@/pages/ItemNameManagement";
 import Reports from "@/pages/Reports";
+import CustomerListPage from "@/pages/CustomerListPage";
+import CustomerHistoryPage from "@/pages/CustomerHistoryPage";
+import AllBillsPage from "@/pages/AllBillsPage";
+import ItemHistoryPage from "@/pages/ItemHistoryPage";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
