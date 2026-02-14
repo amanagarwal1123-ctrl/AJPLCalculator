@@ -1,22 +1,18 @@
 [
   {
-    "content": "Fix Report Tabs: Add data-testid to TabsContent elements for reliable automated testing",
+    "content": "Verify making charge uses net weight (CONFIRMED: both backend calc_engine.py and frontend ItemCalculator.js already use net weight)",
     "status": "completed"
   },
   {
-    "content": "Backend: Add /api/analytics/customers/frequency and /api/analytics/customers/inactive endpoints",
-    "status": "completed"
+    "content": "Fix PDF generation: Ensure all columns inside borders, fix column positions, beautify layout",
+    "status": "in_progress"
   },
   {
-    "content": "Frontend: Enhance Reports Customers tab with frequency cohort chart, inactive customers section, and spending tier breakdown",
-    "status": "completed"
+    "content": "Fix browser print view (BillPrintView.js): Add gross/less/net weight display, improve table layout, beautify",
+    "status": "pending"
   },
   {
-    "content": "Fix Array.sort() mutation bug causing crash on tab navigation",
-    "status": "completed"
-  },
-  {
-    "content": "Run comprehensive tests to verify all changes",
-    "status": "completed"
+    "content": "Take screenshots and verify both print outputs",
+    "status": "pending"
   }
 ]
