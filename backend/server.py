@@ -337,7 +337,7 @@ async def create_user(req: UserCreate, user=Depends(get_current_user)):
     user_doc = {
         "id": str(uuid.uuid4()),
         "username": req.username,
-        "password": pwd_context.hash(req.password),
+        "password": pwd_context.hash(req.password) if req.password else None,
         "full_name": req.full_name,
         "role": req.role,
         "branch_id": req.branch_id,
