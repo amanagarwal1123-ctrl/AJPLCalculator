@@ -719,7 +719,7 @@ export default function Reports() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {customers.sort((a, b) => (b.total_spent || 0) - (a.total_spent || 0)).map((c, i) => (
+                          {[...customers].sort((a, b) => (b.total_spent || 0) - (a.total_spent || 0)).map((c, i) => (
                             <TableRow key={i} className="border-border">
                               <TableCell className="font-medium">{c.name}</TableCell>
                               <TableCell className="mono text-sm">{c.phone}</TableCell>
