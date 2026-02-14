@@ -17,23 +17,19 @@
   },
   {
     "content": "Implement OTP-based login (no passwords) - backend endpoints",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Update LoginPage to two-step OTP flow",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Add pending OTPs panel to Admin Dashboard",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Remove 'Made with Emergent' badge",
-    "status": "pending"
-  },
-  {
-    "content": "Phase 2: Mobile layout tweaks for all pages (spacing, touch targets)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 3: Active Drafts section in SalesExecDashboard",
@@ -44,7 +40,11 @@
     "status": "completed"
   },
   {
-    "content": "Testing: Verify all changes on mobile viewport",
-    "status": "pending"
+    "content": "Admin Dashboard mobile card view for bills",
+    "status": "completed"
+  },
+  {
+    "content": "Testing: Comprehensive verification on mobile viewport",
+    "status": "in_progress"
   }
 ]
