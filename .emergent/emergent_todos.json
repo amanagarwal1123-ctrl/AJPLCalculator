@@ -1,11 +1,11 @@
 [
   {
     "content": "Backend: Add endpoints for customer history, item sales history, and enhanced bill listing",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Frontend: Build Customer List + Customer History page (admin - full bill history, modify/delete)",
-    "status": "pending"
+    "status": "in_progress"
   },
   {
     "content": "Frontend: Build All Bills page for admin (chronological, full details, modify/delete)",
