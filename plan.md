@@ -11,11 +11,12 @@
   - Spending tiers
 - Ensure billing calculations and outputs adhere to business rules:
   - **Making charges must be charged on net weight** (confirmed and communicated in print output).
+  - **Diamond “Less” workflow:** allow marking individual studded entries as **L/NL** so diamond weight can optionally be deducted from net weight.
   - Print/PDF formatting must keep **all table content inside borders** with professional alignment.
 
 **Branding/UI status:** Renamed to **AJPL Calculator** across the app and updated global theme tokens to **bright velvet blue**.
 
-**Current status:** Phases **1–6 are complete and verified**. The system is usable end-to-end:
+**Current status:** Phases **1–7 are complete and verified**. The system is usable end-to-end:
 - Admin setup → executive billing → print/PDF → send to manager → manager edits/approves → audit trail + reports.
 
 **Live status check (confirmed):**
@@ -24,8 +25,9 @@
 - Reports page is functional; all tabs render and navigate reliably.
 - Reports → Customers tab contains enhanced customer analytics (cohorts, tiers, inactive tracking, directory).
 - Print outputs improved:
-  - Browser Print view contains **Gross/Less/Net** columns and a clear making-charge rule note.
+  - Browser Print view contains **Gross/Less/Net** columns and clear making-charge note.
   - PDF invoice has strict margins + column layout so content stays inside borders.
+- Diamond item calculator supports **L/NL** toggles for each studded entry and recalculates net weight accordingly.
 
 ---
 
@@ -158,10 +160,10 @@
 #### 6.1 Making Charges on Net Weight ✅ COMPLETE
 **Findings (verified)**
 - Backend: `calc_engine.calculate_making_charge(..., net_weight, ...)` uses **net weight**.
-- Frontend: `ItemCalculator.js` computes making totals using `netWeight` (gross - less).
+- Frontend: `ItemCalculator.js` computes making totals using `netWeight`.
 
 **Delivered**
-- Added a visible note in print view:
+- Added visible note in print view:
   - `* Making charges are calculated on net weight`
 
 **Exit criteria met**
@@ -172,7 +174,7 @@
 - Rebuilt invoice layout with:
   - Strict **20mm content margins** inside a gold double border
   - Customer details box (ivory panel)
-  - Table columns that fit within borders, including **Gross / Less / Net weight**
+  - Table columns that fit within borders, including **Gross / Less / Net** weight
   - Conditional “Studded” column when diamond items exist
   - Alternating row background
   - Item-name truncation to avoid overflow
@@ -194,7 +196,50 @@
 
 **Testing**
 - Re-verified multiple bills in browser print view.
-- Re-ran calculation engine tests: **10/10 passed**.
+- Re-ran calculation engine tests: **10/10 passed** (later extended to 11/11 in Phase 7).
+
+---
+
+### Phase 7 — Diamond Studded L/NL Weight Deduction ✅ COMPLETE
+**Goal:** Support a showroom workflow where diamond/studded weight may optionally be treated as “less” from gross to compute net gold weight, controlled per studded entry.
+
+#### 7.1 Backend Calculation Support ✅ COMPLETE
+**Delivered (backend: `calc_engine.py`)**
+- Updated `calculate_diamond_item`:
+  - Reads `less_type` from each `studded_charge` (values: `L` or `NL`, default `NL`).
+  - If `L`: converts carats to grams using **1 carat = 0.2g** and adds this to the item’s effective `less` before gold/making calculations.
+  - Returns additional fields for transparency:
+    - `studded_less_grams`
+    - `original_less`
+    - Each studded detail includes `weight_grams`
+
+**Testing**
+- Added `test_diamond_item_with_less` to `test_calc_engine.py`.
+- All calculation tests: **11/11 passed**.
+
+#### 7.2 Frontend UI + Real-Time Recalculation ✅ COMPLETE
+**Delivered (frontend: `ItemCalculator.js`)**
+- Added **two radio buttons per studded entry**:
+  - `NL (Not Less)` (default)
+  - `L (Less)`
+- If `L` selected:
+  - Deducts `(carats * 0.2)` grams from net weight in real time.
+  - Updates gold value and making charges based on the adjusted net weight.
+- Added visual indicators:
+  - Per-line “-X.XXXg from net wt” when L is selected
+  - Summary bar: “Total studded deduction (L entries): -X.XXXg”
+  - Net weight note: “Incl. diamond less: -X.XXXg”
+
+#### 7.3 Bill Display + Print Transparency ✅ COMPLETE
+- `BillPage.js`:
+  - Shows net weight including diamond deduction note when present.
+- `BillPrintView.js`:
+  - Adds note that net weight may include diamond deductions (L entries) and reiterates the conversion.
+
+#### 7.4 Testing Status ✅ COMPLETE
+- **Backend:** 100% pass (calculation + new diamond tests)
+- **Frontend:** 100% pass (UI automation)
+- **Integration:** 100% pass (end-to-end L/NL flow)
 
 ---
 
@@ -209,13 +254,15 @@ Recommended future work (optional):
 - **Security improvements:**
   - Optional refresh tokens and better session-expiry UX.
 - **Print/PDF QA:**
-  - Test PDF layout with very long item names and multiple diamond items across multiple pages.
+  - Stress test PDF layout with very long item names and multiple diamond items across multiple pages.
+  - Validate multi-item diamond bills display `studded_less_grams` consistently across UI + PDF.
 
 ---
 
 ## 4) Success Criteria
 - **Calculation correctness:** `calc_engine` tests remain green; totals match between UI, print, and PDF.
 - **Business rules:** making charges computed on **net weight**.
+- **Diamond deduction workflow:** per-studded **L/NL** flags correctly adjust net weight using **1 carat = 0.2g** and recalculate gold/making totals.
 - **Workflow correctness:** executive cannot edit after “Sent”; manager/admin can edit and approve; audit trail captured.
 - **Usability:** end-to-end bill creation < 2 minutes; tablet-friendly; clear validation.
 - **Reporting:** charts + tables with robust filters; CSV export everywhere; report tabs fully testable without flakiness.
