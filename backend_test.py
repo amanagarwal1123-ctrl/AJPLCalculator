@@ -16,6 +16,9 @@ class GoldJewelleryAPITester:
             'executive_user_id': None,
             'executive_username': None,
             'executive_password': None,
+            'manager_user_id': None,
+            'manager_username': None,
+            'manager_password': None,
             'item_name_id': None,
             'bill_id': None
         }
