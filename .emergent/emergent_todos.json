@@ -1,14 +1,14 @@
 [
   {
     "content": "Fix .gitignore: Remove *.env and *.env.* lines so deployment can include .env files",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Fix JWT secret hardcoded fallback in server.py",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Verify all services healthy and app accessible after fixes",
-    "status": "pending"
+    "status": "in_progress"
   }
 ]
