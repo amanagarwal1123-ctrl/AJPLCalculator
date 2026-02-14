@@ -331,10 +331,13 @@ async def get_pending_otps(user=Depends(get_current_user)):
     """Admin endpoint to see recent OTP requests."""
     await require_role(user, ["admin"])
     now = datetime.now(timezone.utc).isoformat()
-    # Get OTPs from last 10 minutes (both pending and used)
-    ten_min_ago = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat()
+    # Clean up expired OTPs
+    await db.otps.delete_many({"expires_at": {"$lt": now}})
+    await db.otps.delete_many({"verified": True})
+    # Get active (non-expired, non-verified) OTPs
     otps = await db.otps.find({
-        "created_at": {"$gt": ten_min_ago},
+        "verified": False,
+        "expires_at": {"$gt": now},
     }).sort("created_at", -1).to_list(50)
     return [serialize_doc(o) for o in otps]
 
