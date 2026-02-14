@@ -1,0 +1,104 @@
+import { useState, useEffect } from 'react';
+import { apiClient } from '@/App';
+import AppLayout from '@/components/layout/AppLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+export default function ItemNameManagement() {
+  const [items, setItems] = useState([]);
+  const [name, setName] = useState('');
+
+  useEffect(() => { loadItems(); }, []);
+
+  const loadItems = async () => {
+    try {
+      const res = await apiClient.get('/item-names');
+      setItems(res.data);
+    } catch (err) {
+      toast.error('Failed to load item names');
+    }
+  };
+
+  const createItem = async () => {
+    if (!name.trim()) { toast.error('Enter item name'); return; }
+    try {
+      await apiClient.post('/item-names', { name });
+      setName('');
+      toast.success('Item name added!');
+      loadItems();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to add item');
+    }
+  };
+
+  const deleteItem = async (id) => {
+    if (!window.confirm('Delete this item name?')) return;
+    try {
+      await apiClient.delete(`/item-names/${id}`);
+      toast.success('Item name deleted');
+      loadItems();
+    } catch (err) {
+      toast.error('Failed to delete');
+    }
+  };
+
+  return (
+    <AppLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="heading text-3xl font-bold">Item Name Management</h1>
+          <p className="text-muted-foreground mt-1">Manage the list of allowed item names for billing</p>
+        </div>
+
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Add New Item Name</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3 items-end">
+              <div className="flex-1">
+                <Input
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="e.g. Necklace, Ring, Bangle, Pendant..."
+                  className="h-11 bg-secondary/50"
+                  onKeyDown={e => e.key === 'Enter' && createItem()}
+                  data-testid="item-name-input"
+                />
+              </div>
+              <Button className="h-11" onClick={createItem} data-testid="add-item-name-button">
+                <Plus size={16} className="mr-2" /> Add
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">All Item Names ({items.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {items.length === 0 ? (
+              <p className="text-muted-foreground text-center py-6">No item names yet. Add some above!</p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {items.map(item => (
+                  <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/20 border border-border">
+                    <span className="font-medium">{item.name}</span>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => deleteItem(item.id)} data-testid={`delete-item-${item.name}`}>
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </AppLayout>
+  );
+}
