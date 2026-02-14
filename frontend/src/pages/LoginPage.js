@@ -1,41 +1,120 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/App';
+import { useAuth, apiClient } from '@/App';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Gem } from 'lucide-react';
+import { Gem, ArrowLeft, KeyRound, User, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
+  const [step, setStep] = useState('username'); // 'username' or 'otp'
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState(['', '', '', '']);
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const otpRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
 
-  const handleSubmit = async (e) => {
+  // Focus first OTP input when step changes
+  useEffect(() => {
+    if (step === 'otp' && otpRefs[0].current) {
+      setTimeout(() => otpRefs[0].current?.focus(), 100);
+    }
+  }, [step]);
+
+  const handleRequestOtp = async (e) => {
     e.preventDefault();
-    if (!username || !password) {
-      toast.error('Please enter username and password');
+    if (!username.trim()) {
+      toast.error('Please enter your username');
       return;
     }
     setLoading(true);
     try {
-      const user = await login(username, password);
-      toast.success(`Welcome, ${user.full_name}!`);
-      switch (user.role) {
-        case 'admin': navigate('/admin'); break;
-        case 'manager': navigate('/manager'); break;
-        case 'executive': navigate('/sales'); break;
-        default: navigate('/');
-      }
+      await apiClient.post('/auth/request-otp', { username: username.trim() });
+      toast.success('OTP sent! Ask your admin for the code.');
+      setStep('otp');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Login failed');
+      toast.error(err.response?.data?.detail || 'Failed to send OTP');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOtpChange = (index, value) => {
+    // Only allow digits
+    const digit = value.replace(/\D/g, '').slice(-1);
+    const newOtp = [...otp];
+    newOtp[index] = digit;
+    setOtp(newOtp);
+
+    // Auto-advance to next input
+    if (digit && index < 3) {
+      otpRefs[index + 1].current?.focus();
+    }
+
+    // Auto-submit when all 4 digits entered
+    if (digit && index === 3) {
+      const fullOtp = newOtp.join('');
+      if (fullOtp.length === 4) {
+        handleVerifyOtp(fullOtp);
+      }
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      otpRefs[index - 1].current?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+    if (pasted.length > 0) {
+      const newOtp = [...otp];
+      for (let i = 0; i < pasted.length && i < 4; i++) {
+        newOtp[i] = pasted[i];
+      }
+      setOtp(newOtp);
+      // Focus appropriate next field or auto-submit
+      if (pasted.length >= 4) {
+        handleVerifyOtp(newOtp.join(''));
+      } else {
+        otpRefs[Math.min(pasted.length, 3)].current?.focus();
+      }
+    }
+  };
+
+  const handleVerifyOtp = async (otpCode) => {
+    if (!otpCode || otpCode.length !== 4) {
+      toast.error('Please enter the 4-digit OTP');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await apiClient.post('/auth/verify-otp', {
+        username: username.trim(),
+        otp: otpCode,
+      });
+      const { token, user: userData } = res.data;
+      localStorage.setItem('token', token);
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      // Trigger auth context update
+      window.location.href = userData.role === 'admin' ? '/admin' : userData.role === 'manager' ? '/manager' : '/sales';
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Invalid OTP');
+      setOtp(['', '', '', '']);
+      otpRefs[0].current?.focus();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmitOtp = (e) => {
+    e.preventDefault();
+    handleVerifyOtp(otp.join(''));
   };
 
   return (
@@ -62,7 +141,7 @@ export default function LoginPage() {
               <span className="text-primary text-sm font-medium">Real-time Calc</span>
             </div>
             <div className="px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-              <span className="text-primary text-sm font-medium">Analytics</span>
+              <span className="text-primary text-sm font-medium">Secure OTP</span>
             </div>
           </div>
         </div>
@@ -75,44 +154,99 @@ export default function LoginPage() {
             <div className="lg:hidden inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 border-2 border-primary/30 mb-4 mx-auto">
               <Gem className="w-7 h-7 text-primary" />
             </div>
-            <CardTitle className="heading text-2xl font-bold">Welcome Back</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
+
+            {step === 'username' ? (
+              <>
+                <CardTitle className="heading text-2xl font-bold">Welcome Back</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">Enter your username to receive an OTP</p>
+              </>
+            ) : (
+              <>
+                <CardTitle className="heading text-2xl font-bold">Enter OTP</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  A 4-digit code has been generated for <span className="text-primary font-medium">{username}</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Ask your admin for the code</p>
+              </>
+            )}
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="Enter your username"
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  className="h-11 bg-secondary/50"
-                  data-testid="login-username-input"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="h-11 bg-secondary/50"
-                  data-testid="login-password-input"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full h-11 text-base font-semibold rounded-xl"
-                disabled={loading}
-                data-testid="login-submit-button"
-              >
-                {loading ? 'Signing in...' : 'Sign In'}
-              </Button>
-            </form>
+            {step === 'username' ? (
+              <form onSubmit={handleRequestOtp} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="username"
+                      type="text"
+                      placeholder="Enter your username"
+                      value={username}
+                      onChange={e => setUsername(e.target.value)}
+                      className="h-12 pl-10 bg-secondary/50 text-base"
+                      data-testid="login-username-input"
+                      autoComplete="username"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-base font-semibold rounded-xl"
+                  disabled={loading}
+                  data-testid="request-otp-button"
+                >
+                  {loading ? (
+                    <><Loader2 size={18} className="mr-2 animate-spin" /> Sending...</>
+                  ) : (
+                    <><KeyRound size={18} className="mr-2" /> Get OTP</>
+                  )}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmitOtp} className="space-y-5">
+                <div className="space-y-3">
+                  <Label className="text-center block">Enter 4-digit OTP</Label>
+                  <div className="flex justify-center gap-3" onPaste={handleOtpPaste}>
+                    {otp.map((digit, i) => (
+                      <Input
+                        key={i}
+                        ref={otpRefs[i]}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={e => handleOtpChange(i, e.target.value)}
+                        onKeyDown={e => handleOtpKeyDown(i, e)}
+                        className="w-14 h-14 text-center text-2xl mono font-bold bg-secondary/50 rounded-xl"
+                        data-testid={`otp-input-${i}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-base font-semibold rounded-xl"
+                  disabled={loading || otp.join('').length !== 4}
+                  data-testid="verify-otp-button"
+                >
+                  {loading ? (
+                    <><Loader2 size={18} className="mr-2 animate-spin" /> Verifying...</>
+                  ) : (
+                    'Verify & Sign In'
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => { setStep('username'); setOtp(['', '', '', '']); }}
+                  data-testid="back-to-username-button"
+                >
+                  <ArrowLeft size={16} className="mr-2" /> Change Username
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>
