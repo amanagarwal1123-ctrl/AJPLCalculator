@@ -111,6 +111,9 @@ export default function ManagerDashboard() {
               <TableCell className="text-muted-foreground text-sm">{bill.created_at?.slice(0, 10)}</TableCell>
               <TableCell>
                 <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" onClick={() => viewSummary(bill.id)} data-testid={`manager-summary-${bill.id}`}>
+                    <ClipboardList size={14} className="mr-1" /> Summary
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={() => navigate(`/bill/${bill.id}`)} data-testid={`manager-view-${bill.id}`}>
                     <Eye size={14} className="mr-1" /> View
                   </Button>
