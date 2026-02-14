@@ -1,0 +1,50 @@
+[
+  {
+    "content": "Phase 1: Build calc_engine module + test with Python script",
+    "status": "in_progress"
+  },
+  {
+    "content": "Phase 1: Test calc engine POC - all calculation vectors pass",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 2: Get design guidelines from design agent",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 2: Install all dependencies (backend + frontend)",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 2: Build complete backend (auth, models, CRUD, calculations, reports)",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 2: Build complete frontend (all pages, flows, Kintsugi design)",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 2: All user stories covered in Development",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 2: End to End Testing using Testing Agent",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 3: Bill workflow (Send to Manager), locking, manager/admin editing",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 3: Admin screens (rates, items, branches, user management)",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 3: Reports & Analytics (charts, tables, CSV/PDF export)",
+    "status": "pending"
+  },
+  {
+    "content": "Phase 3: End to End Testing using Testing Agent",
+    "status": "pending"
+  }
+]
