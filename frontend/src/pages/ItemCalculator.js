@@ -612,6 +612,12 @@ export default function ItemCalculator() {
                         <span className="text-muted-foreground">Net Weight</span>
                         <span className="mono">{netWeight.toFixed(3)}g</span>
                       </div>
+                      {studdedLessGrams > 0 && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-primary">Diamond Less</span>
+                          <span className="mono text-primary">-{studdedLessGrams.toFixed(3)}g</span>
+                        </div>
+                      )}
                     </div>
 
                     <Separator className="bg-border" />
