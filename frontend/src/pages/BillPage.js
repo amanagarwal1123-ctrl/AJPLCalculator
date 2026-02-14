@@ -264,7 +264,7 @@ export default function BillPage() {
         </header>
 
         {/* Add bottom padding on mobile so content isn't hidden by fixed bar */}
-        <main className="px-3 sm:px-4 py-4 sm:py-6 max-w-6xl mx-auto pb-28 lg:pb-6">
+        <main className="px-3 sm:px-4 py-4 sm:py-6 max-w-6xl mx-auto pb-32 lg:pb-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Items List - 2/3 width */}
             <div className="lg:col-span-2 space-y-4">
