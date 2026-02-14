@@ -44,16 +44,20 @@ export default function Reports() {
 
   const loadInitialData = async () => {
     try {
-      const [analyticsRes, customersRes, branchesRes, usersRes] = await Promise.all([
+      const [analyticsRes, customersRes, branchesRes, usersRes, frequencyRes, inactiveRes] = await Promise.all([
         apiClient.get('/analytics/dashboard'),
         apiClient.get('/analytics/customers'),
         apiClient.get('/branches'),
         apiClient.get('/users').catch(() => ({ data: [] })),
+        apiClient.get('/analytics/customers/frequency').catch(() => ({ data: null })),
+        apiClient.get(`/analytics/customers/inactive?days=${inactiveDays}`).catch(() => ({ data: null })),
       ]);
       setAnalytics(analyticsRes.data);
       setCustomers(customersRes.data);
       setBranches(branchesRes.data);
       setUsers(usersRes.data);
+      setCustomerFrequency(frequencyRes.data);
+      setInactiveCustomers(inactiveRes.data);
     } catch (err) {
       toast.error('Failed to load analytics');
     } finally {
