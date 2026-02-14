@@ -433,6 +433,46 @@ async def search_customer(phone: str = Query(""), user=Depends(get_current_user)
     customers = await db.customers.find({"phone": {"$regex": phone}}).to_list(20)
     return [serialize_doc(c) for c in customers]
 
+@api_router.get("/customers/{customer_id}/bills")
+async def get_customer_bills(customer_id: str, user=Depends(get_current_user)):
+    """Get all bills for a specific customer (by customer id or phone)."""
+    # Try finding by id first, then by phone
+    customer = await db.customers.find_one({"id": customer_id})
+    if not customer:
+        customer = await db.customers.find_one({"phone": customer_id})
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    c_data = serialize_doc(customer)
+    # Calculate days since last visit
+    last_visit = customer.get('last_visit', '')
+    if last_visit:
+        try:
+            lv = datetime.fromisoformat(last_visit.replace('Z', '+00:00'))
+            c_data['days_since_last_visit'] = (datetime.now(timezone.utc) - lv).days
+        except Exception:
+            c_data['days_since_last_visit'] = None
+    
+    # Get all bills for this customer by phone
+    bills = await db.bills.find({"customer_phone": customer["phone"]}).sort("created_at", -1).to_list(10000)
+    
+    return {
+        "customer": c_data,
+        "bills": [serialize_doc(b) for b in bills],
+        "total_bills": len(bills),
+        "total_spent": sum(b.get('grand_total', 0) for b in bills),
+    }
+
+@api_router.get("/customers/{customer_id}")
+async def get_customer_detail(customer_id: str, user=Depends(get_current_user)):
+    """Get customer details by ID or phone."""
+    customer = await db.customers.find_one({"id": customer_id})
+    if not customer:
+        customer = await db.customers.find_one({"phone": customer_id})
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return serialize_doc(customer)
+
 @api_router.post("/customers")
 async def create_or_get_customer(req: CustomerCreate, user=Depends(get_current_user)):
     existing = await db.customers.find_one({"phone": req.phone})
