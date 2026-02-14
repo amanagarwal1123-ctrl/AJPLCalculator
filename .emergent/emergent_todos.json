@@ -25,26 +25,18 @@
   },
   {
     "content": "Phase 2: All user stories covered in Development",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Phase 2: End to End Testing using Testing Agent",
-    "status": "pending"
+    "status": "completed"
   },
   {
-    "content": "Phase 3: Bill workflow (Send to Manager), locking, manager/admin editing",
-    "status": "pending"
+    "content": "Phase 2: Fix bill ID serialization bug",
+    "status": "completed"
   },
   {
-    "content": "Phase 3: Admin screens (rates, items, branches, user management)",
-    "status": "pending"
-  },
-  {
-    "content": "Phase 3: Reports & Analytics (charts, tables, CSV/PDF export)",
-    "status": "pending"
-  },
-  {
-    "content": "Phase 3: End to End Testing using Testing Agent",
+    "content": "Phase 3: Continue with advanced features if user requests",
     "status": "pending"
   }
 ]
