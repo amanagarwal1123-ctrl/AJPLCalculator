@@ -84,9 +84,9 @@ frontend/node_modules/.cache/default-development/11.pack
 frontend/node_modules/.cache/default-development/5.pack
 frontend/node_modules/.cache/default-development/13.pack
 -e 
-# Environment files
-*.env
-*.env.*
+# Environment files - NOT excluded (required for Emergent deployment)
+# *.env
+# *.env.*
 frontend/node_modules/.cache/default-development/0.pack
 frontend/node_modules/.cache/default-development/1.pack
 frontend/node_modules/.cache/default-development/2.pack
