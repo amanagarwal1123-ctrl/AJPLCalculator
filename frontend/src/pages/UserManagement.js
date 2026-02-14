@@ -33,8 +33,8 @@ export default function UserManagement() {
   };
 
   const createUser = async () => {
-    if (!form.username || !form.password || !form.full_name) {
-      toast.error('Fill in all required fields');
+    if (!form.username || !form.full_name) {
+      toast.error('Fill in username and full name');
       return;
     }
     try {
