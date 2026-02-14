@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 export default function ItemNameManagement() {
   const [items, setItems] = useState([]);
   const [name, setName] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => { loadItems(); }, []);
 
