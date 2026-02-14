@@ -148,6 +148,8 @@ export default function BillPage() {
               <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                 bill.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400' :
                 bill.status === 'sent' ? 'bg-blue-500/20 text-blue-400' :
+                bill.status === 'edited' ? 'bg-orange-500/20 text-orange-400' :
+                bill.status === 'approved' ? 'bg-green-500/20 text-green-400' :
                 'bg-green-500/20 text-green-400'
               }`}>{bill.status.toUpperCase()}</span>
             </div>
