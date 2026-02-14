@@ -49,6 +49,16 @@ export default function ManagerDashboard() {
     }
   };
 
+  const viewSummary = async (billId) => {
+    try {
+      const res = await apiClient.get(`/bills/${billId}/summary`);
+      setSummaryData(res.data);
+      setSummaryOpen(true);
+    } catch (err) {
+      toast.error('Failed to load summary');
+    }
+  };
+
   const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
 
   const sentBills = bills.filter(b => b.status === 'sent');
