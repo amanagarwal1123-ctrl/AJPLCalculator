@@ -99,15 +99,12 @@ export default function LoginPage() {
         otp: otpCode,
       });
       const { token, user: userData } = res.data;
-      // Store token and set auth header
+      // Store token and set auth header before navigation
       localStorage.setItem('token', token);
       apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      toast.success(`Welcome, ${userData.full_name}!`);
-      // Navigate based on role using React Router
+      // Full page navigation to trigger AuthProvider to pick up token
       const dest = userData.role === 'admin' ? '/admin' : userData.role === 'manager' ? '/manager' : '/sales';
-      navigate(dest);
-      // Force reload to ensure auth context picks up the token
-      window.location.reload();
+      window.location.href = dest;
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Invalid OTP');
       setOtp(['', '', '', '']);
