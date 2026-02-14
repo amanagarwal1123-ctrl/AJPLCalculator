@@ -111,6 +111,11 @@
   .kintsugi-veins { display: none; }
 }
 
+/* Safe area for mobile bottom bars */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
