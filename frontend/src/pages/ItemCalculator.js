@@ -522,23 +522,62 @@ export default function ItemCalculator() {
                     <CardContent className="space-y-3">
                       {studdedCharges.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">No studded charges added</p>}
                       {studdedCharges.map((sc, idx) => (
-                        <div key={idx} className="flex items-end gap-3 p-3 rounded-lg bg-[hsl(196,70%,52%)]/5 border border-[hsl(196,70%,52%)]/20">
-                          <div className="flex-1">
-                            <Label className="text-xs text-muted-foreground capitalize">{sc.type.replace('_', ' ')} - Carats</Label>
-                            <Input type="number" step="0.01" value={sc.carats} onChange={e => updateStuddedCharge(idx, 'carats', e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`studded-carats-${idx}`} />
+                        <div key={idx} className="p-3 rounded-lg bg-[hsl(196,70%,52%)]/5 border border-[hsl(196,70%,52%)]/20">
+                          <div className="flex items-end gap-3">
+                            <div className="flex-1">
+                              <Label className="text-xs text-muted-foreground capitalize">{sc.type.replace('_', ' ')} - Carats</Label>
+                              <Input type="number" step="0.01" value={sc.carats} onChange={e => updateStuddedCharge(idx, 'carats', e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`studded-carats-${idx}`} />
+                            </div>
+                            <div className="flex-1">
+                              <Label className="text-xs text-muted-foreground">Rate per Carat (Rs.)</Label>
+                              <Input type="number" step="0.01" value={sc.rate_per_carat} onChange={e => updateStuddedCharge(idx, 'rate_per_carat', e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`studded-rate-${idx}`} />
+                            </div>
+                            <div className="text-sm mono font-medium text-[hsl(196,70%,52%)]">
+                              {formatCurrency((parseFloat(sc.carats) || 0) * (parseFloat(sc.rate_per_carat) || 0))}
+                            </div>
+                            <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-destructive" onClick={() => removeStuddedCharge(idx)}>
+                              <Trash2 size={14} />
+                            </Button>
                           </div>
-                          <div className="flex-1">
-                            <Label className="text-xs text-muted-foreground">Rate per Carat (Rs.)</Label>
-                            <Input type="number" step="0.01" value={sc.rate_per_carat} onChange={e => updateStuddedCharge(idx, 'rate_per_carat', e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`studded-rate-${idx}`} />
+                          {/* L / NL Radio Buttons */}
+                          <div className="flex items-center gap-4 mt-2 pt-2 border-t border-[hsl(196,70%,52%)]/10">
+                            <span className="text-xs text-muted-foreground">Weight deduction:</span>
+                            <label className="flex items-center gap-1.5 cursor-pointer" data-testid={`studded-nl-${idx}`}>
+                              <input
+                                type="radio"
+                                name={`studded-less-${idx}`}
+                                checked={sc.less_type !== 'L'}
+                                onChange={() => updateStuddedCharge(idx, 'less_type', 'NL')}
+                                className="w-4 h-4 accent-[hsl(196,70%,52%)]"
+                              />
+                              <span className="text-xs font-semibold">NL</span>
+                              <span className="text-xs text-muted-foreground">(Not Less)</span>
+                            </label>
+                            <label className="flex items-center gap-1.5 cursor-pointer" data-testid={`studded-l-${idx}`}>
+                              <input
+                                type="radio"
+                                name={`studded-less-${idx}`}
+                                checked={sc.less_type === 'L'}
+                                onChange={() => updateStuddedCharge(idx, 'less_type', 'L')}
+                                className="w-4 h-4 accent-primary"
+                              />
+                              <span className="text-xs font-semibold text-primary">L</span>
+                              <span className="text-xs text-muted-foreground">(Less)</span>
+                            </label>
+                            {sc.less_type === 'L' && (parseFloat(sc.carats) || 0) > 0 && (
+                              <span className="text-xs mono text-primary font-medium ml-auto">
+                                -{((parseFloat(sc.carats) || 0) * 0.2).toFixed(3)}g from net wt
+                              </span>
+                            )}
                           </div>
-                          <div className="text-sm mono font-medium text-[hsl(196,70%,52%)]">
-                            {formatCurrency((parseFloat(sc.carats) || 0) * (parseFloat(sc.rate_per_carat) || 0))}
-                          </div>
-                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-destructive" onClick={() => removeStuddedCharge(idx)}>
-                            <Trash2 size={14} />
-                          </Button>
                         </div>
                       ))}
+                      {studdedLessGrams > 0 && (
+                        <div className="flex items-center justify-between p-2 rounded bg-primary/10 border border-primary/20 text-xs">
+                          <span className="text-muted-foreground">Total studded deduction (L entries):</span>
+                          <span className="mono font-bold text-primary">-{studdedLessGrams.toFixed(3)}g</span>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
