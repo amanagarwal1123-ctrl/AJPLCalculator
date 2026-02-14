@@ -255,6 +255,7 @@ export default function ItemCalculator() {
         type: sc.type,
         carats: parseFloat(sc.carats) || 0,
         rate_per_carat: parseFloat(sc.rate_per_carat) || 0,
+        less_type: sc.less_type || 'NL',
       })) : [],
     };
 
