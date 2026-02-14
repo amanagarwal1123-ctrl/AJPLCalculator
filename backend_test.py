@@ -158,6 +158,31 @@ class GoldJewelleryAPITester:
             return len(response) > 0
         return False
 
+    def test_create_executive_user(self):
+        """Test creating a sales executive user"""
+        exec_username = f"exec_{datetime.now().strftime('%H%M%S')}"
+        exec_password = "exec123"
+        
+        success, response = self.run_test(
+            "Create Sales Executive",
+            "POST",
+            "/users",
+            200,
+            {
+                "username": exec_username,
+                "password": exec_password,
+                "full_name": "Test Executive",
+                "role": "executive",
+                "branch_id": self.created_resources['branch_id']
+            }
+        )
+        if success:
+            self.created_resources['executive_user_id'] = response.get('id')
+            self.created_resources['executive_username'] = exec_username
+            self.created_resources['executive_password'] = exec_password
+            self.log(f"   Created executive: {exec_username}")
+        return success
+
     def test_create_manager_user(self):
         """Test creating a manager user"""
         manager_username = f"manager_{datetime.now().strftime('%H%M%S')}"
