@@ -90,10 +90,15 @@ export default function ItemNameManagement() {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {items.map(item => (
                   <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/20 border border-border">
-                    <span className="font-medium">{item.name}</span>
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => deleteItem(item.id)} data-testid={`delete-item-${item.name}`}>
-                      <Trash2 size={14} />
-                    </Button>
+                    <span className="font-medium cursor-pointer hover:text-primary transition-colors" onClick={() => navigate(`/admin/items/${encodeURIComponent(item.name)}`)}>{item.name}</span>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-primary" onClick={() => navigate(`/admin/items/${encodeURIComponent(item.name)}`)} data-testid={`history-item-${item.name}`}>
+                        <BarChart3 size={14} />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => deleteItem(item.id)} data-testid={`delete-item-${item.name}`}>
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
