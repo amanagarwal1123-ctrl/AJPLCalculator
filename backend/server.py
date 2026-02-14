@@ -540,6 +540,9 @@ async def update_bill(bill_id: str, updates: dict, user=Depends(get_current_user
     if user.get('role') == 'executive' and bill.get('executive_id') != user.get('id'):
         raise HTTPException(status_code=403, detail="Cannot edit another executive's bill")
 
+    # Build audit log entry
+    old_total = bill.get('grand_total', 0)
+    
     # Recalculate if items changed
     if 'items' in updates:
         calculated_items = []
@@ -561,13 +564,60 @@ async def update_bill(bill_id: str, updates: dict, user=Depends(get_current_user
     updates['updated_at'] = datetime.now(timezone.utc).isoformat()
     updates['last_modified_by'] = user.get('full_name', '')
     
+    # If manager/admin editing a sent bill, mark as edited
+    if bill.get('status') == 'sent' and user.get('role') in ['admin', 'manager']:
+        updates['status'] = 'edited'
+    
     # Remove fields that shouldn't be directly updated
-    for field in ['id', 'bill_number', 'created_at', 'executive_id']:
+    for field in ['id', 'bill_number', 'created_at', 'executive_id', 'change_log']:
         updates.pop(field, None)
     
-    await db.bills.update_one({"id": bill_id}, {"$set": updates})
+    # Add to change log
+    new_total = updates.get('grand_total', old_total)
+    change_entry = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "user": user.get('full_name', ''),
+        "role": user.get('role', ''),
+        "action": "edit",
+        "old_total": old_total,
+        "new_total": new_total,
+    }
+    
+    await db.bills.update_one(
+        {"id": bill_id}, 
+        {"$set": updates, "$push": {"change_log": change_entry}}
+    )
     updated = await db.bills.find_one({"id": bill_id})
     return serialize_doc(updated)
+
+@api_router.put("/bills/{bill_id}/approve")
+async def approve_bill(bill_id: str, user=Depends(get_current_user)):
+    await require_role(user, ["admin", "manager"])
+    bill = await db.bills.find_one({"id": bill_id})
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+    if bill["status"] not in ["sent", "edited"]:
+        raise HTTPException(status_code=400, detail="Bill must be sent or edited to approve")
+    
+    change_entry = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "user": user.get('full_name', ''),
+        "role": user.get('role', ''),
+        "action": "approved",
+        "old_total": bill.get('grand_total', 0),
+        "new_total": bill.get('grand_total', 0),
+    }
+    
+    await db.bills.update_one(
+        {"id": bill_id},
+        {"$set": {
+            "status": "approved",
+            "approved_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "last_modified_by": user.get('full_name', ''),
+        }, "$push": {"change_log": change_entry}}
+    )
+    return {"status": "approved"}
 
 @api_router.put("/bills/{bill_id}/send")
 async def send_bill_to_manager(bill_id: str, user=Depends(get_current_user)):
