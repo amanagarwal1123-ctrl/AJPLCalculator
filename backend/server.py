@@ -778,6 +778,67 @@ async def list_bills(
     bills = await db.bills.find(query).sort("created_at", -1).to_list(5000)
     return [serialize_doc(b) for b in bills]
 
+@api_router.get("/bills/{bill_id}/summary")
+async def get_bill_summary(bill_id: str, user=Depends(get_current_user)):
+    """Get a simplified summary of a bill for manager view.
+    Shows items with rates, making details, diamond rates - but NOT final amounts."""
+    bill = await db.bills.find_one({"id": bill_id})
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+    
+    bill_data = serialize_doc(bill)
+    
+    # Build simplified item summaries
+    item_summaries = []
+    for item in bill_data.get('items', []):
+        summary = {
+            "item_name": item.get('item_name'),
+            "item_type": item.get('item_type', 'gold'),
+            "purity_name": item.get('purity_name'),
+            "rate_mode": item.get('rate_mode'),
+            "gross_weight": item.get('gross_weight', 0),
+            "less": item.get('less', 0),
+            "net_weight": item.get('net_weight', 0),
+            "rate_per_10g": item.get('rate_per_10g', 0),
+            "making_charges": [],
+            "stone_charges": [],
+            "studded_charges": [],
+        }
+        # Making charge details (type + value only, no calculated amount)
+        for mc in item.get('making_charges', []):
+            summary["making_charges"].append({
+                "type": mc.get('type'),
+                "value": mc.get('value', 0),
+                "quantity": mc.get('quantity', 1),
+            })
+        # Stone charge details
+        for sc in item.get('stone_charges', []):
+            summary["stone_charges"].append({
+                "type": sc.get('type'),
+                "value": sc.get('value', 0),
+                "quantity": sc.get('quantity', 1),
+            })
+        # Diamond rates only (carats + rate per carat, no amounts)
+        for sc in item.get('studded_charges', []):
+            summary["studded_charges"].append({
+                "type": sc.get('type'),
+                "carats": sc.get('carats', 0),
+                "rate_per_carat": sc.get('rate_per_carat', 0),
+                "less_type": sc.get('less_type', 'NL'),
+            })
+        item_summaries.append(summary)
+    
+    return {
+        "bill_id": bill_data.get('id'),
+        "bill_number": bill_data.get('bill_number'),
+        "customer_name": bill_data.get('customer_name'),
+        "customer_phone": bill_data.get('customer_phone'),
+        "executive_name": bill_data.get('executive_name'),
+        "date": bill_data.get('created_at', '')[:10],
+        "status": bill_data.get('status'),
+        "items": item_summaries,
+    }
+
 @api_router.get("/bills/{bill_id}")
 async def get_bill(bill_id: str, user=Depends(get_current_user)):
     bill = await db.bills.find_one({"id": bill_id})
