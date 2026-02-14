@@ -366,7 +366,7 @@ export default function Reports() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {branchSales.sort((a, b) => b.total - a.total).map((bs, i) => (
+                      {[...branchSales].sort((a, b) => b.total - a.total).map((bs, i) => (
                         <TableRow key={i} className="border-border">
                           <TableCell className="font-medium">{bs.branch_name}</TableCell>
                           <TableCell className="mono text-right">{bs.count}</TableCell>
