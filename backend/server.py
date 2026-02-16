@@ -1575,6 +1575,279 @@ async def generate_bill_pdf(bill_id: str, user=Depends(get_current_user)):
         headers={'Content-Disposition': f'attachment; filename="{bill_data.get("bill_number", "bill")}.pdf"'}
     )
 
+# ============ SALESPERSON MANAGEMENT ============
+@api_router.post("/salespeople")
+async def create_salesperson(req: SalespersonCreate, user=Depends(get_current_user)):
+    await require_role(user, ["admin"])
+    existing = await db.salespeople.find_one({"name": req.name})
+    if existing:
+        raise HTTPException(status_code=400, detail="Salesperson already exists")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "name": req.name,
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.salespeople.insert_one(doc)
+    return serialize_doc(doc)
+
+@api_router.get("/salespeople")
+async def list_salespeople(user=Depends(get_current_user)):
+    people = await db.salespeople.find({"is_active": True}).to_list(500)
+    return [serialize_doc(p) for p in people]
+
+@api_router.delete("/salespeople/{sp_id}")
+async def delete_salesperson(sp_id: str, user=Depends(get_current_user)):
+    await require_role(user, ["admin"])
+    await db.salespeople.delete_one({"id": sp_id})
+    return {"status": "deleted"}
+
+# ============ ENHANCED CUSTOMER MANAGEMENT ============
+@api_router.put("/customers/{customer_id}")
+async def update_customer(customer_id: str, req: CustomerUpdate, user=Depends(get_current_user)):
+    customer = await db.customers.find_one({"id": customer_id})
+    if not customer:
+        customer = await db.customers.find_one({"phone": customer_id})
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    update_data = {k: v for k, v in req.dict(exclude_none=True).items()}
+    if update_data:
+        await db.customers.update_one({"id": customer.get("id", customer_id)}, {"$set": update_data})
+    updated = await db.customers.find_one({"id": customer.get("id", customer_id)})
+    return serialize_doc(updated)
+
+# ============ CUSTOMER TIER SETTINGS ============
+@api_router.get("/settings/tiers")
+async def get_tier_settings(user=Depends(get_current_user)):
+    settings = await db.settings.find_one({"key": "customer_tiers"})
+    if not settings:
+        return {"tiers": []}
+    return {"tiers": settings.get("tiers", [])}
+
+@api_router.put("/settings/tiers")
+async def update_tier_settings(req: TierSettingsUpdate, user=Depends(get_current_user)):
+    await require_role(user, ["admin"])
+    await db.settings.update_one(
+        {"key": "customer_tiers"},
+        {"$set": {"tiers": [dict(t) for t in req.tiers]}},
+        upsert=True,
+    )
+    return {"status": "updated"}
+
+# ============ FEEDBACK SYSTEM ============
+@api_router.post("/feedback-questions")
+async def create_feedback_question(req: FeedbackQuestionCreate, user=Depends(get_current_user)):
+    await require_role(user, ["admin"])
+    count = await db.feedback_questions.count_documents({})
+    doc = {
+        "id": str(uuid.uuid4()),
+        "question": req.question,
+        "order": req.order or count + 1,
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.feedback_questions.insert_one(doc)
+    return serialize_doc(doc)
+
+@api_router.get("/feedback-questions")
+async def list_feedback_questions(user=Depends(get_current_user)):
+    questions = await db.feedback_questions.find({"is_active": True}).sort("order", 1).to_list(100)
+    return [serialize_doc(q) for q in questions]
+
+@api_router.delete("/feedback-questions/{q_id}")
+async def delete_feedback_question(q_id: str, user=Depends(get_current_user)):
+    await require_role(user, ["admin"])
+    await db.feedback_questions.delete_one({"id": q_id})
+    return {"status": "deleted"}
+
+@api_router.post("/bills/{bill_id}/feedback")
+async def submit_feedback(bill_id: str, req: FeedbackSubmit):
+    """Submit customer feedback for a bill - no auth required (customer fills this)."""
+    bill = await db.bills.find_one({"id": bill_id})
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+    feedback_doc = {
+        "id": str(uuid.uuid4()),
+        "bill_id": bill_id,
+        "customer_name": req.customer_name or bill.get("customer_name", ""),
+        "ratings": [dict(r) for r in req.ratings],
+        "submitted_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.feedbacks.insert_one(feedback_doc)
+    await db.bills.update_one({"id": bill_id}, {"$set": {"has_feedback": True}})
+    return serialize_doc(feedback_doc)
+
+@api_router.get("/bills/{bill_id}/feedback")
+async def get_bill_feedback(bill_id: str, user=Depends(get_current_user)):
+    feedback = await db.feedbacks.find_one({"bill_id": bill_id})
+    if not feedback:
+        return None
+    return serialize_doc(feedback)
+
+# ============ NOTIFICATION SYSTEM ============
+async def generate_notifications():
+    """Generate birthday/anniversary notifications. Called periodically or on demand."""
+    today_ist = datetime.now(IST)
+    today_str = today_ist.strftime("%m-%d")
+    customers = await db.customers.find({}).to_list(10000)
+    tiers_doc = await db.settings.find_one({"key": "customer_tiers"})
+    tiers = tiers_doc.get("tiers", []) if tiers_doc else []
+
+    for c in customers:
+        customer_id = c.get("id", "")
+        # Birthday notifications
+        dob = c.get("dob", "")
+        if dob:
+            try:
+                dob_md = dob[5:10]  # MM-DD from YYYY-MM-DD
+                if dob_md == today_str:
+                    existing = await db.notifications.find_one({
+                        "customer_id": customer_id,
+                        "type": "birthday",
+                        "due_date": today_ist.strftime("%Y-%m-%d"),
+                    })
+                    if not existing:
+                        tier = get_customer_tier(c.get("total_spent", 0), tiers)
+                        await db.notifications.insert_one({
+                            "id": str(uuid.uuid4()),
+                            "type": "birthday",
+                            "customer_id": customer_id,
+                            "customer_name": c.get("name", ""),
+                            "customer_phone": c.get("phone", ""),
+                            "tier": tier,
+                            "message": f"Birthday today! {c.get('name', '')}",
+                            "due_date": today_ist.strftime("%Y-%m-%d"),
+                            "status": "pending",
+                            "target_user_id": c.get("last_executive_id", ""),
+                            "created_at": datetime.now(timezone.utc).isoformat(),
+                        })
+            except Exception:
+                pass
+        # Anniversary notifications
+        anniv = c.get("anniversary", "")
+        if anniv:
+            try:
+                anniv_md = anniv[5:10]
+                if anniv_md == today_str:
+                    existing = await db.notifications.find_one({
+                        "customer_id": customer_id,
+                        "type": "anniversary",
+                        "due_date": today_ist.strftime("%Y-%m-%d"),
+                    })
+                    if not existing:
+                        tier = get_customer_tier(c.get("total_spent", 0), tiers)
+                        await db.notifications.insert_one({
+                            "id": str(uuid.uuid4()),
+                            "type": "anniversary",
+                            "customer_id": customer_id,
+                            "customer_name": c.get("name", ""),
+                            "customer_phone": c.get("phone", ""),
+                            "tier": tier,
+                            "message": f"Anniversary today! {c.get('name', '')}",
+                            "due_date": today_ist.strftime("%Y-%m-%d"),
+                            "status": "pending",
+                            "target_user_id": c.get("last_executive_id", ""),
+                            "created_at": datetime.now(timezone.utc).isoformat(),
+                        })
+            except Exception:
+                pass
+    # Re-remind pending tasks from yesterday
+    yesterday = (today_ist - timedelta(days=1)).strftime("%Y-%m-%d")
+    old_pending = await db.notifications.find({
+        "status": "pending",
+        "due_date": {"$lt": today_ist.strftime("%Y-%m-%d")},
+    }).to_list(1000)
+    for n in old_pending:
+        await db.notifications.update_one({"id": n["id"]}, {"$set": {"due_date": today_ist.strftime("%Y-%m-%d")}})
+
+
+def get_customer_tier(total_spent, tiers):
+    """Determine customer tier based on total spent."""
+    for t in sorted(tiers, key=lambda x: x.get("min_amount", 0), reverse=True):
+        if total_spent >= t.get("min_amount", 0):
+            return t.get("name", "Bronze")
+    return "Bronze"
+
+
+@api_router.get("/notifications")
+async def get_notifications(user=Depends(get_current_user)):
+    """Get notifications for the current user."""
+    await generate_notifications()
+    query = {}
+    if user.get("role") == "executive":
+        query["target_user_id"] = user.get("id", "")
+    # Admins and managers see all
+    notifications = await db.notifications.find(query).sort("due_date", -1).to_list(200)
+    return [serialize_doc(n) for n in notifications]
+
+@api_router.put("/notifications/{notif_id}/done")
+async def mark_notification_done(notif_id: str, user=Depends(get_current_user)):
+    await db.notifications.update_one(
+        {"id": notif_id},
+        {"$set": {"status": "done", "completed_by": user.get("full_name", ""), "completed_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"status": "done"}
+
+@api_router.put("/notifications/{notif_id}/pending")
+async def mark_notification_pending(notif_id: str, user=Depends(get_current_user)):
+    await db.notifications.update_one({"id": notif_id}, {"$set": {"status": "pending"}})
+    return {"status": "pending"}
+
+# ============ PHOTO UPLOAD ============
+@api_router.post("/upload/photo")
+async def upload_photo(file: UploadFile = File(...), user=Depends(get_current_user)):
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Only image files allowed")
+    ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+    filename = f"{uuid.uuid4()}.{ext}"
+    filepath = UPLOAD_DIR / filename
+    with open(filepath, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    return {"filename": filename, "url": f"/api/uploads/{filename}"}
+
+@api_router.get("/uploads/{filename}")
+async def serve_upload(filename: str):
+    filepath = UPLOAD_DIR / filename
+    if not filepath.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(filepath)
+
+# ============ MRP CALCULATION ============
+@api_router.post("/calculate/mrp-item")
+async def calculate_mrp_item(item: dict, user=Depends(get_current_user)):
+    """Calculate MRP item: net weight, discount, GST breakdown."""
+    gross_weight = float(item.get("gross_weight", 0))
+    studded_weights = item.get("studded_weights", [])
+    total_studded_weight = sum(float(sw.get("weight", 0)) for sw in studded_weights)
+    net_weight = max(0, gross_weight - total_studded_weight)
+    mrp = float(item.get("mrp", 0))
+
+    # Discounts
+    discounts = item.get("discounts", [])
+    total_discount = 0
+    for d in discounts:
+        if d.get("type") == "percentage":
+            total_discount += mrp * float(d.get("value", 0)) / 100
+        else:
+            total_discount += float(d.get("value", 0))
+
+    after_discount = max(0, mrp - total_discount)
+    amount_without_gst = round(after_discount / 1.03, 2)
+    gst_amount = round(after_discount - amount_without_gst, 2)
+
+    return {
+        **item,
+        "item_type": "mrp",
+        "net_weight": round(net_weight, 3),
+        "total_studded_weight": round(total_studded_weight, 3),
+        "mrp": mrp,
+        "total_discount": round(total_discount, 2),
+        "after_discount": round(after_discount, 2),
+        "amount_without_gst": amount_without_gst,
+        "gst_amount": gst_amount,
+        "total_amount": amount_without_gst,  # Show without GST in items; GST added at end
+    }
+
 # ============ ROOT ============
 @api_router.get("/")
 async def root():
