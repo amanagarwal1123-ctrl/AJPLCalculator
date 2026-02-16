@@ -196,13 +196,24 @@ export default function SalesExecDashboard() {
                   <Input id="cloc" placeholder="City / Area" value={customerLocation} onChange={e => setCustomerLocation(e.target.value)} className="h-11 bg-secondary/50" data-testid="customer-location-input" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="cref" className="text-sm">Reference</Label>
+                  <Label htmlFor="cref" className="text-sm">Reference *</Label>
                   <Select value={customerReference} onValueChange={setCustomerReference}>
                     <SelectTrigger className="h-11 bg-secondary/50" data-testid="customer-reference-select">
                       <SelectValue placeholder="How did they find us?" />
                     </SelectTrigger>
                     <SelectContent>
                       {references.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="csp" className="text-sm">Salesperson *</Label>
+                  <Select value={salesperson} onValueChange={setSalesperson}>
+                    <SelectTrigger className="h-11 bg-secondary/50" data-testid="salesperson-select">
+                      <SelectValue placeholder="Select salesperson" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {salespeople.map(sp => <SelectItem key={sp.id} value={sp.name}>{sp.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
