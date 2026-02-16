@@ -107,9 +107,9 @@ export default function SalesExecDashboard() {
         <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="flex items-center justify-between px-3 sm:px-4 py-3 max-w-5xl mx-auto">
             <div className="min-w-0 flex items-center gap-2">
-              <img src="/ajpl-logo.png" alt="AJPL" className="h-8 w-auto object-contain" />
+              <img src="/ajpl-logo.png" alt="AJPL" className="h-10 w-auto object-contain" />
               <div>
-                <h1 className="heading text-sm sm:text-base font-bold text-primary tracking-wider leading-tight">AJPL Calculator</h1>
+                <h1 className="heading text-base sm:text-lg font-bold text-primary tracking-wider leading-tight">AJPL Calculator</h1>
                 <p className="text-[10px] text-muted-foreground truncate">{userBranch?.name || 'Branch'} &middot; {user?.full_name}</p>
               </div>
             </div>
