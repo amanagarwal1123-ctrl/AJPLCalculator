@@ -223,6 +223,7 @@ export default function BillPage() {
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="right" className="w-[320px] p-0 bg-card border-border">
+                    <SheetTitle className="sr-only">Active Bills</SheetTitle>
                     <div className="p-4 border-b border-border">
                       <h2 className="heading text-lg font-bold text-primary">Active Drafts</h2>
                       <p className="text-xs text-muted-foreground mt-1">Switch between your bills</p>
