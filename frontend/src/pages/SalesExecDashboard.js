@@ -8,7 +8,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, FileText, Eye, ArrowRight, Clock, Send, CheckCircle, Layers, LogOut } from 'lucide-react';
+import { Plus, FileText, Eye, ArrowRight, Clock, Send, CheckCircle, Layers, LogOut, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
