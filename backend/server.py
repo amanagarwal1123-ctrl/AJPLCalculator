@@ -184,8 +184,35 @@ class BillCreate(BaseModel):
     customer_phone: str
     customer_location: Optional[str] = ""
     customer_reference: Optional[str] = ""
+    salesperson_name: Optional[str] = ""
     items: List[Dict[str, Any]] = []
     external_charges: List[Dict[str, Any]] = []
+    bill_mode: Optional[str] = "regular"  # regular or mrp
+
+class SalespersonCreate(BaseModel):
+    name: str
+
+class CustomerUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    location: Optional[str] = None
+    reference: Optional[str] = None
+    dob: Optional[str] = None
+    anniversary: Optional[str] = None
+    address: Optional[str] = None
+    notes: Optional[str] = None
+
+class FeedbackQuestionCreate(BaseModel):
+    question: str
+    order: Optional[int] = 0
+
+class FeedbackSubmit(BaseModel):
+    ratings: List[Dict[str, Any]]  # [{question_id, question, rating}]
+    customer_name: Optional[str] = ""
+
+class TierSettingsUpdate(BaseModel):
+    tiers: List[Dict[str, Any]]  # [{name, min_amount, max_amount}]
 
 # ============ SEED DATA ============
 @app.on_event("startup")
