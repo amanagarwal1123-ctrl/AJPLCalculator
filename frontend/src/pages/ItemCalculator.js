@@ -436,7 +436,11 @@ export default function ItemCalculator() {
                     <CardTitle className="text-base">Item Details</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Tag Number</Label>
+                        <Input value={tagNumber} onChange={e => setTagNumber(e.target.value)} placeholder="Tag #" className="h-11 bg-secondary/50 mono" data-testid="tag-number-input" />
+                      </div>
                       <div className="space-y-2">
                         <Label>Item Name *</Label>
                         <Select value={itemName} onValueChange={setItemName}>
