@@ -54,9 +54,9 @@ export default function AppLayout({ children }) {
     navigate('/login');
   };
 
-  const NavContent = () => (
+  const NavContent = ({ inSheet = false }) => (
     <div className="flex flex-col h-full">
-      <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+      {inSheet && <SheetTitle className="sr-only">Navigation Menu</SheetTitle>}
       <div className="p-5 border-b border-border flex items-center gap-3">
         <img src="/ajpl-logo.png" alt="AJPL" className="h-14 w-auto object-contain" />
         <div>
