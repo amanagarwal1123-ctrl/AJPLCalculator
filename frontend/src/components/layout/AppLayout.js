@@ -146,7 +146,7 @@ export default function AppLayout({ children }) {
                 <Button variant="ghost" size="icon" className="h-11 w-11" data-testid="mobile-menu-button"><Menu size={24} /></Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[280px] p-0 bg-card border-border">
-                <NavContent />
+                <NavContent inSheet={true} />
               </SheetContent>
             </Sheet>
             <div className="flex items-center gap-2">
