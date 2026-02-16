@@ -23,6 +23,7 @@ const adminLinks = [
 const managerLinks = [
   { to: '/manager', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
+  { to: '/admin/notifications', label: 'Notifications', icon: Bell },
 ];
 
 const AppLogo = ({ size = 'default' }) => {
