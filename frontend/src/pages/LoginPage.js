@@ -344,7 +344,7 @@ export default function LoginPage() {
       {/* Left brand panel - desktop only */}
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center">
         <div className="relative z-10 text-center px-12">
-          <img src="/ajpl-logo.png" alt="AJPL by Yash" className="h-28 w-auto object-contain mx-auto mb-6" />
+          <img src="/ajpl-logo.png" alt="AJPL by Yash" className="h-36 w-auto object-contain mx-auto mb-6" />
           <h1 className="heading text-4xl font-bold text-foreground tracking-tight mb-4">
             <span className="text-primary">AJPL Calculator</span>
           </h1>
