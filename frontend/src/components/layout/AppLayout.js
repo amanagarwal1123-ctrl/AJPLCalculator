@@ -56,10 +56,11 @@ export default function AppLayout({ children }) {
 
   const NavContent = () => (
     <div className="flex flex-col h-full">
+      <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
       <div className="p-5 border-b border-border flex items-center gap-3">
-        <img src="/ajpl-logo.png" alt="AJPL" className="h-10 w-auto object-contain" />
+        <img src="/ajpl-logo.png" alt="AJPL" className="h-14 w-auto object-contain" />
         <div>
-          <h1 className="heading text-base font-bold text-primary tracking-wider leading-tight">AJPL Calculator</h1>
+          <h1 className="heading text-lg font-bold text-primary tracking-wider leading-tight">AJPL Calculator</h1>
           <p className="text-[10px] text-muted-foreground capitalize">{user?.role} Panel</p>
         </div>
       </div>
