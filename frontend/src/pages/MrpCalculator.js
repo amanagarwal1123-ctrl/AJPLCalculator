@@ -186,7 +186,7 @@ export default function MrpCalculator() {
                   {studdedWeights.map((sw, idx) => (
                     <div key={idx} className="flex items-end gap-3 p-3 rounded-lg bg-[hsl(196,70%,52%)]/5 border border-[hsl(196,70%,52%)]/20">
                       <div className="flex-1">
-                        <Label className="text-xs text-muted-foreground capitalize">{sw.type.replace('_', ' ')} Weight (g)</Label>
+                        <Label className="text-xs text-muted-foreground capitalize">{sw.type.replace('_', ' ')} (carats)</Label>
                         <Input type="number" step="0.001" value={sw.weight} onChange={e => updateStuddedWeight(idx, e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`mrp-sw-${idx}`} />
                       </div>
                       <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-destructive" onClick={() => removeStuddedWeight(idx)}>
