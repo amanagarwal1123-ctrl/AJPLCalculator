@@ -49,6 +49,10 @@ export default function ManagerDashboard() {
     }
   };
 
+  const viewCustomer = (phone) => {
+    navigate(`/customer/${phone}`);
+  };
+
   const viewSummary = async (billId) => {
     try {
       const res = await apiClient.get(`/bills/${billId}/summary`);
