@@ -1024,7 +1024,9 @@ async def delete_bill(bill_id: str, user=Depends(get_current_user)):
 @api_router.post("/calculate/item")
 async def calculate_item(item: dict, user=Depends(get_current_user)):
     """Calculate a single item's totals in real-time."""
-    if item.get('item_type') == 'diamond':
+    if item.get('item_type') == 'mrp':
+        return item  # MRP items are calculated via /calculate/mrp-item
+    elif item.get('item_type') == 'diamond':
         result = calculate_diamond_item(item)
     else:
         result = calculate_gold_item(item)
@@ -1037,11 +1039,14 @@ async def calculate_bill(data: dict, user=Depends(get_current_user)):
     external_charges = data.get('external_charges', [])
     calculated_items = []
     for item in items:
-        if item.get('item_type') == 'diamond':
+        if item.get('item_type') == 'mrp':
+            calculated_items.append(item)
+        elif item.get('item_type') == 'diamond':
             calc = calculate_diamond_item(item)
+            calculated_items.append(calc)
         else:
             calc = calculate_gold_item(item)
-        calculated_items.append(calc)
+            calculated_items.append(calc)
     totals = calculate_bill_totals(calculated_items, external_charges)
     totals['items'] = calculated_items
     return totals
