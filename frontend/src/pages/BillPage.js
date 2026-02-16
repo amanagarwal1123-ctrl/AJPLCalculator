@@ -56,6 +56,24 @@ export default function BillPage() {
     }
   };
 
+  const handlePhotoUpload = async (index, file) => {
+    if (!file) return;
+    setUploading(index);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadRes = await apiClient.post('/upload/photo', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const photoUrl = uploadRes.data.url;
+      const newItems = [...bill.items];
+      if (!newItems[index].photos) newItems[index].photos = [];
+      newItems[index].photos.push(photoUrl);
+      const res = await apiClient.put(`/bills/${billId}`, { items: newItems, external_charges: bill.external_charges });
+      setBill(res.data);
+      toast.success('Photo added');
+    } catch (err) { toast.error('Failed to upload photo'); }
+    finally { setUploading(null); }
+  };
+
   const canEdit = () => {
     if (!bill) return false;
     if (bill.status === 'draft' && (user?.role === 'executive' || user?.role === 'admin' || user?.role === 'manager')) return true;
