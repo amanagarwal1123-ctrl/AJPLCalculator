@@ -37,9 +37,10 @@ export default function MrpCalculator() {
     } catch (err) { toast.error('Failed to load data'); }
   };
 
-  // Calculations
-  const totalStuddedWeight = studdedWeights.reduce((s, w) => s + (parseFloat(w.weight) || 0), 0);
-  const netWeight = Math.max(0, (parseFloat(grossWeight) || 0) - totalStuddedWeight);
+  // Calculations — studded weights entered in carats, convert to grams (1 ct = 0.2g)
+  const totalStuddedCarats = studdedWeights.reduce((s, w) => s + (parseFloat(w.weight) || 0), 0);
+  const totalStuddedGrams = totalStuddedCarats * 0.2;
+  const netWeight = Math.max(0, (parseFloat(grossWeight) || 0) - totalStuddedGrams);
   const mrpNum = parseFloat(mrp) || 0;
 
   let totalDiscount = 0;
