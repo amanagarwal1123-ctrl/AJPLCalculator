@@ -2,18 +2,22 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/App';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { LogOut, Menu, LayoutDashboard, Settings, Users, GitBranch, Tag, BarChart3, FileText } from 'lucide-react';
+import { LogOut, Menu, LayoutDashboard, Settings, Users, GitBranch, Tag, BarChart3, FileText, UserCheck, MessageSquare, Bell } from 'lucide-react';
 import { useState } from 'react';
+import { SheetTitle } from '@/components/ui/sheet';
 
 const adminLinks = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/rates', label: 'Rate Management', icon: Settings },
   { to: '/admin/branches', label: 'Branches', icon: GitBranch },
   { to: '/admin/users', label: 'Users', icon: Users },
+  { to: '/admin/salespeople', label: 'Salespeople', icon: UserCheck },
   { to: '/admin/items', label: 'Item Names', icon: Tag },
   { to: '/admin/customers', label: 'Customers', icon: Users },
   { to: '/admin/bills', label: 'All Bills', icon: FileText },
+  { to: '/admin/feedback', label: 'Feedback Qs', icon: MessageSquare },
   { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
+  { to: '/admin/notifications', label: 'Notifications', icon: Bell },
 ];
 
 const managerLinks = [
