@@ -87,7 +87,9 @@ export default function AdminDashboard() {
     { label: 'Rate Management', icon: Settings, to: '/admin/rates' },
     { label: 'Branches', icon: GitBranch, to: '/admin/branches' },
     { label: 'Users', icon: Users, to: '/admin/users' },
+    { label: 'Salespeople', icon: Users, to: '/admin/salespeople' },
     { label: 'Item Names', icon: Tag, to: '/admin/items' },
+    { label: 'Feedback Qs', icon: FileText, to: '/admin/feedback' },
     { label: 'Reports', icon: BarChart3, to: '/admin/reports' },
   ];
 
