@@ -279,7 +279,26 @@ async def startup_event():
     await db.customers.create_index("phone")
     await db.otps.create_index("username")
     await db.otps.create_index("expires_at")
+    await db.salespeople.create_index("name", unique=True)
+    await db.feedback_questions.create_index("order")
+    await db.notifications.create_index("target_user_id")
+    await db.notifications.create_index("due_date")
     logger.info("Database indexes created")
+
+    # Create default tier settings if not exists
+    tiers = await db.settings.find_one({"key": "customer_tiers"})
+    if not tiers:
+        await db.settings.insert_one({
+            "key": "customer_tiers",
+            "tiers": [
+                {"name": "Bronze", "min_amount": 0, "max_amount": 50000},
+                {"name": "Silver", "min_amount": 50000, "max_amount": 200000},
+                {"name": "Gold", "min_amount": 200000, "max_amount": 500000},
+                {"name": "Platinum", "min_amount": 500000, "max_amount": 1500000},
+                {"name": "Diamond", "min_amount": 1500000, "max_amount": 999999999},
+            ],
+        })
+        logger.info("Default customer tiers created")
 
 # ============ AUTH ROUTES ============
 import random
