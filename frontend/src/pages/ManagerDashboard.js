@@ -140,11 +140,11 @@ export default function ManagerDashboard() {
               <TableCell className="mono text-sm">{b.bill_number}</TableCell>
               <TableCell>
                 <div>
-                  <p className="font-medium text-sm">{b.customer_name}</p>
+                  <p className="font-medium text-sm cursor-pointer text-primary hover:underline" onClick={() => viewCustomer(b.customer_phone)}>{b.customer_name}</p>
                   <p className="text-xs text-muted-foreground">{b.customer_phone}</p>
                 </div>
               </TableCell>
-              <TableCell className="text-muted-foreground">{b.executive_name}</TableCell>
+              <TableCell className="text-muted-foreground">{b.executive_name}{b.salesperson_name ? ` / ${b.salesperson_name}` : ''}</TableCell>
               <TableCell>{statusBadge(b.status)}</TableCell>
               <TableCell className="mono text-sm">{b.items?.length || 0}</TableCell>
               <TableCell className="mono text-right font-medium text-primary">{formatCurrency(b.grand_total)}</TableCell>
