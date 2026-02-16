@@ -652,6 +652,12 @@ export default function ItemCalculator() {
                         <span className="text-muted-foreground">Item</span>
                         <span className="font-medium">{itemName || '-'}</span>
                       </div>
+                      {tagNumber && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Tag #</span>
+                          <span className="mono">{tagNumber}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Purity</span>
                         <span>{selectedPurity?.name} ({selectedPurity?.percent}%)</span>
