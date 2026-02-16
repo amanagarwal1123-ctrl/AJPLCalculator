@@ -174,7 +174,7 @@ export default function MrpCalculator() {
               {/* Studded Weights */}
               <Card className="bg-card border-[hsl(196,70%,52%)]/30">
                 <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                  <CardTitle className="text-base text-[hsl(196,70%,52%)]">Studded Weights (deducted from gross)</CardTitle>
+                  <CardTitle className="text-base text-[hsl(196,70%,52%)]">Studded Weights in Carats (deducted from gross)</CardTitle>
                   <div className="flex gap-1">
                     <Button variant="outline" size="sm" onClick={() => addStuddedWeight('diamond')} className="text-xs h-7" data-testid="mrp-add-diamond">+ Diamond</Button>
                     <Button variant="outline" size="sm" onClick={() => addStuddedWeight('solitaire')} className="text-xs h-7">+ Solitaire</Button>
