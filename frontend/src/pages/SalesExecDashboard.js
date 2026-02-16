@@ -23,10 +23,13 @@ export default function SalesExecDashboard() {
   const [creating, setCreating] = useState(false);
   const [branches, setBranches] = useState([]);
   const [activeFilter, setActiveFilter] = useState('all');
+  const [salespeople, setSalespeople] = useState([]);
+  const [salesperson, setSalesperson] = useState('');
 
   useEffect(() => {
     loadBills();
     loadBranches();
+    loadSalespeople();
   }, []);
 
   const loadBills = async () => {
@@ -40,6 +43,13 @@ export default function SalesExecDashboard() {
     try {
       const res = await apiClient.get('/branches');
       setBranches(res.data);
+    } catch (err) { console.error(err); }
+  };
+
+  const loadSalespeople = async () => {
+    try {
+      const res = await apiClient.get('/salespeople');
+      setSalespeople(res.data);
     } catch (err) { console.error(err); }
   };
 
