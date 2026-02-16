@@ -239,7 +239,7 @@ export default function MrpCalculator() {
                     <div className="flex justify-between"><span className="text-muted-foreground">Item</span><span className="font-medium">{itemName || '-'}</span></div>
                     {tagNumber && <div className="flex justify-between"><span className="text-muted-foreground">Tag #</span><span className="mono">{tagNumber}</span></div>}
                     <div className="flex justify-between"><span className="text-muted-foreground">Gross Wt</span><span className="mono">{(parseFloat(grossWeight) || 0).toFixed(3)}g</span></div>
-                    {totalStuddedWeight > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Studded Wt</span><span className="mono text-[hsl(196,70%,52%)]">-{totalStuddedWeight.toFixed(3)}g</span></div>}
+                    {totalStuddedCarats > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Studded</span><span className="mono text-[hsl(196,70%,52%)]">{totalStuddedCarats.toFixed(2)} ct ({totalStuddedGrams.toFixed(3)}g)</span></div>}
                     <div className="flex justify-between"><span className="text-muted-foreground">Net Wt</span><span className="mono font-bold">{netWeight.toFixed(3)}g</span></div>
                   </div>
                   <Separator className="bg-border" />
