@@ -192,7 +192,7 @@ export default function SalesExecDashboard() {
                   <Input id="cphone" placeholder="Phone number" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="h-11 bg-secondary/50" data-testid="customer-phone-input" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="cloc" className="text-sm">Location</Label>
+                  <Label htmlFor="cloc" className="text-sm">Location *</Label>
                   <Input id="cloc" placeholder="City / Area" value={customerLocation} onChange={e => setCustomerLocation(e.target.value)} className="h-11 bg-secondary/50" data-testid="customer-location-input" />
                 </div>
                 <div className="space-y-2">
