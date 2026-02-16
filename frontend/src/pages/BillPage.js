@@ -123,8 +123,8 @@ export default function BillPage() {
     try {
       await apiClient.put(`/bills/${billId}/send`);
       toast.success('Bill sent to manager!');
-      loadBill();
-      loadExecBills();
+      // Redirect to feedback page
+      navigate(`/bill/${billId}/feedback`);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to send');
     }
