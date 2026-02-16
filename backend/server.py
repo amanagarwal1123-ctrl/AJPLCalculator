@@ -808,11 +808,15 @@ async def update_bill(bill_id: str, updates: dict, user=Depends(get_current_user
     if 'items' in updates:
         calculated_items = []
         for item in updates['items']:
-            if item.get('item_type') == 'diamond':
+            if item.get('item_type') == 'mrp':
+                # MRP items are pre-calculated - pass through
+                calculated_items.append(item)
+            elif item.get('item_type') == 'diamond':
                 calc = calculate_diamond_item(item)
+                calculated_items.append(calc)
             else:
                 calc = calculate_gold_item(item)
-            calculated_items.append(calc)
+                calculated_items.append(calc)
         updates['items'] = calculated_items
         ext_charges = updates.get('external_charges', bill.get('external_charges', []))
         totals = calculate_bill_totals(calculated_items, ext_charges)
