@@ -80,9 +80,24 @@ def serialize_doc(doc):
             result[key] = value
     return result
 
+IST = pytz.timezone('Asia/Kolkata')
+
+# Uploads directory
+UPLOAD_DIR = ROOT_DIR / 'uploads'
+UPLOAD_DIR.mkdir(exist_ok=True)
+
 def create_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+    role = data.get("role", "")
+    if role in ("manager", "executive"):
+        # Expire at 10 PM IST today (or tomorrow if already past 10 PM)
+        now_ist = datetime.now(IST)
+        cutoff = now_ist.replace(hour=22, minute=0, second=0, microsecond=0)
+        if now_ist >= cutoff:
+            cutoff += timedelta(days=1)
+        expire = cutoff.astimezone(timezone.utc)
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
