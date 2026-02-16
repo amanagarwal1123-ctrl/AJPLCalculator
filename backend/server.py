@@ -760,6 +760,8 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
         "customer_phone": req.customer_phone,
         "customer_location": req.customer_location,
         "customer_reference": req.customer_reference,
+        "salesperson_name": req.salesperson_name,
+        "bill_mode": req.bill_mode,
         "items": calculated_items,
         "external_charges": req.external_charges,
         "items_total": totals["items_total"],
