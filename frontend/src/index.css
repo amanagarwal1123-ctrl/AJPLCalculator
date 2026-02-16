@@ -116,6 +116,12 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Mobile sidebar slide-in animation */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
 /* Hide the Made with Emergent badge */
 div[style*="Made with Emergent"],
 a[href*="emergentagent"],
