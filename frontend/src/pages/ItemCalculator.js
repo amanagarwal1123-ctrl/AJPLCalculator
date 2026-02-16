@@ -303,7 +303,14 @@ export default function ItemCalculator() {
       <div className="relative z-10">
         <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="flex items-center gap-3 px-4 py-3 max-w-5xl mx-auto">
-            <Button variant="ghost" size="sm" onClick={() => step === 'type' ? navigate(`/bill/${billId}`) : setStep(step === 'calculate' ? 'purity' : step === 'purity' ? 'rate_mode' : 'type')} data-testid="back-button">
+            <Button variant="ghost" size="sm" onClick={() => {
+              if (step === 'type') navigate(`/bill/${billId}`);
+              else if (step === 'diamond_choice') setStep('type');
+              else if (step === 'calculate') setStep('purity');
+              else if (step === 'purity') setStep('rate_mode');
+              else if (step === 'rate_mode') setStep(itemType === 'diamond' ? 'diamond_choice' : 'type');
+              else setStep('type');
+            }} data-testid="back-button">
               <ArrowLeft size={18} />
             </Button>
             <div>
