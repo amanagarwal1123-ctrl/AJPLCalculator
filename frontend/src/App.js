@@ -129,12 +129,18 @@ function App() {
             <Route path="/admin/customers/:customerId" element={<PrivateRoute roles={['admin']}><CustomerHistoryPage /></PrivateRoute>} />
             <Route path="/admin/bills" element={<PrivateRoute roles={['admin']}><AllBillsPage /></PrivateRoute>} />
             <Route path="/admin/reports" element={<PrivateRoute roles={['admin', 'manager']}><Reports /></PrivateRoute>} />
+            <Route path="/admin/salespeople" element={<PrivateRoute roles={['admin']}><SalespeopleManagement /></PrivateRoute>} />
+            <Route path="/admin/feedback" element={<PrivateRoute roles={['admin']}><FeedbackQuestionsManagement /></PrivateRoute>} />
+            <Route path="/admin/notifications" element={<PrivateRoute roles={['admin', 'manager']}><NotificationsPage /></PrivateRoute>} />
             <Route path="/manager" element={<PrivateRoute roles={['manager']}><ManagerDashboard /></PrivateRoute>} />
             <Route path="/sales" element={<PrivateRoute roles={['executive']}><SalesExecDashboard /></PrivateRoute>} />
             <Route path="/bill/:billId" element={<PrivateRoute><BillPage /></PrivateRoute>} />
             <Route path="/bill/:billId/add-item" element={<PrivateRoute><ItemCalculator /></PrivateRoute>} />
             <Route path="/bill/:billId/edit-item/:itemIndex" element={<PrivateRoute><ItemCalculator /></PrivateRoute>} />
             <Route path="/bill/:billId/print" element={<PrivateRoute><BillPrintView /></PrivateRoute>} />
+            <Route path="/bill/:billId/feedback" element={<FeedbackPage />} />
+            <Route path="/bill/:billId/mrp" element={<PrivateRoute><MrpCalculator /></PrivateRoute>} />
+            <Route path="/customer/:customerId" element={<PrivateRoute><CustomerProfilePage /></PrivateRoute>} />
           </Routes>
           <Toaster position="top-right" richColors />
         </AuthProvider>
