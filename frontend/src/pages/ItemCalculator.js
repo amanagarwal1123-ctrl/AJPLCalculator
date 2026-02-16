@@ -238,18 +238,15 @@ export default function ItemCalculator() {
   };
 
   const saveItem = async () => {
-    if (!itemName) {
-      toast.error('Please select an item name');
-      return;
-    }
-    if (!grossWeight) {
-      toast.error('Please enter gross weight');
-      return;
-    }
+    if (!itemName) { toast.error('Please select an item name'); return; }
+    if (!grossWeight) { toast.error('Please enter gross weight'); return; }
+    if (makingCharges.length === 0) { toast.error('Please add at least one making charge'); return; }
+    if (rateMode === 'manual' && !rate) { toast.error('Please enter gold rate'); return; }
 
     const itemData = {
       item_type: itemType,
       item_name: itemName,
+      tag_number: tagNumber,
       rate_mode: rateMode,
       purity_name: selectedPurity?.name,
       purity_percent: selectedPurity?.percent,
