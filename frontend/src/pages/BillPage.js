@@ -21,6 +21,8 @@ export default function BillPage() {
   const [extChargeAmount, setExtChargeAmount] = useState('');
   const [showExtChargeForm, setShowExtChargeForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(null);
+  const photoInputRef = useState(null);
 
   // Multi-bill switcher state (for executives)
   const [execBills, setExecBills] = useState([]);
