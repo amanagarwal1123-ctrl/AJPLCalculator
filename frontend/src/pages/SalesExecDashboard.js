@@ -56,10 +56,11 @@ export default function SalesExecDashboard() {
   const userBranch = branches.find(b => b.id === user?.branch_id);
 
   const handleMakeBill = async () => {
-    if (!customerName.trim() || !customerPhone.trim()) {
-      toast.error('Please enter customer name and phone number');
-      return;
-    }
+    if (!customerName.trim()) { toast.error('Customer Name is mandatory'); return; }
+    if (!customerPhone.trim()) { toast.error('Phone Number is mandatory'); return; }
+    if (!customerLocation.trim()) { toast.error('Location is mandatory'); return; }
+    if (!customerReference) { toast.error('Reference is mandatory'); return; }
+    if (!salesperson) { toast.error('Please select a salesperson'); return; }
     setCreating(true);
     try {
       const res = await apiClient.post('/bills', {
@@ -67,6 +68,7 @@ export default function SalesExecDashboard() {
         customer_phone: customerPhone,
         customer_location: customerLocation,
         customer_reference: customerReference,
+        salesperson_name: salesperson,
         items: [],
         external_charges: [],
       });
