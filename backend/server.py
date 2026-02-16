@@ -1831,8 +1831,10 @@ async def calculate_mrp_item(item: dict, user=Depends(get_current_user)):
     """Calculate MRP item: net weight, discount, GST breakdown."""
     gross_weight = float(item.get("gross_weight", 0))
     studded_weights = item.get("studded_weights", [])
-    total_studded_weight = sum(float(sw.get("weight", 0)) for sw in studded_weights)
-    net_weight = max(0, gross_weight - total_studded_weight)
+    # Studded weights are entered in carats; 1 carat = 0.2 grams
+    total_studded_carats = sum(float(sw.get("weight", 0)) for sw in studded_weights)
+    total_studded_grams = round(total_studded_carats * 0.2, 3)
+    net_weight = max(0, gross_weight - total_studded_grams)
     mrp = float(item.get("mrp", 0))
 
     # Discounts
