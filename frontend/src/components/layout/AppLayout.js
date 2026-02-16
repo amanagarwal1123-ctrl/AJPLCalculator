@@ -1,10 +1,8 @@
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/App';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { LogOut, Menu, LayoutDashboard, Settings, Users, GitBranch, Tag, BarChart3, FileText, UserCheck, MessageSquare, Bell } from 'lucide-react';
-import { useState } from 'react';
-import { SheetTitle } from '@/components/ui/sheet';
+import { LogOut, Menu, X, LayoutDashboard, Settings, Users, GitBranch, Tag, BarChart3, FileText, UserCheck, MessageSquare, Bell } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const adminLinks = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -27,11 +25,7 @@ const managerLinks = [
 ];
 
 const AppLogo = ({ size = 'default' }) => {
-  const sizes = {
-    sm: 'h-10',
-    default: 'h-14',
-    lg: 'h-20',
-  };
+  const sizes = { sm: 'h-10', default: 'h-14', lg: 'h-20' };
   return (
     <div className="flex items-center gap-2">
       <img src="/ajpl-logo.png" alt="AJPL" className={`${sizes[size]} w-auto object-contain`} />
@@ -49,14 +43,20 @@ export default function AppLayout({ children }) {
 
   const links = user?.role === 'admin' ? adminLinks : user?.role === 'manager' ? managerLinks : [];
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  // Close sidebar on route change
+  useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
-  const NavContent = ({ inSheet = false }) => (
+  // Prevent body scroll when sidebar is open
+  useEffect(() => {
+    if (sidebarOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => { document.body.style.overflow = ''; };
+  }, [sidebarOpen]);
+
+  const handleLogout = () => { logout(); navigate('/login'); };
+
+  const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      {inSheet && <SheetTitle className="sr-only">Navigation Menu</SheetTitle>}
       <div className="p-5 border-b border-border flex items-center gap-3">
         <img src="/ajpl-logo.png" alt="AJPL" className="h-14 w-auto object-contain" />
         <div>
@@ -64,7 +64,7 @@ export default function AppLayout({ children }) {
           <p className="text-[10px] text-muted-foreground capitalize">{user?.role} Panel</p>
         </div>
       </div>
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {links.map(link => {
           const Icon = link.icon;
           const isActive = location.pathname === link.to;
@@ -116,15 +116,11 @@ export default function AppLayout({ children }) {
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
                 <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">{user?.full_name}</span>
-                <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="logout-button">
-                  <LogOut size={16} />
-                </Button>
+                <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="logout-button"><LogOut size={16} /></Button>
               </div>
             </div>
           </header>
-          <main className="px-3 sm:px-4 py-4 sm:py-6 max-w-7xl mx-auto">
-            {children}
-          </main>
+          <main className="px-3 sm:px-4 py-4 sm:py-6 max-w-7xl mx-auto">{children}</main>
         </div>
       </div>
     );
@@ -136,26 +132,63 @@ export default function AppLayout({ children }) {
       <div className="relative z-10 min-h-screen grid grid-cols-1 lg:grid-cols-[280px_1fr]">
         {/* Desktop sidebar */}
         <aside className="hidden lg:block border-r border-border bg-card/50 backdrop-blur-sm">
-          <NavContent />
+          <SidebarContent />
         </aside>
+
         {/* Mobile header */}
         <div className="lg:hidden border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="flex items-center justify-between px-3 py-2">
-            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-11 w-11" data-testid="mobile-menu-button"><Menu size={24} /></Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[280px] p-0 bg-card border-border">
-                <NavContent inSheet={true} />
-              </SheetContent>
-            </Sheet>
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="h-11 w-11 flex items-center justify-center rounded-md hover:bg-secondary/80 active:bg-secondary transition-colors"
+              data-testid="mobile-menu-button"
+              aria-label="Open menu"
+            >
+              <Menu size={24} />
+            </button>
             <div className="flex items-center gap-2">
               <img src="/ajpl-logo.png" alt="AJPL" className="h-10 w-auto object-contain" />
               <span className="heading text-base font-bold text-primary">AJPL Calculator</span>
             </div>
-            <Button variant="ghost" size="icon" className="h-11 w-11" onClick={handleLogout} data-testid="mobile-logout-button"><LogOut size={18} /></Button>
+            <button
+              onClick={handleLogout}
+              className="h-11 w-11 flex items-center justify-center rounded-md hover:bg-secondary/80 active:bg-secondary transition-colors"
+              data-testid="mobile-logout-button"
+              aria-label="Logout"
+            >
+              <LogOut size={18} />
+            </button>
           </div>
         </div>
+
+        {/* Mobile slide-in sidebar overlay */}
+        {sidebarOpen && (
+          <div className="lg:hidden fixed inset-0" style={{ zIndex: 9999 }}>
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/70"
+              onClick={() => setSidebarOpen(false)}
+              data-testid="sidebar-backdrop"
+            />
+            {/* Sidebar panel */}
+            <div
+              className="absolute top-0 left-0 bottom-0 w-[280px] bg-card border-r border-border shadow-2xl"
+              style={{ animation: 'slideInLeft 0.2s ease-out' }}
+            >
+              {/* Close button */}
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="absolute top-3 right-3 h-8 w-8 flex items-center justify-center rounded-md hover:bg-secondary/80 z-10"
+                data-testid="sidebar-close"
+                aria-label="Close menu"
+              >
+                <X size={18} />
+              </button>
+              <SidebarContent />
+            </div>
+          </div>
+        )}
+
         <main className="px-4 sm:px-6 lg:px-8 py-6 overflow-auto">
           {children}
         </main>
