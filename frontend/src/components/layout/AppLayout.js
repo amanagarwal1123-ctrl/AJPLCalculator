@@ -111,8 +111,8 @@ export default function AppLayout({ children }) {
           <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
             <div className="flex items-center justify-between px-3 sm:px-4 py-2 max-w-7xl mx-auto">
               <div className="flex items-center gap-2">
-                <img src="/ajpl-logo.png" alt="AJPL" className="h-8 w-auto object-contain" />
-                <span className="heading text-sm sm:text-base font-bold text-primary tracking-wider hidden sm:inline">AJPL Calculator</span>
+                <img src="/ajpl-logo.png" alt="AJPL" className="h-10 w-auto object-contain" />
+                <span className="heading text-base sm:text-lg font-bold text-primary tracking-wider hidden sm:inline">AJPL Calculator</span>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
                 <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">{user?.full_name}</span>
