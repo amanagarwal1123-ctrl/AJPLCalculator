@@ -23,9 +23,9 @@ const managerLinks = [
 
 const AppLogo = ({ size = 'default' }) => {
   const sizes = {
-    sm: 'h-7',
-    default: 'h-9',
-    lg: 'h-12',
+    sm: 'h-10',
+    default: 'h-14',
+    lg: 'h-20',
   };
   return (
     <div className="flex items-center gap-2">
