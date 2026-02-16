@@ -744,11 +744,15 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
     # Calculate items
     calculated_items = []
     for item in req.items:
-        if item.get('item_type') == 'diamond':
+        if item.get('item_type') == 'mrp':
+            # MRP items are already calculated by /calculate/mrp-item - pass through
+            calculated_items.append(item)
+        elif item.get('item_type') == 'diamond':
             calc = calculate_diamond_item(item)
+            calculated_items.append(calc)
         else:
             calc = calculate_gold_item(item)
-        calculated_items.append(calc)
+            calculated_items.append(calc)
 
     # Calculate bill totals
     totals = calculate_bill_totals(calculated_items, req.external_charges)
