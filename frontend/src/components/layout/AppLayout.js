@@ -143,17 +143,17 @@ export default function AppLayout({ children }) {
           <div className="flex items-center justify-between px-3 py-2">
             <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="sm"><Menu size={20} /></Button>
+                <Button variant="ghost" size="icon" className="h-11 w-11" data-testid="mobile-menu-button"><Menu size={24} /></Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[280px] p-0 bg-card border-border">
                 <NavContent />
               </SheetContent>
             </Sheet>
             <div className="flex items-center gap-2">
-              <img src="/ajpl-logo.png" alt="AJPL" className="h-7 w-auto object-contain" />
-              <span className="heading text-sm font-bold text-primary">AJPL Calculator</span>
+              <img src="/ajpl-logo.png" alt="AJPL" className="h-10 w-auto object-contain" />
+              <span className="heading text-base font-bold text-primary">AJPL Calculator</span>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut size={16} /></Button>
+            <Button variant="ghost" size="icon" className="h-11 w-11" onClick={handleLogout} data-testid="mobile-logout-button"><LogOut size={18} /></Button>
           </div>
         </div>
         <main className="px-4 sm:px-6 lg:px-8 py-6 overflow-auto">
