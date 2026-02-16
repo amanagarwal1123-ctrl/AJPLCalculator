@@ -331,33 +331,58 @@ export default function BillPage() {
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                {item.tag_number && <span className="mono text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{item.tag_number}</span>}
                                 <span className="font-medium text-sm sm:text-base">{item.item_name}</span>
                                 <span className={`px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs ${
-                                  item.item_type === 'diamond' ? 'bg-blue-500/20 text-blue-400' : 'bg-primary/20 text-primary'
-                                }`}>{item.item_type === 'diamond' ? 'Diamond' : 'Gold'}</span>
-                                <span className="text-[10px] sm:text-xs text-muted-foreground">{item.purity_name}</span>
+                                  item.item_type === 'diamond' ? 'bg-blue-500/20 text-blue-400' : item.item_type === 'mrp' ? 'bg-purple-500/20 text-purple-400' : 'bg-primary/20 text-primary'
+                                }`}>{item.item_type === 'diamond' ? 'Diamond' : item.item_type === 'mrp' ? 'MRP' : 'Gold'}</span>
+                                {item.purity_name && <span className="text-[10px] sm:text-xs text-muted-foreground">{item.purity_name}</span>}
                               </div>
-                              {/* Mobile: compact 2-col grid */}
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mt-2 text-xs text-muted-foreground">
-                                <span>Gross: <span className="text-foreground">{item.gross_weight}g</span></span>
-                                <span>Less: <span className="text-foreground">{item.less}g</span></span>
-                                <span>Net: <span className="mono text-foreground font-medium">{item.net_weight}g</span>{item.studded_less_grams > 0 && <span className="text-primary ml-1">(-{item.studded_less_grams}g)</span>}</span>
-                                <span>Rate: <span className="mono text-foreground">{formatCurrency(item.rate_per_10g)}/10g</span></span>
-                              </div>
-                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mt-1 text-xs">
-                                <span>Gold: <span className="mono text-primary">{formatCurrency(item.gold_value)}</span></span>
-                                <span>Making: <span className="mono">{formatCurrency(item.total_making)}</span></span>
-                                <span>Stone: <span className="mono">{formatCurrency(item.total_stone)}</span></span>
-                                {item.item_type === 'diamond' && <span>Studded: <span className="mono">{formatCurrency(item.total_studded)}</span></span>}
-                              </div>
+                              {item.item_type === 'mrp' ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mt-2 text-xs text-muted-foreground">
+                                  <span>Gross: <span className="text-foreground">{item.gross_weight}g</span></span>
+                                  <span>Net: <span className="mono text-foreground font-medium">{item.net_weight}g</span></span>
+                                  <span>MRP: <span className="mono text-foreground">{formatCurrency(item.mrp)}</span></span>
+                                  {item.total_discount > 0 && <span>Disc: <span className="mono text-destructive">-{formatCurrency(item.total_discount)}</span></span>}
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mt-2 text-xs text-muted-foreground">
+                                    <span>Gross: <span className="text-foreground">{item.gross_weight}g</span></span>
+                                    <span>Less: <span className="text-foreground">{item.less}g</span></span>
+                                    <span>Net: <span className="mono text-foreground font-medium">{item.net_weight}g</span>{item.studded_less_grams > 0 && <span className="text-primary ml-1">(-{item.studded_less_grams}g)</span>}</span>
+                                    <span>Rate: <span className="mono text-foreground">{formatCurrency(item.rate_per_10g)}/10g</span></span>
+                                  </div>
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mt-1 text-xs">
+                                    <span>Gold: <span className="mono text-primary">{formatCurrency(item.gold_value)}</span></span>
+                                    <span>Making: <span className="mono">{formatCurrency(item.total_making)}</span></span>
+                                    <span>Stone: <span className="mono">{formatCurrency(item.total_stone)}</span></span>
+                                    {item.item_type === 'diamond' && <span>Studded: <span className="mono">{formatCurrency(item.total_studded)}</span></span>}
+                                  </div>
+                                </>
+                              )}
+                              {/* Photos */}
+                              {item.photos && item.photos.length > 0 && (
+                                <div className="flex gap-2 mt-2 flex-wrap">
+                                  {item.photos.map((p, pi) => (
+                                    <img key={pi} src={`${process.env.REACT_APP_BACKEND_URL}${p}`} alt="" className="w-12 h-12 rounded object-cover border border-border" />
+                                  ))}
+                                </div>
+                              )}
                             </div>
                             <div className="flex flex-col items-end gap-1 shrink-0">
                               <span className="mono text-base sm:text-lg font-bold text-primary">{formatCurrency(item.total_amount)}</span>
                               {canEdit() && (
                                 <div className="flex gap-1">
-                                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate(`/bill/${billId}/edit-item/${idx}`)} data-testid={`edit-item-${idx}`}>
-                                    <Edit size={14} />
-                                  </Button>
+                                  <label className="h-8 w-8 p-0 flex items-center justify-center cursor-pointer text-muted-foreground hover:text-foreground">
+                                    <Camera size={14} />
+                                    <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handlePhotoUpload(idx, e.target.files?.[0])} data-testid={`photo-upload-${idx}`} />
+                                  </label>
+                                  {item.item_type !== 'mrp' && (
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate(`/bill/${billId}/edit-item/${idx}`)} data-testid={`edit-item-${idx}`}>
+                                      <Edit size={14} />
+                                    </Button>
+                                  )}
                                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive" onClick={() => removeItem(idx)} data-testid={`remove-item-${idx}`}>
                                     <Trash2 size={14} />
                                   </Button>
