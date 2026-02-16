@@ -18,6 +18,12 @@ import CustomerListPage from "@/pages/CustomerListPage";
 import CustomerHistoryPage from "@/pages/CustomerHistoryPage";
 import AllBillsPage from "@/pages/AllBillsPage";
 import ItemHistoryPage from "@/pages/ItemHistoryPage";
+import SalespeopleManagement from "@/pages/SalespeopleManagement";
+import FeedbackQuestionsManagement from "@/pages/FeedbackQuestionsManagement";
+import FeedbackPage from "@/pages/FeedbackPage";
+import CustomerProfilePage from "@/pages/CustomerProfilePage";
+import NotificationsPage from "@/pages/NotificationsPage";
+import MrpCalculator from "@/pages/MrpCalculator";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
