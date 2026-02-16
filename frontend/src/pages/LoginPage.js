@@ -150,7 +150,7 @@ export default function LoginPage() {
         <>
           <CardHeader className="text-center pb-2">
             <div className="lg:hidden inline-flex items-center justify-center mb-4 mx-auto">
-              <img src="/ajpl-logo.png" alt="AJPL" className="h-14 w-auto object-contain" />
+              <img src="/ajpl-logo.png" alt="AJPL" className="h-20 w-auto object-contain" />
             </div>
             <CardTitle className="heading text-2xl font-bold">Admin Login</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">Sign in with admin credentials</p>
@@ -222,7 +222,7 @@ export default function LoginPage() {
         <>
           <CardHeader className="text-center pb-2">
             <div className="lg:hidden inline-flex items-center justify-center mb-4 mx-auto">
-              <img src="/ajpl-logo.png" alt="AJPL" className="h-14 w-auto object-contain" />
+              <img src="/ajpl-logo.png" alt="AJPL" className="h-20 w-auto object-contain" />
             </div>
             <CardTitle className="heading text-2xl font-bold">Enter OTP</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
