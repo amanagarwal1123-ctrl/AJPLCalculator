@@ -355,6 +355,34 @@ export default function ItemCalculator() {
             </div>
           )}
 
+          {/* Step 1.5: Diamond Sub-Choice (Make Bill vs MRP) */}
+          {step === 'diamond_choice' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+              <button
+                onClick={() => selectDiamondChoice('make_bill')}
+                className="group p-8 rounded-2xl bg-card border-2 border-border hover:border-[hsl(196,70%,52%)]/50 transition-colors duration-200 text-center"
+                data-testid="diamond-make-bill"
+              >
+                <div className="w-20 h-20 mx-auto rounded-full bg-[hsl(196,70%,52%)]/10 flex items-center justify-center mb-4 group-hover:bg-[hsl(196,70%,52%)]/20">
+                  <Gem className="w-10 h-10 text-[hsl(196,70%,52%)]" />
+                </div>
+                <h2 className="heading text-2xl font-bold">Make Bill</h2>
+                <p className="text-sm text-muted-foreground mt-2">Full calculation with gold value, making charges & diamond rates</p>
+              </button>
+              <button
+                onClick={() => selectDiamondChoice('mrp')}
+                className="group p-8 rounded-2xl bg-card border-2 border-border hover:border-primary/50 transition-colors duration-200 text-center"
+                data-testid="diamond-mrp"
+              >
+                <div className="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20">
+                  <CircleDot className="w-10 h-10 text-primary" />
+                </div>
+                <h2 className="heading text-2xl font-bold">MRP</h2>
+                <p className="text-sm text-muted-foreground mt-2">Tag-based MRP with discount calculation & GST breakdown</p>
+              </button>
+            </div>
+          )}
+
           {/* Step 2: Rate Mode */}
           {step === 'rate_mode' && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
