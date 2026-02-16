@@ -317,6 +317,7 @@ export default function ItemCalculator() {
               <h1 className="heading text-lg font-bold text-primary">{isEditing ? 'Edit Item' : 'Add Item'}</h1>
               <p className="text-xs text-muted-foreground">
                 {step === 'type' && 'Select item type'}
+                {step === 'diamond_choice' && 'Diamond - Choose mode'}
                 {step === 'rate_mode' && `${itemType === 'diamond' ? 'Diamond' : 'Gold'} - Select rate mode`}
                 {step === 'purity' && `${rateMode} rates - Select purity`}
                 {step === 'calculate' && `${selectedPurity?.name} ${rateMode} - Calculate`}
