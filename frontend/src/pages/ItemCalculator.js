@@ -20,9 +20,11 @@ export default function ItemCalculator() {
   const [itemType, setItemType] = useState(''); // gold or diamond
   const [rateMode, setRateMode] = useState(''); // normal, ajpl, manual
   const [selectedPurity, setSelectedPurity] = useState(null);
+  const [diamondSubChoice, setDiamondSubChoice] = useState(''); // 'make_bill' or 'mrp'
 
   // Calculation fields
   const [itemName, setItemName] = useState('');
+  const [tagNumber, setTagNumber] = useState('');
   const [rate, setRate] = useState('');
   const [grossWeight, setGrossWeight] = useState('');
   const [less, setLess] = useState('');
