@@ -86,6 +86,19 @@ export default function ItemCalculator() {
 
   const selectType = (type) => {
     setItemType(type);
+    if (type === 'diamond') {
+      setStep('diamond_choice');
+    } else {
+      setStep('rate_mode');
+    }
+  };
+
+  const selectDiamondChoice = (choice) => {
+    setDiamondSubChoice(choice);
+    if (choice === 'mrp') {
+      navigate(`/bill/${billId}/mrp`);
+      return;
+    }
     setStep('rate_mode');
   };
 
