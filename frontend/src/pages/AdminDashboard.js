@@ -19,6 +19,7 @@ export default function AdminDashboard() {
   const [pendingOtps, setPendingOtps] = useState([]);
   const [otpLoading, setOtpLoading] = useState(false);
   const [copiedOtp, setCopiedOtp] = useState(null);
+  const [billTab, setBillTab] = useState('pending');
 
   useEffect(() => {
     loadData();
