@@ -110,6 +110,25 @@ export default function AdminDashboard() {
   const activeOtps = pendingOtps.filter(o => !o.verified && o.expires_at > now);
   const recentOtps = pendingOtps.slice(0, 10);
 
+  const pendingBills = bills.filter(b => b.status === 'sent' || b.status === 'edited');
+  const approvedBills = bills.filter(b => b.status === 'approved');
+  const draftBills = bills.filter(b => b.status === 'draft');
+
+  const statusBadge = (status) => {
+    const styles = { draft: 'bg-yellow-500/20 text-yellow-400', sent: 'bg-blue-500/20 text-blue-400', edited: 'bg-orange-500/20 text-orange-400', approved: 'bg-green-500/20 text-green-400' };
+    return <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${styles[status] || 'bg-gray-500/20 text-gray-400'}`}>{status}</span>;
+  };
+
+  const getTabBills = () => {
+    switch (billTab) {
+      case 'pending': return pendingBills;
+      case 'approved': return approvedBills;
+      case 'draft': return draftBills;
+      default: return bills;
+    }
+  };
+  const tabBills = getTabBills();
+
   return (
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
