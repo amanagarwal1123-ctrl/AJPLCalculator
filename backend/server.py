@@ -1506,18 +1506,34 @@ async def generate_bill_pdf(bill_id: str, user=Depends(get_current_user)):
         less_wt = item.get('less', 0)
         net_wt = item.get('net_weight', 0)
         
-        row_data = [
-            str(idx + 1),
-            item_name,
-            str(item.get('purity_name', '')),
-            f"{gross_wt:.3f}",
-            f"{less_wt:.3f}",
-            f"{net_wt:.3f}",
-            f"{item.get('rate_per_10g', 0):,.0f}",
-            f"{item.get('gold_value', 0):,.0f}",
-            f"{item.get('total_making', 0):,.0f}",
-            f"{item.get('total_stone', 0):,.0f}",
-        ]
+        is_mrp_item = item.get('item_type') == 'mrp'
+        
+        if is_mrp_item:
+            row_data = [
+                str(idx + 1),
+                item_name,
+                'MRP',
+                f"{gross_wt:.3f}",
+                '-',
+                f"{net_wt:.3f}",
+                f"{item.get('mrp', 0):,.0f}",
+                f"-{item.get('total_discount', 0):,.0f}" if item.get('total_discount', 0) > 0 else '-',
+                '-',
+                '-',
+            ]
+        else:
+            row_data = [
+                str(idx + 1),
+                item_name,
+                str(item.get('purity_name', '')),
+                f"{gross_wt:.3f}",
+                f"{less_wt:.3f}",
+                f"{net_wt:.3f}",
+                f"{item.get('rate_per_10g', 0):,.0f}",
+                f"{item.get('gold_value', 0):,.0f}",
+                f"{item.get('total_making', 0):,.0f}",
+                f"{item.get('total_stone', 0):,.0f}",
+            ]
         
         if has_diamond:
             row_data.append(f"{item.get('total_studded', 0):,.0f}")
