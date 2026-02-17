@@ -301,12 +301,11 @@ export default function ItemCalculator() {
         <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="flex items-center gap-3 px-4 py-3 max-w-5xl mx-auto">
             <Button variant="ghost" size="sm" onClick={() => {
-              if (step === 'type') navigate(`/bill/${billId}`);
+              if (step === 'calculate' || step === 'type') navigate(`/bill/${billId}`);
               else if (step === 'diamond_choice') setStep('type');
-              else if (step === 'calculate') setStep('purity');
               else if (step === 'purity') setStep('rate_mode');
               else if (step === 'rate_mode') setStep(itemType === 'diamond' ? 'diamond_choice' : 'type');
-              else setStep('type');
+              else navigate(`/bill/${billId}`);
             }} data-testid="back-button">
               <ArrowLeft size={18} />
             </Button>
