@@ -58,6 +58,7 @@ export default function SalesExecDashboard() {
   const handleMakeBill = async () => {
     if (!customerName.trim()) { toast.error('Customer Name is mandatory'); return; }
     if (!customerPhone.trim()) { toast.error('Phone Number is mandatory'); return; }
+    if (customerPhone.replace(/\D/g, '').length !== 10) { toast.error('Phone number must be exactly 10 digits'); return; }
     if (!customerLocation.trim()) { toast.error('Location is mandatory'); return; }
     if (!customerReference) { toast.error('Reference is mandatory'); return; }
     if (!salesperson) { toast.error('Please select a salesperson'); return; }
