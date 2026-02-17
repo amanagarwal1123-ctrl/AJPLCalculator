@@ -20,6 +20,8 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 
 ### Admin Features
 - [x] Dashboard with KPIs, OTP panel, recent bills
+- [x] **Bills with tabs: Pending, Approved, Draft, All** (Feb 2026)
+- [x] **Admin can approve pending bills directly** (Feb 2026)
 - [x] Rate Management (Normal & AJPL rate cards)
 - [x] Branch Management
 - [x] User Management
@@ -34,52 +36,61 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 
 ### Sales Executive Features
 - [x] Customer intake form with mandatory fields (name, phone, location, reference, salesperson)
+- [x] **Phone number 10-digit validation** (Feb 2026)
 - [x] Salesperson dropdown selection (admin manages salesperson list)
-- [x] Multi-bill management (active drafts, tab-like switching)
+- [x] **Multi-bill tab bar** showing active drafts at top of dashboard (Feb 2026)
 - [x] Gold item calculator with making/stone charges
 - [x] Diamond item calculator with studded charges (L/NL weight deduction)
-- [x] MRP Calculator mode - tag-based pricing with discounts & GST breakdown
+- [x] **MRP Calculator mode - now editable after saving** (Feb 2026)
 - [x] Tag number field on items (optional)
 - [x] Photo upload with items (camera + gallery)
+- [x] **Photos: openable in lightbox, removable per photo** (Feb 2026)
 - [x] Send to Manager with auto-redirect to feedback page
 - [x] Customer profile access from bill page
 
 ### Manager Features
 - [x] Bill review with Summary/View/Approve actions
+- [x] **Full bill details in Summary dialog** - gold value, making charge breakdowns, stone, studded, MRP details, totals (Feb 2026)
 - [x] Clickable customer names linking to profile page
 - [x] Notifications for birthday/anniversary reminders
 - [x] Bill status tabs (Pending, Approved, Draft, All)
+- [x] **Approve redirects to home dashboard** (Feb 2026)
+
+### Navigation & UX Fixes (Feb 2026)
+- [x] **Back button loop fixed** - Bill page back button goes to role-specific home
+- [x] Item calculator back button goes to bill page on first step
+- [x] Manager/Admin approve bill -> redirects to dashboard
 
 ### Customer Management
 - [x] Customer database with extended fields (email, DOB, anniversary, address, notes)
-- [x] Customer tier classification (Bronze to Diamond based on spending)
+- [x] **Customer tier classification calculated from actual bills** (Feb 2026 fix)
 - [x] Purchase history view
-- [x] Birthday/anniversary notification system with task tracking (done/pending)
-- [x] Pending tasks re-reminded next day if not completed
+- [x] Birthday/anniversary notification system with task tracking
 
 ### Feedback System
 - [x] Admin configurable feedback questions
 - [x] 1-10 rating radio buttons per question
 - [x] Auto-opens after "Send to Manager"
 - [x] Optional skip option
-- [x] Feedback attached to bill for manager/admin review
 
-### MRP Mode (New)
+### MRP Mode
 - [x] Tag number, item name, gross weight
-- [x] Studded weight section (diamond/solitaire/colored stones) - only weights, deducted from gross
-- [x] Net weight = gross - sum of studded weights
+- [x] Studded weight section (diamond/solitaire/colored stones) in carats
+- [x] Net weight = gross - sum(studded * 0.2)
 - [x] MRP field (in rupees, includes GST)
-- [x] Discount section: percentage or flat rupees (or both)
-- [x] After discount amount = MRP - discounts (this is WITH GST)
+- [x] Discount section: percentage or flat
+- [x] After discount = MRP - discounts (with GST)
 - [x] Amount without GST = after_discount / 1.03
-- [x] In items list, shows amount without GST (3% added at bill total)
+- [x] **Editable after saving** (Feb 2026)
 
-### UI/UX
-- [x] Mobile-responsive layouts across all dashboards
-- [x] Pure CSS mobile sidebar (replaced Radix Sheet for reliability)
-- [x] Bigger logos throughout app
-- [x] "Made with Emergent" badge hidden
-- [x] AJPL Calculator branding with custom logo
+### Bill Printing & PDF (Feb 2026 fixes)
+- [x] **Complete calculations shown** - making charge details, stone, studded breakdown
+- [x] **MRP items show MRP & Discount** instead of Rate/10g & Gold Value
+- [x] GST breakdown in totals section
+
+### Reports & Analytics (Feb 2026 fixes)
+- [x] **MRP items handled separately in analytics** - not counted as "Unknown" purity
+- [x] **Customer spending tiers calculated from actual bills** not cached total_spent
 
 ## Key API Endpoints
 - `POST /api/auth/request-otp` - Generate OTP
@@ -89,12 +100,13 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - `GET/POST/DELETE /api/feedback-questions` - Feedback question CRUD
 - `POST /api/bills/{id}/feedback` - Submit customer feedback
 - `GET /api/bills/{id}/feedback` - Get bill feedback
+- `GET /api/bills/{id}/summary` - **Full bill details** (Feb 2026)
+- `PUT /api/bills/{id}/approve` - Approve bill (admin + manager)
+- `DELETE /api/bills/{id}/items/{idx}/photos/{pidx}` - **Remove photo** (Feb 2026)
 - `GET/PUT /api/settings/tiers` - Customer tier settings
 - `GET /api/notifications` - Notifications with auto-generation
-- `PUT /api/notifications/{id}/done|pending` - Task management
 - `POST /api/upload/photo` - Upload item photo
 - `POST /api/calculate/mrp-item` - MRP calculation
-- `PUT /api/customers/{id}` - Update customer details
 
 ## Database Collections
 users, bills, customers, purities, rate_cards, item_names, branches, otps, salespeople, feedback_questions, feedbacks, notifications, settings
