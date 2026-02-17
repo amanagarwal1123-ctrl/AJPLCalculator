@@ -134,6 +134,27 @@ export default function SalesExecDashboard() {
 
         <main className="px-3 sm:px-4 py-4 sm:py-6 max-w-5xl mx-auto space-y-4 sm:space-y-6">
 
+          {/* Multi-Bill Tab Bar */}
+          {draftBills.length > 0 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1" data-testid="multi-bill-tabs">
+              {draftBills.map(bill => (
+                <button
+                  key={bill.id}
+                  onClick={() => navigate(`/bill/${bill.id}`)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-medium whitespace-nowrap bg-card border border-border border-b-0 hover:border-primary/30 transition-colors"
+                  data-testid={`tab-bill-${bill.id}`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-yellow-400 shrink-0" />
+                  <span className="truncate max-w-[100px]">{bill.customer_name}</span>
+                  <span className="mono text-[10px] text-muted-foreground">{formatCurrency(bill.grand_total)}</span>
+                </button>
+              ))}
+              <div className="px-2 py-2 rounded-t-lg text-xs font-medium bg-primary/10 border border-primary/30 border-b-0 text-primary">
+                <Plus size={14} className="inline mr-1" /> New
+              </div>
+            </div>
+          )}
+
           {/* Active Drafts - Quick Access */}
           {draftBills.length > 0 && (
             <div data-testid="active-drafts-section">
