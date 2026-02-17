@@ -140,6 +140,7 @@ function App() {
             <Route path="/bill/:billId/print" element={<PrivateRoute><BillPrintView /></PrivateRoute>} />
             <Route path="/bill/:billId/feedback" element={<FeedbackPage />} />
             <Route path="/bill/:billId/mrp" element={<PrivateRoute><MrpCalculator /></PrivateRoute>} />
+            <Route path="/bill/:billId/edit-mrp/:itemIndex" element={<PrivateRoute><MrpCalculator /></PrivateRoute>} />
             <Route path="/customer/:customerId" element={<PrivateRoute><CustomerProfilePage /></PrivateRoute>} />
           </Routes>
           <Toaster position="top-right" richColors />
