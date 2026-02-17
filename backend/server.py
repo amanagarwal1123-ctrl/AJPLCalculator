@@ -948,52 +948,45 @@ async def list_bills(
 
 @api_router.get("/bills/{bill_id}/summary")
 async def get_bill_summary(bill_id: str, user=Depends(get_current_user)):
-    """Get a simplified summary of a bill for manager view.
-    Shows items with rates, making details, diamond rates - but NOT final amounts."""
+    """Get full detailed summary of a bill for manager/admin view."""
     bill = await db.bills.find_one({"id": bill_id})
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
     
     bill_data = serialize_doc(bill)
     
-    # Build simplified item summaries
+    # Return FULL item details - nothing hidden
     item_summaries = []
     for item in bill_data.get('items', []):
         summary = {
             "item_name": item.get('item_name'),
             "item_type": item.get('item_type', 'gold'),
+            "tag_number": item.get('tag_number', ''),
             "purity_name": item.get('purity_name'),
             "rate_mode": item.get('rate_mode'),
             "gross_weight": item.get('gross_weight', 0),
             "less": item.get('less', 0),
             "net_weight": item.get('net_weight', 0),
             "rate_per_10g": item.get('rate_per_10g', 0),
-            "making_charges": [],
-            "stone_charges": [],
-            "studded_charges": [],
+            "gold_value": item.get('gold_value', 0),
+            "total_making": item.get('total_making', 0),
+            "total_stone": item.get('total_stone', 0),
+            "total_studded": item.get('total_studded', 0),
+            "total_amount": item.get('total_amount', 0),
+            "studded_less_grams": item.get('studded_less_grams', 0),
+            "making_charges": item.get('making_charges', []),
+            "stone_charges": item.get('stone_charges', []),
+            "studded_charges": item.get('studded_charges', []),
+            # MRP fields
+            "mrp": item.get('mrp', 0),
+            "total_discount": item.get('total_discount', 0),
+            "after_discount": item.get('after_discount', 0),
+            "amount_without_gst": item.get('amount_without_gst', 0),
+            "gst_amount_item": item.get('gst_amount', 0),
+            "studded_weights": item.get('studded_weights', []),
+            "discounts": item.get('discounts', []),
+            "photos": item.get('photos', []),
         }
-        # Making charge details (type + value only, no calculated amount)
-        for mc in item.get('making_charges', []):
-            summary["making_charges"].append({
-                "type": mc.get('type'),
-                "value": mc.get('value', 0),
-                "quantity": mc.get('quantity', 1),
-            })
-        # Stone charge details
-        for sc in item.get('stone_charges', []):
-            summary["stone_charges"].append({
-                "type": sc.get('type'),
-                "value": sc.get('value', 0),
-                "quantity": sc.get('quantity', 1),
-            })
-        # Diamond rates only (carats + rate per carat, no amounts)
-        for sc in item.get('studded_charges', []):
-            summary["studded_charges"].append({
-                "type": sc.get('type'),
-                "carats": sc.get('carats', 0),
-                "rate_per_carat": sc.get('rate_per_carat', 0),
-                "less_type": sc.get('less_type', 'NL'),
-            })
         item_summaries.append(summary)
     
     return {
@@ -1001,10 +994,20 @@ async def get_bill_summary(bill_id: str, user=Depends(get_current_user)):
         "bill_number": bill_data.get('bill_number'),
         "customer_name": bill_data.get('customer_name'),
         "customer_phone": bill_data.get('customer_phone'),
+        "customer_location": bill_data.get('customer_location', ''),
+        "customer_reference": bill_data.get('customer_reference', ''),
+        "salesperson_name": bill_data.get('salesperson_name', ''),
         "executive_name": bill_data.get('executive_name'),
         "date": bill_data.get('created_at', '')[:10],
         "status": bill_data.get('status'),
         "items": item_summaries,
+        "external_charges": bill_data.get('external_charges', []),
+        "items_total": bill_data.get('items_total', 0),
+        "external_charges_total": bill_data.get('external_charges_total', 0),
+        "subtotal_without_gst": bill_data.get('subtotal_without_gst', 0),
+        "gst_percent": bill_data.get('gst_percent', 3),
+        "gst_amount": bill_data.get('gst_amount', 0),
+        "grand_total": bill_data.get('grand_total', 0),
     }
 
 @api_router.get("/bills/{bill_id}")
@@ -1097,6 +1100,7 @@ async def get_dashboard_analytics(
     item_analysis = {}
     gold_total = 0
     diamond_total = 0
+    mrp_total = 0
     reference_analysis = {}
     
     for bill in all_bills:
@@ -1109,25 +1113,37 @@ async def get_dashboard_analytics(
             reference_analysis[ref]['total'] += bill.get('grand_total', 0)
         
         for item in bill.get('items', []):
-            purity = item.get('purity_name', 'Unknown')
+            item_type = item.get('item_type', 'gold')
             iname = item.get('item_name', 'Unknown')
             amount = item.get('total_amount', 0)
             
-            if purity not in kt_analysis:
-                kt_analysis[purity] = {'count': 0, 'total': 0}
-            kt_analysis[purity]['count'] += 1
-            kt_analysis[purity]['total'] += amount
-            
-            key = f"{purity}-{iname}"
-            if key not in item_analysis:
-                item_analysis[key] = {'purity': purity, 'item_name': iname, 'count': 0, 'total': 0}
-            item_analysis[key]['count'] += 1
-            item_analysis[key]['total'] += amount
-            
-            if item.get('item_type') == 'diamond':
+            if item_type == 'mrp':
+                # MRP items: separate category, skip KT analysis
+                mrp_total += amount
                 diamond_total += amount
+                key = f"MRP-{iname}"
+                if key not in item_analysis:
+                    item_analysis[key] = {'purity': 'MRP', 'item_name': iname, 'count': 0, 'total': 0}
+                item_analysis[key]['count'] += 1
+                item_analysis[key]['total'] += amount
             else:
-                gold_total += amount
+                purity = item.get('purity_name', 'Unknown')
+                
+                if purity not in kt_analysis:
+                    kt_analysis[purity] = {'count': 0, 'total': 0}
+                kt_analysis[purity]['count'] += 1
+                kt_analysis[purity]['total'] += amount
+                
+                key = f"{purity}-{iname}"
+                if key not in item_analysis:
+                    item_analysis[key] = {'purity': purity, 'item_name': iname, 'count': 0, 'total': 0}
+                item_analysis[key]['count'] += 1
+                item_analysis[key]['total'] += amount
+                
+                if item_type == 'diamond':
+                    diamond_total += amount
+                else:
+                    gold_total += amount
     
     # Daily sales trend (last 30 days)
     daily_sales = {}
@@ -1235,7 +1251,19 @@ async def get_customer_frequency(user=Depends(get_current_user)):
             cohorts["6+ visits"]["count"] += 1
             cohorts["6+ visits"]["total_spent"] += spent
     
-    # Spending tiers
+    # Calculate actual spending from bills (not cached total_spent)
+    all_bills = await db.bills.find(
+        {"status": {"$in": ["sent", "approved", "edited"]}}
+    ).to_list(10000)
+    customer_bill_spending = {}
+    for bill in all_bills:
+        phone = bill.get('customer_phone', '')
+        if phone:
+            if phone not in customer_bill_spending:
+                customer_bill_spending[phone] = 0
+            customer_bill_spending[phone] += bill.get('grand_total', 0)
+
+    # Spending tiers (calculated from actual bills per customer)
     spending_tiers = {
         "Under 25K": {"count": 0, "total_spent": 0},
         "25K - 50K": {"count": 0, "total_spent": 0},
@@ -1245,7 +1273,8 @@ async def get_customer_frequency(user=Depends(get_current_user)):
     }
     
     for c in customers:
-        spent = c.get('total_spent', 0)
+        phone = c.get('phone', '')
+        spent = customer_bill_spending.get(phone, 0)
         if spent < 25000:
             spending_tiers["Under 25K"]["count"] += 1
             spending_tiers["Under 25K"]["total_spent"] += spent
@@ -1824,6 +1853,29 @@ async def serve_upload(filename: str):
     if not filepath.exists():
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(filepath)
+
+@api_router.delete("/bills/{bill_id}/items/{item_index}/photos/{photo_index}")
+async def remove_item_photo(bill_id: str, item_index: int, photo_index: int, user=Depends(get_current_user)):
+    """Remove a photo from a bill item."""
+    bill = await db.bills.find_one({"id": bill_id})
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+    items = bill.get('items', [])
+    if item_index >= len(items):
+        raise HTTPException(status_code=404, detail="Item not found")
+    photos = items[item_index].get('photos', [])
+    if photo_index >= len(photos):
+        raise HTTPException(status_code=404, detail="Photo not found")
+    photo_url = photos[photo_index]
+    filename = photo_url.split('/')[-1]
+    filepath = UPLOAD_DIR / filename
+    if filepath.exists():
+        filepath.unlink()
+    photos.pop(photo_index)
+    items[item_index]['photos'] = photos
+    await db.bills.update_one({"id": bill_id}, {"$set": {"items": items}})
+    updated = await db.bills.find_one({"id": bill_id})
+    return serialize_doc(updated)
 
 # ============ MRP CALCULATION ============
 @api_router.post("/calculate/mrp-item")
