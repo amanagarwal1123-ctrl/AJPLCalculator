@@ -74,6 +74,16 @@ export default function AdminDashboard() {
     }
   };
 
+  const approveBill = async (billId) => {
+    try {
+      await apiClient.put(`/bills/${billId}/approve`);
+      toast.success('Bill approved!');
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to approve');
+    }
+  };
+
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
   };
