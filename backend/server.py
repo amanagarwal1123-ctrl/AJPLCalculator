@@ -1809,8 +1809,7 @@ async def generate_notifications():
                         })
             except Exception:
                 pass
-    # Re-remind pending tasks from yesterday
-    yesterday = (today_ist - timedelta(days=1)).strftime("%Y-%m-%d")
+    # Re-remind pending tasks from before today
     old_pending = await db.notifications.find({
         "status": "pending",
         "due_date": {"$lt": today_ist.strftime("%Y-%m-%d")},
