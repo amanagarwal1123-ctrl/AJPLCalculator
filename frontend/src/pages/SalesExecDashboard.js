@@ -189,8 +189,8 @@ export default function SalesExecDashboard() {
                   <Input id="cname" placeholder="Customer name" value={customerName} onChange={e => setCustomerName(e.target.value)} className="h-11 bg-secondary/50" data-testid="customer-name-input" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="cphone" className="text-sm">Phone Number *</Label>
-                  <Input id="cphone" placeholder="Phone number" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="h-11 bg-secondary/50" data-testid="customer-phone-input" />
+                  <Label htmlFor="cphone" className="text-sm">Phone Number * (10 digits)</Label>
+                  <Input id="cphone" placeholder="Phone number" value={customerPhone} onChange={e => setCustomerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} className="h-11 bg-secondary/50" data-testid="customer-phone-input" inputMode="numeric" maxLength={10} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cloc" className="text-sm">Location *</Label>
