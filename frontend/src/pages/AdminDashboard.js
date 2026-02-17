@@ -245,21 +245,35 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* Recent Bills */}
+        {/* Bills with Tabs */}
         <Card className="bg-card border-border shadow-[var(--shadow-elev-1)]">
           <CardHeader className="pb-3">
-            <CardTitle className="heading text-lg sm:text-xl">Recent Bills</CardTitle>
+            <CardTitle className="heading text-lg sm:text-xl">Bills</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Tab chips */}
+            <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1" data-testid="admin-bill-tabs">
+              {[
+                { key: 'pending', label: 'Pending', count: pendingBills.length, color: 'text-[hsl(38,85%,55%)]' },
+                { key: 'approved', label: 'Approved', count: approvedBills.length, color: 'text-[hsl(160,52%,46%)]' },
+                { key: 'draft', label: 'Drafts', count: draftBills.length, color: 'text-yellow-400' },
+                { key: 'all', label: 'All', count: bills.length, color: 'text-[hsl(196,70%,52%)]' },
+              ].map(t => (
+                <button key={t.key} onClick={() => setBillTab(t.key)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${billTab === t.key ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-secondary/50 text-muted-foreground border border-transparent hover:bg-secondary'}`} data-testid={`admin-tab-${t.key}`}>
+                  {t.label} ({t.count})
+                </button>
+              ))}
+            </div>
+
             {loading ? (
               <p className="text-muted-foreground text-center py-8">Loading...</p>
-            ) : bills.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No bills yet</p>
+            ) : tabBills.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No bills found</p>
             ) : (
               <>
                 {/* Mobile card view */}
                 <div className="md:hidden space-y-3">
-                  {bills.slice(0, 10).map(bill => (
+                  {tabBills.slice(0, 20).map(bill => (
                     <div key={bill.id} className="p-3 rounded-lg bg-secondary/20 border border-border" data-testid={`admin-bill-card-${bill.id}`}>
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
@@ -268,11 +282,7 @@ export default function AdminDashboard() {
                           <p className="text-xs text-muted-foreground mt-0.5">by {bill.executive_name}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                            bill.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400' :
-                            bill.status === 'sent' ? 'bg-blue-500/20 text-blue-400' :
-                            'bg-green-500/20 text-green-400'
-                          }`}>{bill.status}</span>
+                          {statusBadge(bill.status)}
                           <p className="mono text-sm font-bold text-primary mt-1">{formatCurrency(bill.grand_total)}</p>
                         </div>
                       </div>
@@ -280,6 +290,11 @@ export default function AdminDashboard() {
                         <Button variant="secondary" size="sm" className="flex-1 h-9" onClick={() => navigate(`/bill/${bill.id}`)} data-testid={`view-bill-${bill.id}`}>
                           <Eye size={14} className="mr-1" /> View
                         </Button>
+                        {(bill.status === 'sent' || bill.status === 'edited') && (
+                          <Button size="sm" className="h-9 bg-[hsl(160,52%,46%)] hover:bg-[hsl(160,52%,40%)] text-white" onClick={() => approveBill(bill.id)} data-testid={`approve-bill-${bill.id}`}>
+                            <CheckCircle size={14} className="mr-1" /> Approve
+                          </Button>
+                        )}
                         <Button variant="secondary" size="sm" className="h-9 text-destructive" onClick={() => deleteBill(bill.id)} data-testid={`delete-bill-${bill.id}`}>
                           <Trash2 size={14} />
                         </Button>
@@ -303,28 +318,21 @@ export default function AdminDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {bills.slice(0, 20).map(bill => (
-                        <TableRow key={bill.id} className="border-border hover:bg-secondary/50 cursor-pointer">
+                      {tabBills.slice(0, 30).map(bill => (
+                        <TableRow key={bill.id} className="border-border hover:bg-secondary/50">
                           <TableCell className="mono text-sm">{bill.bill_number}</TableCell>
                           <TableCell>{bill.customer_name}</TableCell>
                           <TableCell className="text-muted-foreground">{bill.executive_name}</TableCell>
-                          <TableCell>
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                              bill.status === 'draft' ? 'bg-yellow-500/20 text-yellow-400' :
-                              bill.status === 'sent' ? 'bg-blue-500/20 text-blue-400' :
-                              'bg-green-500/20 text-green-400'
-                            }`}>{bill.status}</span>
-                          </TableCell>
+                          <TableCell>{statusBadge(bill.status)}</TableCell>
                           <TableCell className="mono text-right font-medium">{formatCurrency(bill.grand_total)}</TableCell>
                           <TableCell className="text-muted-foreground text-sm">{bill.created_at?.slice(0, 10)}</TableCell>
                           <TableCell>
                             <div className="flex gap-1">
-                              <Button variant="ghost" size="sm" onClick={() => navigate(`/bill/${bill.id}`)} data-testid={`view-bill-${bill.id}`}>
-                                <Eye size={14} />
-                              </Button>
-                              <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteBill(bill.id)} data-testid={`delete-bill-${bill.id}`}>
-                                <Trash2 size={14} />
-                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => navigate(`/bill/${bill.id}`)} data-testid={`view-bill-${bill.id}`}><Eye size={14} /></Button>
+                              {(bill.status === 'sent' || bill.status === 'edited') && (
+                                <Button variant="ghost" size="sm" className="text-green-400" onClick={() => approveBill(bill.id)} data-testid={`approve-bill-${bill.id}`}><CheckCircle size={14} className="mr-1" /> Approve</Button>
+                              )}
+                              <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteBill(bill.id)} data-testid={`delete-bill-${bill.id}`}><Trash2 size={14} /></Button>
                             </div>
                           </TableCell>
                         </TableRow>
