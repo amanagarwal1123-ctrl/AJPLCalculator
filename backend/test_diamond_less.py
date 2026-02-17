@@ -11,7 +11,7 @@ from datetime import datetime
 
 class DiamondLessAPITester:
     def __init__(self):
-        self.base_url = "https://otp-bills.preview.emergentagent.com/api"
+        self.base_url = "https://farm-exec-flow.preview.emergentagent.com/api"
         self.token = None
         self.tests_run = 0
         self.tests_passed = 0
