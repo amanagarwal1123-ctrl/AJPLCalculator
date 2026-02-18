@@ -317,7 +317,7 @@ export default function BillPage() {
                                     <div className="mt-1.5 text-[10px] text-muted-foreground">
                                       Making: {item.making_charges.map((mc, mi) => (
                                         <span key={mi} className="mr-2">
-                                          {mc.type === 'percentage' ? `${mc.value}% of 24KT` : mc.type === 'per_gram' ? `${formatCurrency(mc.value)}/g` : `${formatCurrency(mc.value)} x${mc.quantity}pc`}
+                                          {mc.type === 'percentage' ? <>{mc.value}% <sub className="text-primary">{mc.making_per_gram ? `₹${Number(mc.making_per_gram).toFixed(0)}/g` : ''}</sub></> : mc.type === 'per_gram' ? `₹${mc.value}/g` : `₹${mc.value} x${mc.quantity}pc`}
                                         </span>
                                       ))}
                                     </div>
