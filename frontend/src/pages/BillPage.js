@@ -470,8 +470,9 @@ export default function BillPage() {
 
         {/* Photo Lightbox */}
         <Dialog open={!!lightboxImg} onOpenChange={() => setLightboxImg(null)}>
-          <DialogContent className="bg-black/95 border-none max-w-3xl p-2">
+          <DialogContent className="bg-black/95 border-none max-w-3xl p-2" aria-describedby="photo-preview-desc">
             <DialogTitle className="sr-only">Photo Preview</DialogTitle>
+            <p id="photo-preview-desc" className="sr-only">Full size item photo</p>
             {lightboxImg && <img src={lightboxImg} alt="Item photo" className="w-full h-auto max-h-[80vh] object-contain rounded" />}
           </DialogContent>
         </Dialog>
