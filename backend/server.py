@@ -219,6 +219,7 @@ class FeedbackQuestionCreate(BaseModel):
 class FeedbackSubmit(BaseModel):
     ratings: List[Dict[str, Any]]  # [{question_id, question, rating}]
     customer_name: Optional[str] = ""
+    additional_comments: Optional[str] = ""
 
 class TierSettingsUpdate(BaseModel):
     tiers: List[Dict[str, Any]]  # [{name, min_amount, max_amount}]
