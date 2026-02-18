@@ -755,6 +755,12 @@ async def create_or_get_customer(req: CustomerCreate, user=Depends(get_current_u
     return serialize_doc(customer_doc)
 
 # ============ BILL MANAGEMENT ============
+async def _get_daily_serial():
+    """Get the next daily serial number (resets daily)."""
+    today = datetime.now(IST).strftime("%Y-%m-%d")
+    count = await db.bills.count_documents({"created_date": today})
+    return count + 1
+
 @api_router.post("/bills")
 async def create_bill(req: BillCreate, user=Depends(get_current_user)):
     # Create or get customer
