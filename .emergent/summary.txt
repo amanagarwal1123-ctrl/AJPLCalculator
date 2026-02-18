@@ -8,27 +8,26 @@ The user provided a large list of features and bug fixes to be implemented in a 
     -   Sales executives must select their name from this list when creating a bill.
 -   **Feature: Customer Relationship Management (CRM):**
     -   Executives should be able to open a dedicated customer page from the billing screen to view/edit details.
-    -   Customers should be tiered (e.g., Bronze, Silver, Gold) based on purchase value, with configurable tiers in the admin panel.
-    -   Generate in-app notifications for the responsible manager/executive for customer birthdays/anniversaries or for high-value customers who haven't purchased in a while.
-    -   These notifications should be actionable (mark as pending/done).
+    -   Customers should be tiered (e.g., Bronze, Silver, Gold) based on purchase value.
+    -   Generate in-app notifications for customer birthdays/anniversaries or for inactive high-value customers.
 -   **Feature: Customer Feedback:**
-    -   Create an optional feedback form that appears after a bill is sent to the manager.
-    -   Admin should be able to create the feedback questions.
-    -   Customer ratings (1-10) should be attached to the bill for admin/manager review.
+    -   Create an optional feedback form that appears after a bill is sent.
+    -   Admin should be able to create the feedback questions. A free-text box for suggestions should be included.
 -   **Feature: Enhanced Billing & Security:**
     -   Terminate all manager and sales executive sessions daily at 10 PM IST.
     -   Make several fields (Item Name, Customer Name, Phone, etc.) mandatory in the billing form.
-    -   After Send to Manager, automatically navigate to the feedback page, and then to the home page.
     -   Implement a tabbed interface for executives to manage multiple bills simultaneously.
-    -   Allow adding photos to items.
+    -   Allow adding/viewing/editing photos to items.
     -   Add an optional Tag Number field to items.
+    -   Implement single-device login for non-admin users, with an admin panel to view and terminate sessions.
+    -   Add daily serial numbers to bills, starting from 1 each day.
+    -   Add a toggle for admins to mark if a bill has been entered into MMI.
 -   **Feature: MRP Calculation Mode:**
-    -   When Diamond item type is selected, offer two modes: Make Bill (existing flow) and MRP.
-    -   The MRP mode should capture Tag Number, Gross Weight, Studded Weights (Diamond, Solitaire, etc. in carats), and a final MRP in rupees.
-    -   The entered MRP is inclusive of GST. The system should calculate discounts, then derive the pre-GST amount and GST amount for final billing. Net weight is calculated by converting studded carats to grams (1ct = 0.2g) and subtracting from gross weight.
--   **Manager Flow:**
-    -   After a manager approves a bill, the page should auto-reload to the dashboard.
-    -   The manager's bill list should have clickable customer names to view their history/profile.
+    -   Implement an MRP mode for Diamond items with specific fields and GST-inclusive calculation logic.
+-   **Admin & Manager Flow Enhancements:**
+    -   Admins should be able to see and approve pending bills.
+    -   The bill list for admins should be grouped by date, showing key details.
+    -   Fix navigation loops.
 
 **PRODUCT REQUIREMENTS:**
 (Refer to the detailed list in )
@@ -36,83 +35,76 @@ The user provided a large list of features and bug fixes to be implemented in a 
 **User's preferred language**: English
 
 **what currently exists?**
-A significantly enhanced version of the FARM application. All requested backend models and API endpoints for the new features (Salespeople, Customer CRM, Feedback, MRP items, Photo Uploads) have been created and are functional. The frontend has been updated with several new pages (, , , , etc.) and integrated into the routing.
+A feature-rich full-stack FARM application for a jewelry business. In this session, the agent addressed two large batches of user feedback, implementing numerous features and bug fixes.
 
 Key implemented features include:
--   JWT tokens for non-admins now expire at 10 PM IST.
--   The mobile menu bug is fixed with a custom CSS-based slide-in sidebar.
--   Logos are larger across the app.
--   Mandatory field validation is active on the billing form.
--   The MRP calculation flow is fully implemented on both frontend and backend, including the correct carat-to-gram conversion and GST-inclusive logic.
--   The admin dashboard has links to manage Salespeople and Feedback Questions.
--   The core logic for most of the user's requests is in place, but comprehensive user verification is pending.
+- **Core User Requests:** Salesperson management, CRM Tiers, Customer Feedback, MRP Calculation, and Photo Uploads.
+- **Tabbed Billing UI:** Sales executives can now manage multiple bill drafts simultaneously using a tab-based interface.
+- **Advanced Admin Dashboard:** The admin dashboard has been completely overhauled to show bills grouped by date, display daily serial numbers, include an MMI entered toggle, and provide a panel for managing active user sessions.
+- **Session Control:** Single-device login is enforced for non-admin roles. Admins can view and terminate any active session.
+- **Bug Fixes & UX:** Fixed numerous navigation loops, corrected calculation logic for customer tiers and MRP items, improved bill printouts, and implemented 10-digit phone number validation. MRP items are now editable after being saved.
+- **UI Enhancements:** The display format for making charges has been updated across the application for clarity.
 
 **Last working item**:
--   Last item agent was working: Fixing the MRP calculation logic. The user specified that studded item weights (diamonds, etc.) are entered in **carats**, which must be converted to grams (1 carat = 0.2g) before being subtracted from the gross weight (in grams) to calculate the net weight.
+-   Last item agent was working: Implementing a batch of 7 user-requested features, including single-device session management, an admin panel for active sessions, date-grouped bills on the admin dashboard, daily bill serial numbers, an MMI entered toggle, a new making charge display format, and a text box for additional feedback.
 -   Status: USER VERIFICATION PENDING
 -   Agent Testing Done: Y
--   Which testing method agent to use? backend testing agent. Create a specific test case to validate the MRP calculation endpoint () with carat-to-gram conversion to prevent future regressions.
+-   Which testing method agent to use? The next step is user verification. The agent should guide the user to test the latest features. If bugs are found, use the  for regression testing.
 -   User Testing Done: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1 (P0): Full-scale User Verification.** The user has not yet tested the vast number of features implemented in this session. This is the highest priority before proceeding. The user needs to test all flows from admin, manager, and sales executive perspectives.
--   **Issue 2 (P0): Missing Tabbed Billing UI.** The user requested a tab-like interface for sales executives to manage multiple bills, similar to browser tabs. This frontend feature was part of the plan but was missed during implementation.
+-   Issue 1: User Verification of all new features (P0)
+-   Issue 2: Photo viewing functionality for Admins may be broken (P1)
 
-    -   **Issues Detail:**
-        -   **Issue 1: Full-scale User Verification**
-            -   **Attempted fixes:** N/A. The work is complete from the agent's side.
-            -   **Next debug checklist:** Guide the user through testing each new feature systematically. Be prepared to fix bugs based on their feedback.
-            -   **Why fix this issue and what will be achieved with the fix?** To validate that the dozen new features meet the user's expectations and work correctly end-to-end.
-            -   **Status:** USER VERIFICATION PENDING
-            -   **Is recurring issue?** N
-            -   **Should Test frontend/backend/both after fix?** Both.
-            -   **Blocked on other issue:** None.
-        -   **Issue 2: Missing Tabbed Billing UI**
-            -   **Attempted fixes:** None. The feature was overlooked.
-            -   **Next debug checklist:**
-                1.  Design a UI component for managing tabs in .
-                2.  Each tab should represent an active bill state. The + button should create a new bill state.
-                3.  Manage the state for multiple active bills in the frontend, possibly using a context or a state management library.
-                4.  Ensure that switching tabs correctly loads the corresponding bill data.
-            -   **Why fix this issue and what will be achieved with the fix?** To fulfill user requirement #11, allowing sales executives to work on multiple customer bills concurrently and efficiently.
-            -   **Status:** NOT STARTED
-            -   **Is recurring issue?** N
-            -   **Should Test frontend/backend/both after fix?** Frontend.
-            -   **Blocked on other issue:** None.
+**Issues Detail:**
+-   **Issue 1: User Verification of all new features**
+    -   **Attempted fixes:** N/A. The work was just completed and tested by the agent.
+    -   **Next debug checklist:** Guide the user through testing the two major batches of features implemented in this session, especially the 7 most recent enhancements. Be prepared to address any feedback or bugs.
+    -   **Why fix this issue and what will be achieved with the fix?** To confirm that the large number of newly implemented features meet user requirements and are working correctly end-to-end.
+    -   **Status:** USER VERIFICATION PENDING
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** Both.
+    -   **Blocked on other issue:** None.
+-   **Issue 2: Photo viewing functionality for Admins may be broken**
+    -   **Attempted fixes:** The agent implemented photo management logic in  and the testing agent verified it. However, the user explicitly mentioned The photos are still not opening in admin login just before this last batch of work began.
+    -   **Next debug checklist:**
+        1.  Ask the user to test the photo viewing/editing/deleting functionality again from the admin account.
+        2.  If it fails, check the browser console for errors on  when logged in as an admin.
+        3.  Verify the API calls and responses for fetching bill data and photos.
+    -   **Why fix this issue and what will be achieved with the fix?** This is a core user requirement for managing bill items.
+    -   **Status:** USER VERIFICATION PENDING
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** Both.
+    -   **Blocked on other issue:** None.
 
 **In progress Task List**:
 -   None.
 
 **Upcoming and Future Tasks**
--   **P0: Implement Tabbed Billing UI:** Implement the missing frontend for multi-bill management as described in All Pending/In progress Issue list.
--   **P1: Comprehensive Testing and Bug Fixing:** After the user completes their verification, address any bugs or feedback they provide.
+-   **P1: Implement Frontend for Item Name Editing:** The backend API endpoint () was created, but the frontend UI for an admin to edit an item's name is missing. This needs to be added, likely on the  or a similar admin-facing view.
+-   **P2: Comprehensive Bug Fixing:** Address any and all bugs reported by the user during their verification phase.
 
 **Completed work in this session**
--   **Bugfix: Mobile Navigation:** Replaced the non-functional  component with a custom, pure CSS slide-in sidebar in  and , fixing the mobile menu.
--   **Bugfix: MRP Calculation:**
-    -   Fixed backend logic in  to correctly process and save MRP items without zeroing them out.
-    -   Corrected the MRP calculation to handle GST-inclusive prices as per user specs.
-    -   Implemented the carat-to-gram conversion for studded items in both  (frontend) and  (backend).
--   **UI Enhancement: Bigger Logo:** Increased logo size in , , and .
--   **Backend Feature Implementation (server.py & models.py):**
-    -   **Session Management:** Set JWT expiry to 10 PM IST for non-admins using .
-    -   **Salesperson Mgmt:** Added  CRUD endpoints and  model.
-    -   **CRM & Notifications:** Added , ,  models and associated API endpoints.
-    -   **Feedback System:** Added ,  models and endpoints for admin to manage questions and for users to submit feedback.
-    -   **Photo Uploads:** Added a placeholder endpoint  and updated  model.
--   **Frontend Feature Implementation:**
-    -   **New Admin Pages:** Created  and .
-    -   **New User Pages:** Created , , and .
-    -   **MRP Flow:** Created  and integrated it into  as a new billing mode for Diamond items.
-    -   **Billing Form Enhancements:**
-        -   Added a Salesperson dropdown to .
-        -   Enforced mandatory fields with client-side validation in .
-        -   Added an optional Tag Number field in .
-    -   **Routing:** Updated  with routes for all new pages.
-    -   **Manager Dashboard:** Updated  to redirect on approval and make customer names clickable.
+-   **Feature: Tabbed Multi-Bill UI:** Implemented a tabbed interface for sales executives on . (Fulfills a major requirement from the previous handoff).
+-   **Feature: Advanced Session Management:**
+    -   Enforced single-device login for non-admins. ()
+    -   Created an admin panel to view and terminate active sessions. (, )
+-   **Feature: Admin Dashboard Overhaul ():**
+    -   Bills are now grouped by date.
+    -   Added display for daily serial numbers, salesperson, and other details in the bill list.
+    -   Implemented an MMI Entered toggle for each bill.
+    -   Gave admins the ability to approve pending bills.
+-   **Feature: Daily Bill Serial Numbers:** Logic added to  to assign an auto-incrementing serial number to bills, resetting daily.
+-   **Bugfix & Enhancement Batch:**
+    -   Made MRP items editable after being saved (, ).
+    -   Fixed navigation loops on manager and item pages (, ).
+    -   Corrected customer tier calculation logic in reports ().
+    -   Added 10-digit validation to phone number fields ().
+    -   Improved making charge display format across the app (, , etc.).
+    -   Added a text box for suggestions on the feedback form (, ).
 
 **Earlier issues found/mentioned but not fixed**
--   **Tabbed interface for multi-billing:** As noted above, the frontend UI for this feature was not implemented.
+-   **Frontend for Item Name Editing:** As part of the last user request, the agent created a backend API for admins to edit item names but did not implement the corresponding user interface on the frontend.
 
 **Known issue recurrence from previous fork**
 -   N/A
@@ -122,73 +114,63 @@ Key implemented features include:
 
 **Key Technical Concepts**
 -   **Stack:** FARM (FastAPI, React, MongoDB).
--   **Authentication:** Dual system (OTP/Password) with timezone-aware JWT expiry ().
--   **Backend:** Large, monolithic  with multiple new endpoints and Pydantic models for CRM, feedback, and sales management.
--   **Frontend:** Multi-page React app with complex, multi-step forms (, ). Custom CSS animations for the mobile sidebar.
--   **State Management:** Primarily component state (, ), with some global state via .
+-   **Authentication:** JWT-based with role-specific logic.
+-   **Session Management:** A new  collection in MongoDB tracks user sessions. Login logic checks for existing sessions to enforce single-device access for non-admins.
+-   **Complex Frontend State:**  manages state for multiple bill drafts (tabs).  groups and displays complex data structures (bills grouped by date, active sessions).
+-   **Backend Logic:**  contains monolithic logic for all features, including bill creation with daily serials, MMI toggling, session termination, and report generation.
 
 **key DB schema**
--   **User:** 
--   **OTP:** 
 -   **Bill:** 
 -   **Item:** 
--   **Salesperson:**  (New)
--   **CustomerTierSetting:**  (New)
--   **Customer:**  (New)
--   **FeedbackQuestion:**  (New)
--   **FeedbackResponse:**  (New)
--   **Notification:**  (New)
+-   **FeedbackResponse:** 
+-   **ActiveSession:**  (New Collection)
+-   **Salesperson:** 
+-   **Customer:** 
+-   **Notification:** 
 
 **changes in tech stack**
--   **Backend:** Added  dependency for timezone handling.
+-   None in this session.
 
 **All files of reference**
--   : Heavily modified to add ~10 new API endpoints, session expiry logic, and MRP calculation logic.
--   : Heavily modified to add 6 new Pydantic models and update existing ones (, ).
--   : Updated to add routes for 6 new pages.
--   : Added styles for the new custom CSS mobile sidebar.
--   : Rewritten to replace  with the CSS-based sidebar.
--   : Modified to add the Make Bill vs MRP choice for diamonds and the Tag Number field.
--   : Modified to add salesperson dropdown and mandatory field validation.
--   : New file for the MRP calculation form.
--   , , , , : All new pages created to support the new features.
+-   : Heavily modified to add session management, daily serial logic, MMI toggle, item name editing, and fixes to report logic.
+-   : Updated to add the  model and add new fields to  and .
+-   : Completely rewritten to support date-grouped bills, the session management panel, MMI toggle, and bill approval.
+-   : Majorly updated to add the multi-tab billing interface.
+-   : Updated to allow editing of MRP items, manage photos, and fix navigation loops.
+-   : Updated to show more bill details and fix navigation.
+-   : Updated to handle new making charge and MRP display formats.
+-   : Updated to add the additional comments text box.
 
 **Areas that need refactoring**:
--   ****: This file is now extremely large and handles all API logic. It should be broken down into multiple router files (e.g., , , ) for better organization and maintainability.
--   ****: This component is very large and manages complex state. It should be broken down into smaller components for each step of the calculation.
--   ****: With the upcoming tabbed interface, the state management in this component will become very complex. It should be refactored to handle multiple bill states cleanly.
+-   ****: This file has grown even larger and more complex. It desperately needs to be broken down into multiple FastAPI router files (e.g., , , ) to improve maintainability.
+-   ** & **: These components now manage very complex state and UI logic. They should be decomposed into smaller, more manageable sub-components.
 
 **key api endpoints**
--   : Create a salesperson.
--   : Get active salespeople for the dropdown.
--   : Configure customer tiers.
--   : Get customer profile.
--   : Create feedback questions.
--   : Submit customer feedback for a bill.
--   : Get notifications for the current user.
--   : Calculate totals for an MRP item.
+-   : Toggles the MMI status for a bill.
+-   : Edits an item's name (frontend UI is missing).
+-   : Retrieves all active user sessions.
+-   : Terminates a specific user session.
+-   , : Modified to handle session creation and validation.
+-   : Modified to add  and  on creation.
 
 **Critical Info for New Agent**
--   **Mobile Sidebar:** The mobile menu is a custom CSS implementation in  and , not a  component. Debugging it requires checking these files.
--   **MRP Logic:** The MRP value entered by the user **includes 3% GST**. The backend logic subtracts discounts and then divides by 1.03 to find the base amount. Do not change this without confirming with the user.
--   **Carat Conversion:** Studded item weights (for MRP items) are entered in carats and converted to grams (1ct = 0.2g) in the backend () and frontend () for net weight calculation.
--   **Missed Feature:** The user is expecting a tabbed UI for multi-billing on the Sales Executive dashboard. This is a high-priority missing piece of the frontend.
+-   **User Verification is Top Priority:** Two very large batches of features were implemented and passed automated tests. The next step MUST be to guide the user through a thorough verification of all new functionality and be prepared for bug reports.
+-   **Incomplete Feature:** The feature for an admin to edit an item's name is incomplete. The backend API exists (), but the frontend UI to use it was not built.
+-   **Potential Lingering Bug:** The user reported that photo viewing for admins was still broken before the last set of changes. Although testing passed, this specific flow should be explicitly re-verified with the user as it might be a recurring issue.
+-   **Session Logic:** The single-device session logic is handled in  by checking the  collection during login/OTP verification. The admin can bypass this.
 
 **documents and test reports created in this job**
--   
--   
+-    (multiple reports were generated)
 -    (updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
--   **User Message (1-2):** Provided a large list of 15 feature requests and bug fixes, and then provided clarifications on salesperson roles, customer tiers, notifications, and session timings. Confirmed the proposed implementation plan.
--   **User Message (3):** Reported that after implementation, the mobile menu button leads to a blank page and MRP calculations were incorrect (returning 0).
--   **User Message (4):** Clarified the MRP calculation logic: the MRP on a tag is inclusive of GST.
--   **User Message (5):** Clarified that for MRP items, the studded weights are entered in carats, not grams.
-    -   **Status:** All issues and clarifications have been addressed. The agent has fixed the mobile menu, corrected the MRP saving bug, and implemented the carat-to-gram conversion. The application is now pending final user verification of all changes.
+-   **User Message:** Requested 7 new features/fixes: new making charge display, date-grouped bills for admin, single-device session control with an admin override/panel, daily bill serial numbers, MMI entered toggle on bills, continued issue with opening photos in admin login, ability for admin to edit item names, and a new textbox in the feedback form.
+-   **User Message:** Approved the agent's plan for the 7 items and clarified that admins should be allowed to have multiple logins.
+-   **User Message:** Approved a previous plan to fix 9 other issues and also requested the implementation of the multi-tab billing UI and fixes for other bugs (back button loops, report inaccuracies).
 
 **Project Health Check:**
--   **Broken:** None. All reported bugs have been fixed.
--   **Mocked:** The OTP delivery mechanism remains mocked by displaying OTPs on the admin dashboard, as per the original user request.
+-   **Broken:** The admin's ability to view item photos is potentially still broken, pending user verification.
+-   **Mocked:** The OTP delivery mechanism is still mocked (OTP is displayed on the admin dashboard).
 
 **3rd Party Integrations**
 -   FastAPI
@@ -197,13 +179,13 @@ Key implemented features include:
 -   
 -   
 -   
--    (New)
+-   
 
 **Testing status**
--   Testing agent used after significant changes: YES. A comprehensive test suite was run and passed 100% after the initial bulk implementation.
+-   Testing agent used after significant changes: YES. The testing agent was used twice, after each major batch of implementations, with all tests passing.
 -   Troubleshoot agent used after agent stuck in loop: NO
--   Test files created: None.
--   Known regressions: None.
+-   Test files created: None
+-   Known regressions: None confirmed, but the admin photo viewing issue is a potential regression or a bug that was never fully fixed.
 
 **Credentials to test flow:**
 -   **Role:** Admin
@@ -216,4 +198,4 @@ Key implemented features include:
     -   **Flow:** Enter  on the main login page. Then, log in as admin to view the generated OTP on the dashboard and use it to complete the executive's login.
 
 **What agent forgot to execute**
--   **Tabbed Multi-Bill UI:** The frontend for the tabbed interface requested by the user in point #11 (the current bill shows like a tab in a browser and upon click plus, a new home page open) was not implemented. This is the only major requested feature that was missed.</analysis>
+-   **Frontend UI for Item Name Editing:** The agent created the backend API () for an admin to edit an item's name but forgot to build the frontend interface for the admin to perform this action.</analysis>
