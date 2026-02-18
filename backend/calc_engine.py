@@ -180,7 +180,15 @@ def calculate_gold_item(item: Dict[str, Any]) -> Dict[str, Any]:
     total_making = Decimal('0')
     for mc in making_charges:
         charge = calculate_making_charge(mc, net_weight, rate_per_10g, purity_percent)
-        making_details.append({**mc, 'calculated_amount': charge})
+        detail = {**mc, 'calculated_amount': charge}
+        # Store making_per_gram for percentage type display
+        if mc.get('type') == 'percentage':
+            p = to_decimal(purity_percent)
+            if p > 0:
+                rate_24kt = to_decimal(rate_per_10g) / (p / Decimal('100'))
+                mpg = (to_decimal(mc.get('value', 0)) / Decimal('100')) * (rate_24kt / Decimal('10'))
+                detail['making_per_gram'] = float(round_currency(mpg))
+        making_details.append(detail)
         total_making += to_decimal(charge)
     total_making = float(round_currency(total_making))
     
