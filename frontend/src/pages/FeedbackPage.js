@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '@/App';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Star, SkipForward, CheckCircle } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { SkipForward, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function FeedbackPage() {
@@ -11,12 +12,11 @@ export default function FeedbackPage() {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [ratings, setRatings] = useState({});
+  const [additionalComments, setAdditionalComments] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [bill, setBill] = useState(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
@@ -26,14 +26,10 @@ export default function FeedbackPage() {
       ]);
       setQuestions(qRes.data);
       setBill(bRes.data);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  const setRating = (qId, value) => {
-    setRatings(prev => ({ ...prev, [qId]: value }));
-  };
+  const setRating = (qId, value) => setRatings(prev => ({ ...prev, [qId]: value }));
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -46,19 +42,15 @@ export default function FeedbackPage() {
       await apiClient.post(`/bills/${billId}/feedback`, {
         ratings: ratingsList,
         customer_name: bill?.customer_name || '',
+        additional_comments: additionalComments,
       });
       toast.success('Thank you for your feedback!');
       navigate('/sales');
-    } catch (err) {
-      toast.error('Failed to submit feedback');
-    } finally {
-      setSubmitting(false);
-    }
+    } catch (err) { toast.error('Failed to submit feedback'); }
+    finally { setSubmitting(false); }
   };
 
-  const handleSkip = () => {
-    navigate('/sales');
-  };
+  const handleSkip = () => navigate('/sales');
 
   return (
     <div className="kintsugi-page min-h-screen flex items-center justify-center p-4">
@@ -94,13 +86,24 @@ export default function FeedbackPage() {
                               : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
                         }`}
                         data-testid={`rating-${q.id}-${n}`}
-                      >
-                        {n}
-                      </button>
+                      >{n}</button>
                     ))}
                   </div>
                 </div>
               ))}
+
+              {/* Additional comments text box */}
+              <div className="space-y-2 pt-2" data-testid="feedback-comments-section">
+                <p className="text-sm font-medium">Any additional suggestions or feedback?</p>
+                <Textarea
+                  value={additionalComments}
+                  onChange={e => setAdditionalComments(e.target.value)}
+                  placeholder="Type your suggestions here... (optional)"
+                  className="bg-secondary/50 min-h-[80px]"
+                  data-testid="feedback-comments-input"
+                />
+              </div>
+
               <div className="flex gap-3 pt-3">
                 <Button variant="secondary" className="flex-1 h-12" onClick={handleSkip} data-testid="skip-feedback-btn">
                   <SkipForward size={16} className="mr-2" /> Skip
