@@ -376,6 +376,19 @@ async def verify_otp(req: OTPVerify):
 
     # Generate JWT token
     token = create_token({"sub": user["id"], "role": user["role"]})
+    # Single-device session: deactivate old sessions for non-admin
+    if user.get("role") != "admin":
+        await db.sessions.update_many({"user_id": user["id"]}, {"$set": {"is_active": False}})
+        await db.sessions.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "username": user.get("username", ""),
+            "full_name": user.get("full_name", ""),
+            "role": user.get("role", ""),
+            "token": token,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
     user_data = serialize_doc(user)
     user_data.pop('password', None)
     return {"token": token, "user": user_data}
