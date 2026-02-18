@@ -203,8 +203,9 @@ export default function ManagerDashboard() {
                   <div><p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-widest">Making Charges</p>
                     {item.making_charges.map((mc, mi) => (
                       <div key={mi} className="text-xs flex items-center gap-2">
-                        <span className="text-muted-foreground">{mc.type === 'percentage' ? '% of 24KT' : mc.type === 'per_gram' ? 'Per Gram' : 'Per Piece'}:</span>
+                        <span className="text-muted-foreground">{mc.type === 'percentage' ? '% Making' : mc.type === 'per_gram' ? 'Per Gram' : 'Per Piece'}:</span>
                         <span className="mono font-medium">{mc.value}{mc.type === 'percentage' ? '%' : mc.type === 'per_gram' ? '/g' : ''}</span>
+                        {mc.type === 'percentage' && mc.making_per_gram && <sub className="text-primary text-[10px]">₹{Number(mc.making_per_gram).toFixed(0)}/g</sub>}
                         {mc.type === 'per_piece' && <span className="text-muted-foreground">x {mc.quantity} pcs</span>}
                       </div>
                     ))}
