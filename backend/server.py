@@ -1978,6 +1978,47 @@ async def calculate_mrp_item(item: dict, user=Depends(get_current_user)):
         "total_amount": amount_without_gst,  # Show without GST in items; GST added at end
     }
 
+# ============ SESSION MANAGEMENT ============
+@api_router.get("/admin/sessions")
+async def get_active_sessions(user=Depends(get_current_user)):
+    """Admin: list all active sessions."""
+    await require_role(user, ["admin"])
+    sessions = await db.sessions.find({"is_active": True}).sort("created_at", -1).to_list(500)
+    return [serialize_doc(s) for s in sessions]
+
+@api_router.delete("/admin/sessions/{session_id}")
+async def terminate_session(session_id: str, user=Depends(get_current_user)):
+    """Admin: terminate a session."""
+    await require_role(user, ["admin"])
+    await db.sessions.update_one({"id": session_id}, {"$set": {"is_active": False}})
+    return {"status": "terminated"}
+
+# ============ MMI TOGGLE ============
+@api_router.put("/bills/{bill_id}/mmi")
+async def toggle_mmi(bill_id: str, user=Depends(get_current_user)):
+    """Toggle MMI entered status for a bill."""
+    await require_role(user, ["admin"])
+    bill = await db.bills.find_one({"id": bill_id})
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+    current = bill.get("mmi_entered", False)
+    await db.bills.update_one({"id": bill_id}, {"$set": {"mmi_entered": not current}})
+    return {"mmi_entered": not current}
+
+# ============ ITEM NAME EDIT ============
+@api_router.put("/item-names/{item_id}")
+async def update_item_name(item_id: str, updates: dict, user=Depends(get_current_user)):
+    """Admin: rename an item name."""
+    await require_role(user, ["admin"])
+    new_name = updates.get("name", "").strip()
+    if not new_name:
+        raise HTTPException(status_code=400, detail="Name is required")
+    existing = await db.item_names.find_one({"name": new_name})
+    if existing and existing.get("id") != item_id:
+        raise HTTPException(status_code=400, detail="Item name already exists")
+    await db.item_names.update_one({"id": item_id}, {"$set": {"name": new_name}})
+    return {"status": "updated", "name": new_name}
+
 # ============ ROOT ============
 @api_router.get("/")
 async def root():
