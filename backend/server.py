@@ -112,6 +112,15 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         user = await db.users.find_one({"id": user_id})
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
+        # Session check for non-admin users
+        if user.get("role") != "admin":
+            session = await db.sessions.find_one({
+                "user_id": user_id,
+                "token": credentials.credentials,
+                "is_active": True,
+            })
+            if not session:
+                raise HTTPException(status_code=401, detail="Session expired or logged in from another device")
         return serialize_doc(user)
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
