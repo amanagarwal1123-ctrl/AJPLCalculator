@@ -508,7 +508,7 @@ export default function ItemCalculator() {
                     {makingCharges.map((mc, idx) => (
                       <div key={idx} className="flex items-end gap-3 p-3 rounded-lg bg-secondary/20 border border-border">
                         <div className="flex-1">
-                          <Label className="text-xs text-muted-foreground capitalize">{mc.type === 'percentage' ? '% of 24KT Rate' : mc.type === 'per_gram' ? 'Per Gram (Rs.)' : 'Per Piece (Rs.)'}</Label>
+                          <Label className="text-xs text-muted-foreground capitalize">{mc.type === 'percentage' ? '% Making' : mc.type === 'per_gram' ? 'Per Gram (Rs.)' : 'Per Piece (Rs.)'}</Label>
                           <Input type="number" step="0.01" value={mc.value} onChange={e => updateMakingCharge(idx, 'value', e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`making-value-${idx}`} />
                         </div>
                         {mc.type === 'per_piece' && (
