@@ -148,7 +148,10 @@ export default function BillPrintView() {
                       {/* Making charge details */}
                       {item.making_charges?.length > 0 && item.making_charges.map((mc, mi) => (
                         <div key={mi} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
-                          <span style={{ color: '#888' }}>Making ({mc.type === 'percentage' ? `${mc.value}% of 24KT` : mc.type === 'per_gram' ? `${fmt(mc.value)}/g` : `${fmt(mc.value)} x${mc.quantity}pc`})</span>
+                          <span style={{ color: '#888' }}>
+                            Making ({mc.type === 'percentage' ? `${mc.value}%` : mc.type === 'per_gram' ? `₹${mc.value}/g` : `₹${mc.value} x${mc.quantity}pc`})
+                            {mc.type === 'percentage' && mc.making_per_gram ? <span style={{ color: '#8B6914', marginLeft: '4px', fontSize: '9px' }}>₹{Number(mc.making_per_gram).toFixed(0)}/g</span> : null}
+                          </span>
                           <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}></span>
                         </div>
                       ))}
