@@ -402,6 +402,19 @@ async def login(req: LoginRequest):
     if not user.get("is_active", True):
         raise HTTPException(status_code=403, detail="Account disabled")
     token = create_token({"sub": user["id"], "role": user["role"]})
+    # Single-device session for non-admin
+    if user.get("role") != "admin":
+        await db.sessions.update_many({"user_id": user["id"]}, {"$set": {"is_active": False}})
+        await db.sessions.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "username": user.get("username", ""),
+            "full_name": user.get("full_name", ""),
+            "role": user.get("role", ""),
+            "token": token,
+            "is_active": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
     user_data = serialize_doc(user)
     user_data.pop('password', None)
     return {"token": token, "user": user_data}
