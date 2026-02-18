@@ -1777,6 +1777,7 @@ async def submit_feedback(bill_id: str, req: FeedbackSubmit):
         "bill_id": bill_id,
         "customer_name": req.customer_name or bill.get("customer_name", ""),
         "ratings": [dict(r) for r in req.ratings],
+        "additional_comments": req.additional_comments or "",
         "submitted_at": datetime.now(timezone.utc).isoformat(),
     }
     await db.feedbacks.insert_one(feedback_doc)
