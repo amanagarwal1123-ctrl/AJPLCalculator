@@ -798,6 +798,9 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
     bill_doc = {
         "id": str(uuid.uuid4()),
         "bill_number": f"BILL-{datetime.now().strftime('%Y%m%d%H%M%S')}-{str(uuid.uuid4())[:4].upper()}",
+        "daily_serial": await _get_daily_serial(),
+        "created_date": datetime.now(IST).strftime("%Y-%m-%d"),
+        "mmi_entered": False,
         "customer_name": req.customer_name,
         "customer_phone": req.customer_phone,
         "customer_location": req.customer_location,
