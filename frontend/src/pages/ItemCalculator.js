@@ -519,7 +519,8 @@ export default function ItemCalculator() {
                         )}
                         {mc.type === 'percentage' && (
                           <div className="text-xs text-muted-foreground">
-                            <span className="mono">{formatCurrency(getMakingPerGram(mc))}/g</span>
+                            <span className="mono">{mc.value}%</span>
+                            <sub className="text-primary ml-1">{formatCurrency(getMakingPerGram(mc))}/g</sub>
                           </div>
                         )}
                         <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-destructive" onClick={() => removeMakingCharge(idx)}>
