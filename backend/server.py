@@ -1425,7 +1425,7 @@ async def generate_bill_pdf(bill_id: str, user=Depends(get_current_user)):
     y -= 7*mm
     c.setFont('Helvetica', 11)
     c.setFillColor(rl_colors.HexColor('#666666'))
-    c.drawCentredString(width/2, y, 'INVOICE')
+    c.drawCentredString(width/2, y, 'TENTATIVE INVOICE')
     
     # Gold divider
     y -= 5*mm
