@@ -154,33 +154,33 @@ export default function ManagerDashboard() {
           {isMrp ? (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-                <div><p className="text-[10px] text-muted-foreground">Gross Wt</p><p className="mono font-medium">{(item.gross_weight || 0).toFixed(3)}g</p></div>
-                <div><p className="text-[10px] text-muted-foreground">Net Wt</p><p className="mono font-bold text-primary">{(item.net_weight || 0).toFixed(3)}g</p></div>
-                <div><p className="text-[10px] text-muted-foreground">MRP</p><p className="mono font-medium">{formatCurrency(item.mrp)}</p></div>
+                <div className="min-w-0"><p className="text-[10px] text-muted-foreground">Gross Wt</p><p className="mono font-medium truncate">{(item.gross_weight || 0).toFixed(3)}g</p></div>
+                <div className="min-w-0"><p className="text-[10px] text-muted-foreground">Net Wt</p><p className="mono font-bold text-primary truncate">{(item.net_weight || 0).toFixed(3)}g</p></div>
+                <div className="min-w-0"><p className="text-[10px] text-muted-foreground">MRP</p><p className="mono font-medium truncate">{formatCurrency(item.mrp)}</p></div>
               </div>
               {item.studded_weights?.length > 0 && (
                 <>
                   <Separator className="bg-border" />
-                  <div><p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-widest">Studded Weights</p>
-                    {item.studded_weights.map((sw, si) => <div key={si} className="text-xs flex gap-2"><span className="capitalize text-muted-foreground">{sw.type?.replace('_', ' ')}:</span><span className="mono font-medium">{sw.weight} ct ({(sw.weight * 0.2).toFixed(3)}g)</span></div>)}
+                  <div className="overflow-hidden"><p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-widest">Studded Weights</p>
+                    {item.studded_weights.map((sw, si) => <div key={si} className="text-xs flex gap-2 flex-wrap"><span className="capitalize text-muted-foreground">{sw.type?.replace('_', ' ')}:</span><span className="mono font-medium">{sw.weight} ct ({(sw.weight * 0.2).toFixed(3)}g)</span></div>)}
                   </div>
                 </>
               )}
               {item.discounts?.length > 0 && (
                 <>
                   <Separator className="bg-border" />
-                  <div><p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-widest">Discounts</p>
-                    {item.discounts.map((d, di) => <div key={di} className="text-xs flex gap-2"><span className="text-muted-foreground">{d.type === 'percentage' ? `${d.value}%` : 'Flat'}:</span><span className="mono font-medium text-destructive">-{formatCurrency(d.type === 'percentage' ? (item.mrp * d.value / 100) : d.value)}</span></div>)}
+                  <div className="overflow-hidden"><p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-widest">Discounts</p>
+                    {item.discounts.map((d, di) => <div key={di} className="text-xs flex gap-2 flex-wrap"><span className="text-muted-foreground">{d.type === 'percentage' ? `${d.value}%` : 'Flat'}:</span><span className="mono font-medium text-destructive">-{formatCurrency(d.type === 'percentage' ? (item.mrp * d.value / 100) : d.value)}</span></div>)}
                   </div>
                 </>
               )}
               <Separator className="bg-border" />
-              <div className="text-sm space-y-1">
-                {item.total_discount > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Total Discount</span><span className="mono text-destructive">-{formatCurrency(item.total_discount)}</span></div>}
-                <div className="flex justify-between"><span className="text-muted-foreground">After Discount</span><span className="mono">{formatCurrency(item.after_discount)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Excl. GST</span><span className="mono text-primary">{formatCurrency(item.amount_without_gst)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">GST (3%)</span><span className="mono">{formatCurrency(item.gst_amount_item)}</span></div>
-                <div className="flex justify-between font-bold border-t border-border pt-1 mt-1"><span>Item Total</span><span className="mono text-primary">{formatCurrency(item.total_amount)}</span></div>
+              <div className="text-sm space-y-1 overflow-hidden">
+                {item.total_discount > 0 && <div className="flex justify-between gap-2"><span className="text-muted-foreground shrink-0">Total Discount</span><span className="mono text-destructive truncate">-{formatCurrency(item.total_discount)}</span></div>}
+                <div className="flex justify-between gap-2"><span className="text-muted-foreground shrink-0">After Discount</span><span className="mono truncate">{formatCurrency(item.after_discount)}</span></div>
+                <div className="flex justify-between gap-2"><span className="text-muted-foreground shrink-0">Excl. GST</span><span className="mono text-primary truncate">{formatCurrency(item.amount_without_gst)}</span></div>
+                <div className="flex justify-between gap-2"><span className="text-muted-foreground shrink-0">GST (3%)</span><span className="mono truncate">{formatCurrency(item.gst_amount_item)}</span></div>
+                <div className="flex justify-between gap-2 font-bold border-t border-border pt-1 mt-1"><span>Item Total</span><span className="mono text-primary truncate">{formatCurrency(item.total_amount)}</span></div>
               </div>
             </>
           ) : (
