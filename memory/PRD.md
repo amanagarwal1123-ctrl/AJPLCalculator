@@ -25,6 +25,7 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - [x] Dashboard with KPIs, OTP panel
 - [x] Bills grouped by date with datetime, salesman, weight, phone, item count
 - [x] Daily serial numbers on bills (reset to 1 each day)
+- [x] **Simple bill numbers**: `0001-DDMMYYYY` format (sequential + date suffix, Feb 2026)
 - [x] MMI entered toggle per bill
 - [x] Active sessions management - view/terminate user sessions
 - [x] Bills tabs: Pending, Approved, Draft, All with approve buttons
