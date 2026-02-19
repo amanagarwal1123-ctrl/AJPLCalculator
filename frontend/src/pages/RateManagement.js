@@ -38,11 +38,18 @@ export default function RateManagement() {
   const saveRates = async (rateType) => {
     setSaving(true);
     try {
+      const purities = rates[rateType]?.purities || [];
       await apiClient.put(`/rates/${rateType}`, {
         rate_type: rateType,
-        purities: rates[rateType]?.purities || [],
+        purities: purities.map(p => ({
+          purity_id: p.purity_id,
+          purity_name: p.purity_name,
+          purity_percent: p.purity_percent,
+          rate_per_10g: p.rate_per_10g || 0,
+        })),
       });
       toast.success(`${rateType.toUpperCase()} rates saved!`);
+      loadData();
     } catch (err) {
       toast.error('Failed to save rates');
     } finally {
@@ -51,11 +58,14 @@ export default function RateManagement() {
   };
 
   const updateRate = (rateType, purityIdx, value) => {
-    const updated = { ...rates };
-    if (updated[rateType]?.purities?.[purityIdx]) {
-      updated[rateType].purities[purityIdx].rate_per_10g = parseFloat(value) || 0;
-      setRates({ ...updated });
-    }
+    setRates(prev => {
+      const rateCard = prev[rateType];
+      if (!rateCard?.purities?.[purityIdx]) return prev;
+      const newPurities = rateCard.purities.map((p, i) =>
+        i === purityIdx ? { ...p, rate_per_10g: parseFloat(value) || 0 } : p
+      );
+      return { ...prev, [rateType]: { ...rateCard, purities: newPurities } };
+    });
   };
 
   const addPurity = async () => {
