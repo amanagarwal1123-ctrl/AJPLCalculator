@@ -298,9 +298,15 @@ async def startup_event():
     await db.notifications.create_index("due_date")
     logger.info("Database indexes created")
 
-    # Backfill old bills missing daily_serial or created_date
+    # Backfill old bills missing daily_serial/created_date or with old bill_number format
     old_bills = await db.bills.find({
-        "$or": [{"daily_serial": {"$exists": False}}, {"created_date": {"$exists": False}}, {"daily_serial": None}, {"created_date": None}]
+        "$or": [
+            {"daily_serial": {"$exists": False}},
+            {"created_date": {"$exists": False}},
+            {"daily_serial": None},
+            {"created_date": None},
+            {"bill_number": {"$regex": "^BILL-"}},
+        ]
     }).sort("created_at", 1).to_list(10000)
     if old_bills:
         # Group by date to assign serial numbers
