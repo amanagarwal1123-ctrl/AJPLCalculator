@@ -802,10 +802,12 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
     # Calculate bill totals
     totals = calculate_bill_totals(calculated_items, req.external_charges)
 
+    daily_serial = await _get_daily_serial()
+    today_str = datetime.now(IST).strftime("%d%m%Y")
     bill_doc = {
         "id": str(uuid.uuid4()),
-        "bill_number": f"BILL-{datetime.now().strftime('%Y%m%d%H%M%S')}-{str(uuid.uuid4())[:4].upper()}",
-        "daily_serial": await _get_daily_serial(),
+        "bill_number": f"{daily_serial:04d}-{today_str}",
+        "daily_serial": daily_serial,
         "created_date": datetime.now(IST).strftime("%Y-%m-%d"),
         "mmi_entered": False,
         "customer_name": req.customer_name,
