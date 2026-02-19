@@ -69,6 +69,13 @@ export default function Reports() {
     }
   };
 
+  const loadFeedbacks = async () => {
+    try {
+      const res = await apiClient.get('/feedbacks');
+      setFeedbacks(res.data);
+    } catch (err) { console.error('Failed to load feedbacks'); }
+  };
+
   const applyFilters = async () => {
     try {
       setLoading(true);
