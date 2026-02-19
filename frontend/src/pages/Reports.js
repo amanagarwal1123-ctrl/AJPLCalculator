@@ -28,6 +28,10 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   
+  // Feedback state
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [feedbackSort, setFeedbackSort] = useState('date'); // 'date' or 'value'
+  
   // Customer analytics state
   const [customerFrequency, setCustomerFrequency] = useState(null);
   const [inactiveCustomers, setInactiveCustomers] = useState(null);
