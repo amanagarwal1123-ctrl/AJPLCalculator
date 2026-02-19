@@ -26,60 +26,36 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - [x] Bills grouped by date with datetime, salesman, weight, phone, item count
 - [x] Daily serial numbers on bills (reset to 1 each day)
 - [x] Simple bill numbers: `0001-DDMMYYYY` format
+- [x] S.No column in All Bills table showing daily_serial (Feb 2026)
 - [x] MMI entered toggle per bill
 - [x] Active sessions management - view/terminate user sessions
 - [x] Bills tabs: Pending, Approved, Draft, All with approve buttons
 - [x] Rate Management - Normal & AJPL rates, auto-heal for empty purities (Feb 2026)
-- [x] Branch Management
-- [x] User Management
-- [x] Salesperson Management
+- [x] Branch Management, User Management, Salesperson Management
 - [x] Item Name Management with edit/rename
 - [x] Customer List with tier-based classification
-- [x] Feedback Questions Management
-- [x] Customer Tier Settings
+- [x] Feedback Questions Management, Customer Tier Settings
 - [x] Notifications panel
-- [x] Reports & Analytics with Feedbacks tab (Feb 2026)
-
-### Photo Management
-- [x] Photo upload for bill items
-- [x] Photo thumbnail display on bill page
-- [x] Lightbox dialog for full-size photo viewing (all roles)
-- [x] Photo removal by authorized users
-
-### Manager Dashboard
-- [x] KPI cards with overflow-hidden for currency values
-- [x] Bill table with fixed column widths and truncation
-- [x] Bill cards with overflow handling on mobile
-- [x] Summary dialog with proper mobile width and scrollable content
-
-### Sales Executive Features
-- [x] Customer intake with mandatory fields + 10-digit phone validation
-- [x] Salesperson dropdown selection
-- [x] Multi-bill tab bar showing active drafts
-- [x] Gold/Diamond/MRP calculators - all items editable after saving
-- [x] Photo upload with lightbox preview and removal
-- [x] Send to Manager -> Feedback -> Home flow
 
 ### Reports & Analytics
-- [x] Overview with daily sales trend and gold vs diamond charts
-- [x] KT Analysis with bar chart and summary table
-- [x] Branch-wise and Executive-wise sales
-- [x] Customer frequency and spending tier analytics
-- [x] Inactive customers tracker
-- [x] Top selling items
-- [x] Feedbacks tab with sort by date/value (Feb 2026)
+- [x] Overview, KT Analysis, Branches, Executives, References, Customers, Top Items tabs
+- [x] Feedbacks tab with date range filter (from/to) + ascending/descending sort by bill value (Feb 2026)
 - [x] CSV export for all reports
+- [x] TabsList with flex-wrap for 8 tabs
+
+### Manager Dashboard
+- [x] KPI cards with overflow-hidden, Bill table with fixed widths, Summary dialog
+
+### Sales Executive Features
+- [x] Customer intake, Salesperson dropdown, Multi-bill tab bar
+- [x] Gold/Diamond/MRP calculators, Photo upload, Feedback flow
 
 ## Key API Endpoints
-- `POST /api/auth/request-otp` / `POST /api/auth/verify-otp` - OTP flow
-- `POST /api/auth/login` - Admin password login
-- `GET/PUT /api/rates/{rate_type}` - Rate management (with auto-heal)
+- `POST /api/auth/login` / `POST /api/auth/request-otp` / `POST /api/auth/verify-otp`
+- `GET/PUT /api/rates/{rate_type}` - Rate management with auto-heal
 - `GET /api/feedbacks` - All feedbacks with bill details
-- `POST /api/upload/photo` / `GET /api/uploads/{filename}` - Photo management
-- `GET /api/bills/{id}/summary` - Full bill details
-
-## Database Collections
-users, bills, customers, purities, rate_cards, item_names, branches, otps, salespeople, feedback_questions, feedbacks, notifications, settings, sessions
+- `GET /api/bills` - All bills with daily_serial field
+- `POST /api/upload/photo` / `GET /api/uploads/{filename}`
 
 ## Credentials
 - **Admin:** username=admin, password=admin1123
