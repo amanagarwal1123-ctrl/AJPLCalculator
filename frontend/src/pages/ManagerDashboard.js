@@ -280,14 +280,15 @@ export default function ManagerDashboard() {
 
         {/* Summary Dialog - FULL DETAILS */}
         <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
-          <DialogContent className="bg-card border-border max-w-2xl max-h-[85vh] overflow-y-auto mx-3 sm:mx-auto">
+          <DialogContent className="bg-card border-border max-w-2xl max-h-[85vh] overflow-y-auto w-[calc(100vw-2rem)] sm:w-auto" aria-describedby="summary-dialog-desc">
             <DialogHeader>
               <DialogTitle className="heading text-lg sm:text-xl">Full Bill Details</DialogTitle>
+              <p id="summary-dialog-desc" className="sr-only">Detailed view of bill items and totals</p>
               {summaryData && (
-                <div className="text-xs sm:text-sm text-muted-foreground space-y-1 mt-2">
-                  <p><strong>Customer:</strong> {summaryData.customer_name} ({summaryData.customer_phone})</p>
-                  <p><strong>Date:</strong> {summaryData.date} | <strong>Exec:</strong> {summaryData.executive_name}{summaryData.salesperson_name ? ` | SP: ${summaryData.salesperson_name}` : ''}</p>
-                  <p><strong>Bill:</strong> {summaryData.bill_number} | <strong>Status:</strong> {summaryData.status?.toUpperCase()}</p>
+                <div className="text-xs sm:text-sm text-muted-foreground space-y-1 mt-2 overflow-hidden">
+                  <p className="truncate"><strong>Customer:</strong> {summaryData.customer_name} ({summaryData.customer_phone})</p>
+                  <p className="truncate"><strong>Date:</strong> {summaryData.date} | <strong>Exec:</strong> {summaryData.executive_name}{summaryData.salesperson_name ? ` | SP: ${summaryData.salesperson_name}` : ''}</p>
+                  <p className="truncate"><strong>Bill:</strong> <span className="mono text-[10px] sm:text-xs">{summaryData.bill_number}</span> | <strong>Status:</strong> {summaryData.status?.toUpperCase()}</p>
                 </div>
               )}
             </DialogHeader>
