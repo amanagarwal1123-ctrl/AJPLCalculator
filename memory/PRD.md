@@ -28,7 +28,7 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - [x] MMI entered toggle per bill
 - [x] Active sessions management - view/terminate user sessions
 - [x] Bills tabs: Pending, Approved, Draft, All with approve buttons
-- [x] Rate Management (Normal & AJPL rate cards)
+- [x] Rate Management - Normal & AJPL rates, **multiple edits per day supported** (verified Feb 2026)
 - [x] Branch Management
 - [x] User Management
 - [x] Salesperson Management
@@ -44,7 +44,13 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - [x] Photo thumbnail display on bill page
 - [x] Lightbox dialog for full-size photo viewing (all roles)
 - [x] Photo removal by authorized users
-- [x] Accessibility: aria-describedby on lightbox dialog
+
+### Manager Dashboard (formatting fixed Feb 2026)
+- [x] KPI cards with overflow-hidden for currency values
+- [x] Bill table with fixed column widths and truncation
+- [x] Bill cards with overflow handling on mobile
+- [x] Summary dialog with proper mobile width and scrollable content
+- [x] Item detail rendering with proper overflow/truncate classes
 
 ### Sales Executive Features
 - [x] Customer intake with mandatory fields + 10-digit phone validation
@@ -53,11 +59,6 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - [x] Gold/Diamond/MRP calculators - all items editable after saving
 - [x] Photo upload with lightbox preview and removal
 - [x] Send to Manager -> Feedback -> Home flow
-
-### Manager Features
-- [x] Full bill details in Summary dialog
-- [x] Approve redirects to home dashboard
-- [x] Clickable customer names linking to profile
 
 ### Making Charges Display
 - [x] Percentage making: shows "x%" with subscript showing per-gram rate
@@ -75,21 +76,13 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - [x] Additional suggestions/comments textarea
 - [x] Auto-opens after "Send to Manager"
 
-### Reports & Analytics
-- [x] MRP items handled separately in analytics
-- [x] Customer spending tiers calculated from actual bills
-
 ## Key API Endpoints
 - `POST /api/auth/request-otp` / `POST /api/auth/verify-otp` - OTP flow
 - `POST /api/auth/login` - Admin password login
-- `GET /api/admin/sessions` / `DELETE /api/admin/sessions/{id}` - Session management
-- `POST /api/upload/photo` - Upload item photo
-- `GET /api/uploads/{filename}` - Serve uploaded photos
-- `DELETE /api/bills/{id}/items/{idx}/photos/{pidx}` - Remove photo
+- `GET/PUT /api/rates/{rate_type}` - Rate management (unlimited saves)
 - `PUT /api/item-names/{id}` - Rename item name
-- `PUT /api/bills/{id}/mmi` - Toggle MMI entered status
-- `GET /api/bills/{id}/summary` - Full bill details
-- `PUT /api/bills/{id}/approve` - Approve bill
+- `POST /api/upload/photo` / `GET /api/uploads/{filename}` - Photo management
+- `GET /api/bills/{id}/summary` - Full bill details for manager/admin
 
 ## Database Collections
 users, bills, customers, purities, rate_cards, item_names, branches, otps, salespeople, feedback_questions, feedbacks, notifications, settings, sessions
