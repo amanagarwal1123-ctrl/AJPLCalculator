@@ -297,18 +297,18 @@ export default function ManagerDashboard() {
                 {summaryData.items?.map((item, idx) => renderItemDetail(item, idx))}
 
                 {/* Bill Totals */}
-                <Card className="bg-primary/5 border-primary/20">
+                <Card className="bg-primary/5 border-primary/20 overflow-hidden">
                   <CardContent className="p-3 sm:p-4 space-y-2">
-                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Items Total</span><span className="mono font-medium">{formatCurrency(summaryData.items_total)}</span></div>
+                    <div className="flex justify-between gap-2 text-sm"><span className="text-muted-foreground shrink-0">Items Total</span><span className="mono font-medium truncate">{formatCurrency(summaryData.items_total)}</span></div>
                     {summaryData.external_charges?.map((ec, i) => (
-                      <div key={i} className="flex justify-between text-sm"><span className="text-muted-foreground">{ec.name}</span><span className="mono">{formatCurrency(ec.amount)}</span></div>
+                      <div key={i} className="flex justify-between gap-2 text-sm"><span className="text-muted-foreground truncate shrink-0 max-w-[50%]">{ec.name}</span><span className="mono truncate">{formatCurrency(ec.amount)}</span></div>
                     ))}
-                    {summaryData.external_charges_total > 0 && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Ext. Charges Total</span><span className="mono">{formatCurrency(summaryData.external_charges_total)}</span></div>}
+                    {summaryData.external_charges_total > 0 && <div className="flex justify-between gap-2 text-sm"><span className="text-muted-foreground shrink-0">Ext. Charges Total</span><span className="mono truncate">{formatCurrency(summaryData.external_charges_total)}</span></div>}
                     <Separator className="bg-border" />
-                    <div className="flex justify-between text-sm font-medium"><span>Subtotal (excl. GST)</span><span className="mono">{formatCurrency(summaryData.subtotal_without_gst)}</span></div>
-                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">GST ({summaryData.gst_percent || 3}%)</span><span className="mono">{formatCurrency(summaryData.gst_amount)}</span></div>
+                    <div className="flex justify-between gap-2 text-sm font-medium"><span className="shrink-0">Subtotal (excl. GST)</span><span className="mono truncate">{formatCurrency(summaryData.subtotal_without_gst)}</span></div>
+                    <div className="flex justify-between gap-2 text-sm"><span className="text-muted-foreground shrink-0">GST ({summaryData.gst_percent || 3}%)</span><span className="mono truncate">{formatCurrency(summaryData.gst_amount)}</span></div>
                     <Separator className="bg-primary/30" />
-                    <div className="flex justify-between text-lg font-bold"><span className="heading">Grand Total</span><span className="mono text-primary">{formatCurrency(summaryData.grand_total)}</span></div>
+                    <div className="flex justify-between gap-2 text-base sm:text-lg font-bold"><span className="heading shrink-0">Grand Total</span><span className="mono text-primary truncate">{formatCurrency(summaryData.grand_total)}</span></div>
                   </CardContent>
                 </Card>
               </div>
