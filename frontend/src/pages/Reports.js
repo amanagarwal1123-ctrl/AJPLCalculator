@@ -44,7 +44,7 @@ export default function Reports() {
   const [filterBranch, setFilterBranch] = useState('all');
   const [filterExecutive, setFilterExecutive] = useState('all');
 
-  useEffect(() => { loadInitialData(); }, []);
+  useEffect(() => { loadInitialData(); loadFeedbacks(); }, []);
 
   const loadInitialData = async () => {
     try {
