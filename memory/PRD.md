@@ -29,7 +29,7 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - [x] MMI entered toggle per bill
 - [x] Active sessions management - view/terminate user sessions
 - [x] Bills tabs: Pending, Approved, Draft, All with approve buttons
-- [x] Rate Management - Normal & AJPL rates, **multiple edits per day supported** (verified Feb 2026)
+- [x] Rate Management - Normal & AJPL rates, **multiple edits per day supported**, fixed save state bug (Feb 2026)
 - [x] Branch Management
 - [x] User Management
 - [x] Salesperson Management
