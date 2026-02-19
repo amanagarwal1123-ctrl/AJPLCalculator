@@ -904,7 +904,8 @@ export default function Reports() {
                           <p className="mt-2 text-xs text-muted-foreground italic border-l-2 border-primary/30 pl-2">"{f.additional_comments}"</p>
                         )}
                       </div>
-                    ))}
+                    ));
+                    })()}
                   </div>
                 )}
               </CardContent>
