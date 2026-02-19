@@ -89,17 +89,17 @@ export default function ManagerDashboard() {
 
   const BillTable = ({ billList, showApprove = false }) => (
     <div className="hidden md:block overflow-x-auto">
-      <Table>
+      <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow className="border-border">
-            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Bill #</TableHead>
-            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Customer</TableHead>
-            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Executive</TableHead>
-            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Status</TableHead>
-            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Items</TableHead>
-            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total</TableHead>
-            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Date</TableHead>
-            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Actions</TableHead>
+            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground w-[180px]">Bill #</TableHead>
+            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground w-[150px]">Customer</TableHead>
+            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground w-[120px]">Executive</TableHead>
+            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground w-[80px]">Status</TableHead>
+            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground w-[50px]">Items</TableHead>
+            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right w-[100px]">Total</TableHead>
+            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground w-[90px]">Date</TableHead>
+            <TableHead className="text-xs uppercase tracking-widest text-muted-foreground w-auto">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -107,19 +107,19 @@ export default function ManagerDashboard() {
             <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No bills found</TableCell></TableRow>
           ) : billList.map(b => (
             <TableRow key={b.id} className="border-border hover:bg-secondary/50">
-              <TableCell className="mono text-sm">{b.bill_number}</TableCell>
-              <TableCell><p className="font-medium text-sm cursor-pointer text-primary hover:underline" onClick={() => navigate(`/customer/${b.customer_phone}`)}>{b.customer_name}</p><p className="text-xs text-muted-foreground">{b.customer_phone}</p></TableCell>
-              <TableCell className="text-muted-foreground">{b.executive_name}</TableCell>
+              <TableCell className="mono text-xs truncate max-w-[180px]" title={b.bill_number}>{b.bill_number}</TableCell>
+              <TableCell className="max-w-[150px]"><p className="font-medium text-sm cursor-pointer text-primary hover:underline truncate" onClick={() => navigate(`/customer/${b.customer_phone}`)}>{b.customer_name}</p><p className="text-xs text-muted-foreground truncate">{b.customer_phone}</p></TableCell>
+              <TableCell className="text-muted-foreground text-sm truncate max-w-[120px]">{b.executive_name}</TableCell>
               <TableCell>{statusBadge(b.status)}</TableCell>
               <TableCell className="mono text-sm">{b.items?.length || 0}</TableCell>
-              <TableCell className="mono text-right font-medium text-primary">{formatCurrency(b.grand_total)}</TableCell>
-              <TableCell className="text-muted-foreground text-sm">{b.created_at?.slice(0, 10)}</TableCell>
+              <TableCell className="mono text-right font-medium text-primary text-sm whitespace-nowrap">{formatCurrency(b.grand_total)}</TableCell>
+              <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{b.created_at?.slice(0, 10)}</TableCell>
               <TableCell>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => viewSummary(b.id)} data-testid={`manager-summary-${b.id}`}><ClipboardList size={14} className="mr-1" /> Summary</Button>
-                  <Button variant="ghost" size="sm" onClick={() => navigate(`/bill/${b.id}`)} data-testid={`manager-view-${b.id}`}><Eye size={14} className="mr-1" /> View</Button>
+                <div className="flex gap-1 flex-nowrap">
+                  <Button variant="ghost" size="sm" className="shrink-0" onClick={() => viewSummary(b.id)} data-testid={`manager-summary-${b.id}`}><ClipboardList size={14} className="mr-1" /> Summary</Button>
+                  <Button variant="ghost" size="sm" className="shrink-0" onClick={() => navigate(`/bill/${b.id}`)} data-testid={`manager-view-${b.id}`}><Eye size={14} className="mr-1" /> View</Button>
                   {showApprove && b.status !== 'approved' && (
-                    <Button variant="ghost" size="sm" className="text-green-400" onClick={() => approveBill(b.id)} data-testid={`manager-approve-${b.id}`}><CheckCircle size={14} className="mr-1" /> Approve</Button>
+                    <Button variant="ghost" size="sm" className="text-green-400 shrink-0" onClick={() => approveBill(b.id)} data-testid={`manager-approve-${b.id}`}><CheckCircle size={14} className="mr-1" /> Approve</Button>
                   )}
                 </div>
               </TableCell>
