@@ -342,6 +342,28 @@ export default function Reports() {
                     </ResponsiveContainer>
                   ) : <div className="flex items-center justify-center h-full text-muted-foreground">No data yet</div>}
                 </div>
+                {ktData.length > 0 && (
+                  <Table className="mt-4">
+                    <TableHeader>
+                      <TableRow className="border-border">
+                        <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">KT</TableHead>
+                        <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Items Sold</TableHead>
+                        <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total Sales</TableHead>
+                        <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Avg Per Item</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {[...ktData].sort((a, b) => b.total - a.total).map((kt, i) => (
+                        <TableRow key={i} className="border-border">
+                          <TableCell className="font-medium text-primary">{kt.name}</TableCell>
+                          <TableCell className="mono text-right">{kt.count}</TableCell>
+                          <TableCell className="mono text-right font-medium text-primary">{formatCurrency(kt.total)}</TableCell>
+                          <TableCell className="mono text-right text-muted-foreground">{formatCurrency(kt.count > 0 ? kt.total / kt.count : 0)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
