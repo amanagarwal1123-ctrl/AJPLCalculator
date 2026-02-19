@@ -30,7 +30,10 @@ export default function Reports() {
   
   // Feedback state
   const [feedbacks, setFeedbacks] = useState([]);
-  const [feedbackSort, setFeedbackSort] = useState('date'); // 'date' or 'value'
+  const [feedbackSort, setFeedbackSort] = useState('value'); // 'value'
+  const [feedbackOrder, setFeedbackOrder] = useState('desc'); // 'asc' or 'desc'
+  const [feedbackDateFrom, setFeedbackDateFrom] = useState('');
+  const [feedbackDateTo, setFeedbackDateTo] = useState('');
   
   // Customer analytics state
   const [customerFrequency, setCustomerFrequency] = useState(null);

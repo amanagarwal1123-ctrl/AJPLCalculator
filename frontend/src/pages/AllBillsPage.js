@@ -117,6 +117,7 @@ export default function AllBillsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border">
+                      <TableHead className="text-xs uppercase tracking-widest text-muted-foreground w-[50px] text-center">S.No</TableHead>
                       <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Bill #</TableHead>
                       <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Date</TableHead>
                       <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Customer</TableHead>
@@ -133,6 +134,7 @@ export default function AllBillsPage() {
                   <TableBody>
                     {filtered.map((bill, i) => (
                       <TableRow key={bill.id} className="border-border hover:bg-secondary/20" data-testid={`all-bill-row-${i}`}>
+                        <TableCell className="mono text-center font-bold text-primary">{bill.daily_serial || '-'}</TableCell>
                         <TableCell className="mono text-xs">{bill.bill_number}</TableCell>
                         <TableCell className="mono text-sm">{bill.created_at?.slice(0, 10)}</TableCell>
                         <TableCell className="font-medium">{bill.customer_name}</TableCell>
