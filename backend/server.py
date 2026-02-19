@@ -298,6 +298,34 @@ async def startup_event():
     await db.notifications.create_index("due_date")
     logger.info("Database indexes created")
 
+    # Backfill old bills missing daily_serial or created_date
+    old_bills = await db.bills.find({
+        "$or": [{"daily_serial": {"$exists": False}}, {"created_date": {"$exists": False}}, {"daily_serial": None}, {"created_date": None}]
+    }).sort("created_at", 1).to_list(10000)
+    if old_bills:
+        # Group by date to assign serial numbers
+        from collections import defaultdict
+        date_groups = defaultdict(list)
+        for b in old_bills:
+            created_at = b.get("created_at", "")
+            if created_at:
+                date_str = created_at[:10]  # YYYY-MM-DD
+            else:
+                date_str = datetime.now(IST).strftime("%Y-%m-%d")
+            date_groups[date_str].append(b)
+        for date_str, bills_in_date in date_groups.items():
+            # Count existing bills with serials on this date
+            existing_count = await db.bills.count_documents({"created_date": date_str, "daily_serial": {"$exists": True, "$ne": None}})
+            for i, b in enumerate(bills_in_date):
+                serial = existing_count + i + 1
+                # Also update bill_number to new format if it's old format
+                bill_number = b.get("bill_number", "")
+                if bill_number.startswith("BILL-"):
+                    dd_mm_yyyy = date_str[8:10] + date_str[5:7] + date_str[0:4]
+                    bill_number = f"{serial:04d}-{dd_mm_yyyy}"
+                await db.bills.update_one({"_id": b["_id"]}, {"$set": {"daily_serial": serial, "created_date": date_str, "bill_number": bill_number}})
+        logger.info(f"Backfilled {len(old_bills)} old bills with daily_serial and created_date")
+
     # Create default tier settings if not exists
     tiers = await db.settings.find_one({"key": "customer_tiers"})
     if not tiers:
