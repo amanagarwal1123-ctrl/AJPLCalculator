@@ -827,6 +827,63 @@ export default function Reports() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Feedbacks */}
+          <TabsContent value="feedbacks" data-testid="tab-content-feedbacks">
+            <Card className="bg-card border-border">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2"><MessageSquare size={16} className="text-primary" /> All Feedbacks ({feedbacks.length})</CardTitle>
+                <div className="flex gap-2 items-center">
+                  <span className="text-xs text-muted-foreground">Sort by:</span>
+                  <Button variant={feedbackSort === 'date' ? 'default' : 'secondary'} size="sm" className="h-7 text-xs" onClick={() => setFeedbackSort('date')} data-testid="sort-feedback-date">Date</Button>
+                  <Button variant={feedbackSort === 'value' ? 'default' : 'secondary'} size="sm" className="h-7 text-xs" onClick={() => setFeedbackSort('value')} data-testid="sort-feedback-value">Bill Value</Button>
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => exportCSV(feedbacks.map(f => ({customer: f.customer_name, bill: f.bill_number, date: f.bill_date, total: f.grand_total, avg_rating: f.avg_rating, comments: f.additional_comments})), 'feedbacks')}><Download size={12} className="mr-1" /> CSV</Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {feedbacks.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-8">No feedbacks submitted yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {[...feedbacks].sort((a, b) => feedbackSort === 'value' ? (b.grand_total || 0) - (a.grand_total || 0) : (b.submitted_at || '').localeCompare(a.submitted_at || '')).map((f, i) => (
+                      <div key={f.id || i} className="p-3 sm:p-4 rounded-lg bg-secondary/20 border border-border" data-testid={`feedback-item-${i}`}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium text-sm">{f.customer_name || 'Anonymous'}</span>
+                              <span className="mono text-[10px] text-muted-foreground">{f.bill_number}</span>
+                              <span className="text-[10px] text-muted-foreground">{f.bill_date}</span>
+                            </div>
+                            {f.executive_name && <p className="text-xs text-muted-foreground mt-0.5">Exec: {f.executive_name}</p>}
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="flex items-center gap-1">
+                              <Star size={12} className="text-primary fill-primary" />
+                              <span className="mono text-sm font-bold text-primary">{f.avg_rating}</span>
+                            </div>
+                            <span className="mono text-sm font-medium text-primary">{formatCurrency(f.grand_total)}</span>
+                          </div>
+                        </div>
+                        {f.ratings?.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {f.ratings.map((r, ri) => (
+                              <div key={ri} className="text-xs px-2 py-1 rounded bg-secondary/50 border border-border">
+                                <span className="text-muted-foreground">{r.question?.substring(0, 30)}{r.question?.length > 30 ? '...' : ''}:</span>
+                                <span className="mono font-bold ml-1 text-primary">{r.rating}/10</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {f.additional_comments && (
+                          <p className="mt-2 text-xs text-muted-foreground italic border-l-2 border-primary/30 pl-2">"{f.additional_comments}"</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </AppLayout>
