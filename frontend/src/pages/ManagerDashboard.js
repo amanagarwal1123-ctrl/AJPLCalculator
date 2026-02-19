@@ -140,15 +140,15 @@ export default function ManagerDashboard() {
   const renderItemDetail = (item, idx) => {
     const isMrp = item.item_type === 'mrp';
     return (
-      <Card key={idx} className="bg-secondary/20 border-border">
+      <Card key={idx} className="bg-secondary/20 border-border overflow-hidden">
         <CardContent className="p-3 sm:p-4 space-y-2 sm:space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-1">
-            <div className="flex items-center gap-2">
-              {item.tag_number && <span className="mono text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{item.tag_number}</span>}
-              <span className="heading text-base sm:text-lg font-bold">{item.item_name}</span>
-              <span className={`px-2 py-0.5 rounded text-[10px] sm:text-xs ${isMrp ? 'bg-purple-500/20 text-purple-400' : item.item_type === 'diamond' ? 'bg-[hsl(196,70%,52%)]/20 text-[hsl(196,70%,52%)]' : 'bg-primary/20 text-primary'}`}>{isMrp ? 'MRP' : item.item_type}</span>
+          <div className="flex items-center justify-between flex-wrap gap-1 overflow-hidden">
+            <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+              {item.tag_number && <span className="mono text-[10px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground shrink-0">{item.tag_number}</span>}
+              <span className="heading text-base sm:text-lg font-bold truncate">{item.item_name}</span>
+              <span className={`px-2 py-0.5 rounded text-[10px] sm:text-xs shrink-0 ${isMrp ? 'bg-purple-500/20 text-purple-400' : item.item_type === 'diamond' ? 'bg-[hsl(196,70%,52%)]/20 text-[hsl(196,70%,52%)]' : 'bg-primary/20 text-primary'}`}>{isMrp ? 'MRP' : item.item_type}</span>
             </div>
-            {!isMrp && <span className="text-primary font-medium text-sm">{item.purity_name}</span>}
+            {!isMrp && <span className="text-primary font-medium text-sm shrink-0">{item.purity_name}</span>}
           </div>
 
           {isMrp ? (
