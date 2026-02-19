@@ -259,10 +259,10 @@ export default function ManagerDashboard() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <Card className="bg-card border-border"><CardContent className="p-3 sm:p-5"><p className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">Today's Sales</p><p className="mono text-lg sm:text-2xl font-bold text-primary mt-1">{formatCurrency(analytics?.today_sales)}</p></CardContent></Card>
-          <Card className="bg-card border-border"><CardContent className="p-3 sm:p-5"><p className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">Pending</p><p className="mono text-lg sm:text-2xl font-bold text-[hsl(38,85%,55%)] mt-1">{pendingBills.length}</p></CardContent></Card>
-          <Card className="bg-card border-border"><CardContent className="p-3 sm:p-5"><p className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">Approved</p><p className="mono text-lg sm:text-2xl font-bold text-[hsl(160,52%,46%)] mt-1">{approvedBills.length}</p></CardContent></Card>
-          <Card className="bg-card border-border"><CardContent className="p-3 sm:p-5"><p className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">Total</p><p className="mono text-lg sm:text-2xl font-bold text-[hsl(196,70%,52%)] mt-1">{bills.length}</p></CardContent></Card>
+          <Card className="bg-card border-border overflow-hidden"><CardContent className="p-3 sm:p-5"><p className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">Today's Sales</p><p className="mono text-lg sm:text-2xl font-bold text-primary mt-1 truncate">{formatCurrency(analytics?.today_sales)}</p></CardContent></Card>
+          <Card className="bg-card border-border overflow-hidden"><CardContent className="p-3 sm:p-5"><p className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">Pending</p><p className="mono text-lg sm:text-2xl font-bold text-[hsl(38,85%,55%)] mt-1">{pendingBills.length}</p></CardContent></Card>
+          <Card className="bg-card border-border overflow-hidden"><CardContent className="p-3 sm:p-5"><p className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">Approved</p><p className="mono text-lg sm:text-2xl font-bold text-[hsl(160,52%,46%)] mt-1">{approvedBills.length}</p></CardContent></Card>
+          <Card className="bg-card border-border overflow-hidden"><CardContent className="p-3 sm:p-5"><p className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">Total</p><p className="mono text-lg sm:text-2xl font-bold text-[hsl(196,70%,52%)] mt-1">{bills.length}</p></CardContent></Card>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
