@@ -1827,6 +1827,29 @@ async def get_bill_feedback(bill_id: str, user=Depends(get_current_user)):
         return None
     return serialize_doc(feedback)
 
+@api_router.get("/feedbacks")
+async def list_all_feedbacks(user=Depends(get_current_user)):
+    """Get all feedbacks with bill details, sorted by date."""
+    await require_role(user, ["admin", "manager"])
+    feedbacks = await db.feedbacks.find({}).sort("submitted_at", -1).to_list(5000)
+    result = []
+    for f in feedbacks:
+        f_data = serialize_doc(f)
+        bill = await db.bills.find_one({"id": f.get("bill_id")})
+        if bill:
+            f_data["bill_number"] = bill.get("bill_number", "")
+            f_data["bill_date"] = bill.get("created_date", bill.get("created_at", "")[:10])
+            f_data["grand_total"] = bill.get("grand_total", 0)
+            f_data["customer_phone"] = bill.get("customer_phone", "")
+            f_data["executive_name"] = bill.get("executive_name", "")
+        avg_rating = 0
+        ratings = f.get("ratings", [])
+        if ratings:
+            avg_rating = sum(r.get("rating", 0) for r in ratings) / len(ratings)
+        f_data["avg_rating"] = round(avg_rating, 1)
+        result.append(f_data)
+    return result
+
 # ============ NOTIFICATION SYSTEM ============
 async def generate_notifications():
     """Generate birthday/anniversary notifications. Called periodically or on demand."""
