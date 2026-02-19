@@ -266,6 +266,7 @@ export default function Reports() {
             <TabsTrigger value="reference" data-testid="tab-reference">References</TabsTrigger>
             <TabsTrigger value="customers" data-testid="tab-customers">Customers</TabsTrigger>
             <TabsTrigger value="items" data-testid="tab-items">Top Items</TabsTrigger>
+            <TabsTrigger value="feedbacks" data-testid="tab-feedbacks">Feedbacks</TabsTrigger>
           </TabsList>
 
           {/* Overview */}
