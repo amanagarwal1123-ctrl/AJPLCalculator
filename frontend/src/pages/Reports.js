@@ -834,13 +834,30 @@ export default function Reports() {
           {/* Feedbacks */}
           <TabsContent value="feedbacks" data-testid="tab-content-feedbacks">
             <Card className="bg-card border-border">
-              <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2"><MessageSquare size={16} className="text-primary" /> All Feedbacks ({feedbacks.length})</CardTitle>
-                <div className="flex gap-2 items-center">
-                  <span className="text-xs text-muted-foreground">Sort by:</span>
-                  <Button variant={feedbackSort === 'date' ? 'default' : 'secondary'} size="sm" className="h-7 text-xs" onClick={() => setFeedbackSort('date')} data-testid="sort-feedback-date">Date</Button>
-                  <Button variant={feedbackSort === 'value' ? 'default' : 'secondary'} size="sm" className="h-7 text-xs" onClick={() => setFeedbackSort('value')} data-testid="sort-feedback-value">Bill Value</Button>
-                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => exportCSV(feedbacks.map(f => ({customer: f.customer_name, bill: f.bill_number, date: f.bill_date, total: f.grand_total, avg_rating: f.avg_rating, comments: f.additional_comments})), 'feedbacks')}><Download size={12} className="mr-1" /> CSV</Button>
+              <CardHeader className="pb-2">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2"><MessageSquare size={16} className="text-primary" /> All Feedbacks ({feedbacks.length})</CardTitle>
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => exportCSV(feedbacks.map(f => ({customer: f.customer_name, bill: f.bill_number, date: f.bill_date, total: f.grand_total, avg_rating: f.avg_rating, comments: f.additional_comments})), 'feedbacks')} data-testid="export-feedbacks-csv"><Download size={12} className="mr-1" /> CSV</Button>
+                  </div>
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">From Date</Label>
+                      <Input type="date" value={feedbackDateFrom} onChange={e => setFeedbackDateFrom(e.target.value)} className="h-8 w-36 bg-secondary/50 mono text-xs" data-testid="feedback-date-from" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">To Date</Label>
+                      <Input type="date" value={feedbackDateTo} onChange={e => setFeedbackDateTo(e.target.value)} className="h-8 w-36 bg-secondary/50 mono text-xs" data-testid="feedback-date-to" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Sort:</span>
+                      <Button variant={feedbackOrder === 'desc' ? 'default' : 'secondary'} size="sm" className="h-7 text-xs" onClick={() => setFeedbackOrder('desc')} data-testid="sort-feedback-desc">High to Low</Button>
+                      <Button variant={feedbackOrder === 'asc' ? 'default' : 'secondary'} size="sm" className="h-7 text-xs" onClick={() => setFeedbackOrder('asc')} data-testid="sort-feedback-asc">Low to High</Button>
+                    </div>
+                    {(feedbackDateFrom || feedbackDateTo) && (
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setFeedbackDateFrom(''); setFeedbackDateTo(''); }} data-testid="clear-feedback-filters">Clear Dates</Button>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -848,7 +865,13 @@ export default function Reports() {
                   <p className="text-muted-foreground text-center py-8">No feedbacks submitted yet</p>
                 ) : (
                   <div className="space-y-3">
-                    {[...feedbacks].sort((a, b) => feedbackSort === 'value' ? (b.grand_total || 0) - (a.grand_total || 0) : (b.submitted_at || '').localeCompare(a.submitted_at || '')).map((f, i) => (
+                    {(() => {
+                      let filtered = [...feedbacks];
+                      if (feedbackDateFrom) filtered = filtered.filter(f => (f.bill_date || f.submitted_at?.slice(0, 10) || '') >= feedbackDateFrom);
+                      if (feedbackDateTo) filtered = filtered.filter(f => (f.bill_date || f.submitted_at?.slice(0, 10) || '') <= feedbackDateTo);
+                      filtered.sort((a, b) => feedbackOrder === 'asc' ? (a.grand_total || 0) - (b.grand_total || 0) : (b.grand_total || 0) - (a.grand_total || 0));
+                      if (filtered.length === 0) return <p className="text-muted-foreground text-center py-8">No feedbacks found for the selected date range</p>;
+                      return filtered.map((f, i) => (
                       <div key={f.id || i} className="p-3 sm:p-4 rounded-lg bg-secondary/20 border border-border" data-testid={`feedback-item-${i}`}>
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
