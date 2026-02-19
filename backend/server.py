@@ -601,22 +601,45 @@ async def delete_purity(purity_id: str, user=Depends(get_current_user)):
 @api_router.get("/rates")
 async def get_rates(user=Depends(get_current_user)):
     rates = await db.rate_cards.find({}).to_list(10)
-    return [serialize_doc(r) for r in rates]
+    all_purities = await db.purities.find({}).to_list(100)
+    result = []
+    for r in rates:
+        r_data = serialize_doc(r)
+        # Auto-heal: if rate card has empty purities, re-sync from purities collection
+        if not r_data.get("purities") and all_purities:
+            synced = [{"purity_id": p["id"], "purity_name": p["name"], "purity_percent": p["percent"], "rate_per_10g": 0} for p in all_purities]
+            r_data["purities"] = synced
+            await db.rate_cards.update_one({"rate_type": r_data["rate_type"]}, {"$set": {"purities": synced}})
+        result.append(r_data)
+    return result
 
 @api_router.get("/rates/{rate_type}")
 async def get_rate_by_type(rate_type: str, user=Depends(get_current_user)):
     rate = await db.rate_cards.find_one({"rate_type": rate_type})
     if not rate:
         raise HTTPException(status_code=404, detail="Rate card not found")
-    return serialize_doc(rate)
+    r_data = serialize_doc(rate)
+    if not r_data.get("purities"):
+        all_purities = await db.purities.find({}).to_list(100)
+        if all_purities:
+            synced = [{"purity_id": p["id"], "purity_name": p["name"], "purity_percent": p["percent"], "rate_per_10g": 0} for p in all_purities]
+            r_data["purities"] = synced
+            await db.rate_cards.update_one({"rate_type": rate_type}, {"$set": {"purities": synced}})
+    return r_data
 
 @api_router.put("/rates/{rate_type}")
 async def update_rates(rate_type: str, req: RateCardUpdate, user=Depends(get_current_user)):
     await require_role(user, ["admin"])
+    purities_to_save = [dict(p) for p in req.purities]
+    # Guard: never save empty purities if purities collection has data
+    if not purities_to_save:
+        all_purities = await db.purities.find({}).to_list(100)
+        if all_purities:
+            purities_to_save = [{"purity_id": p["id"], "purity_name": p["name"], "purity_percent": p["percent"], "rate_per_10g": 0} for p in all_purities]
     await db.rate_cards.update_one(
         {"rate_type": rate_type},
         {"$set": {
-            "purities": [dict(p) for p in req.purities],
+            "purities": purities_to_save,
             "updated_at": datetime.now(timezone.utc).isoformat(),
             "updated_by": user.get('full_name', 'admin'),
         }}
