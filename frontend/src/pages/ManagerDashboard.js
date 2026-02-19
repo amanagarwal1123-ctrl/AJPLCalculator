@@ -186,30 +186,30 @@ export default function ManagerDashboard() {
           ) : (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
-                <div><p className="text-[10px] text-muted-foreground">Gross Wt</p><p className="mono font-medium">{(item.gross_weight || 0).toFixed(3)}g</p></div>
-                <div><p className="text-[10px] text-muted-foreground">Less</p><p className="mono font-medium">{(item.less || 0).toFixed(3)}g</p></div>
-                <div><p className="text-[10px] text-muted-foreground">Net Wt</p><p className="mono font-bold text-primary">{(item.net_weight || 0).toFixed(3)}g</p></div>
-                <div><p className="text-[10px] text-muted-foreground">Rate/10g</p><p className="mono font-medium">{formatCurrency(item.rate_per_10g)}</p></div>
+                <div className="min-w-0"><p className="text-[10px] text-muted-foreground">Gross Wt</p><p className="mono font-medium truncate">{(item.gross_weight || 0).toFixed(3)}g</p></div>
+                <div className="min-w-0"><p className="text-[10px] text-muted-foreground">Less</p><p className="mono font-medium truncate">{(item.less || 0).toFixed(3)}g</p></div>
+                <div className="min-w-0"><p className="text-[10px] text-muted-foreground">Net Wt</p><p className="mono font-bold text-primary truncate">{(item.net_weight || 0).toFixed(3)}g</p></div>
+                <div className="min-w-0"><p className="text-[10px] text-muted-foreground">Rate/10g</p><p className="mono font-medium truncate">{formatCurrency(item.rate_per_10g)}</p></div>
               </div>
 
               <Separator className="bg-border" />
-              <div className="text-sm space-y-1">
-                <div className="flex justify-between"><span className="text-muted-foreground">Gold Value</span><span className="mono text-primary font-medium">{formatCurrency(item.gold_value)}</span></div>
+              <div className="text-sm space-y-1 overflow-hidden">
+                <div className="flex justify-between gap-2"><span className="text-muted-foreground shrink-0">Gold Value</span><span className="mono text-primary font-medium truncate">{formatCurrency(item.gold_value)}</span></div>
               </div>
 
               {item.making_charges?.length > 0 && (
                 <>
                   <Separator className="bg-border" />
-                  <div><p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-widest">Making Charges</p>
+                  <div className="overflow-hidden"><p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-widest">Making Charges</p>
                     {item.making_charges.map((mc, mi) => (
-                      <div key={mi} className="text-xs flex items-center gap-2">
-                        <span className="text-muted-foreground">{mc.type === 'percentage' ? '% Making' : mc.type === 'per_gram' ? 'Per Gram' : 'Per Piece'}:</span>
+                      <div key={mi} className="text-xs flex items-center gap-2 flex-wrap">
+                        <span className="text-muted-foreground shrink-0">{mc.type === 'percentage' ? '% Making' : mc.type === 'per_gram' ? 'Per Gram' : 'Per Piece'}:</span>
                         <span className="mono font-medium">{mc.value}{mc.type === 'percentage' ? '%' : mc.type === 'per_gram' ? '/g' : ''}</span>
                         {mc.type === 'percentage' && mc.making_per_gram && <sub className="text-primary text-[10px]">₹{Number(mc.making_per_gram).toFixed(0)}/g</sub>}
                         {mc.type === 'per_piece' && <span className="text-muted-foreground">x {mc.quantity} pcs</span>}
                       </div>
                     ))}
-                    <div className="flex justify-between text-sm mt-1"><span className="text-muted-foreground">Total Making</span><span className="mono font-medium">{formatCurrency(item.total_making)}</span></div>
+                    <div className="flex justify-between gap-2 text-sm mt-1"><span className="text-muted-foreground shrink-0">Total Making</span><span className="mono font-medium truncate">{formatCurrency(item.total_making)}</span></div>
                   </div>
                 </>
               )}
@@ -217,9 +217,9 @@ export default function ManagerDashboard() {
               {item.stone_charges?.length > 0 && (
                 <>
                   <Separator className="bg-border" />
-                  <div><p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-widest">Stone Charges</p>
-                    {item.stone_charges.map((sc, si) => <div key={si} className="text-xs flex items-center gap-2"><span className="capitalize text-muted-foreground">{sc.type}:</span><span className="mono font-medium">{sc.value}</span>{sc.type === 'kundan' && <span className="text-muted-foreground">x {sc.quantity} pcs</span>}</div>)}
-                    <div className="flex justify-between text-sm mt-1"><span className="text-muted-foreground">Total Stone</span><span className="mono font-medium">{formatCurrency(item.total_stone)}</span></div>
+                  <div className="overflow-hidden"><p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-widest">Stone Charges</p>
+                    {item.stone_charges.map((sc, si) => <div key={si} className="text-xs flex items-center gap-2 flex-wrap"><span className="capitalize text-muted-foreground">{sc.type}:</span><span className="mono font-medium">{sc.value}</span>{sc.type === 'kundan' && <span className="text-muted-foreground">x {sc.quantity} pcs</span>}</div>)}
+                    <div className="flex justify-between gap-2 text-sm mt-1"><span className="text-muted-foreground shrink-0">Total Stone</span><span className="mono font-medium truncate">{formatCurrency(item.total_stone)}</span></div>
                   </div>
                 </>
               )}
@@ -227,7 +227,7 @@ export default function ManagerDashboard() {
               {item.studded_charges?.length > 0 && (
                 <>
                   <Separator className="bg-border" />
-                  <div><p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-widest">Diamond / Studded</p>
+                  <div className="overflow-hidden"><p className="text-[10px] text-muted-foreground mb-1 uppercase tracking-widest">Diamond / Studded</p>
                     {item.studded_charges.map((sc, si) => (
                       <div key={si} className="text-xs flex items-center gap-2 flex-wrap">
                         <span className="capitalize text-muted-foreground">{sc.type?.replace('_', ' ')}:</span>
@@ -235,13 +235,13 @@ export default function ManagerDashboard() {
                         {sc.less_type === 'L' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/20 text-primary">L</span>}
                       </div>
                     ))}
-                    <div className="flex justify-between text-sm mt-1"><span className="text-muted-foreground">Total Studded</span><span className="mono font-medium">{formatCurrency(item.total_studded)}</span></div>
+                    <div className="flex justify-between gap-2 text-sm mt-1"><span className="text-muted-foreground shrink-0">Total Studded</span><span className="mono font-medium truncate">{formatCurrency(item.total_studded)}</span></div>
                   </div>
                 </>
               )}
 
-              <div className="flex justify-between text-sm font-bold border-t border-border pt-2 mt-2">
-                <span>Item Total</span><span className="mono text-primary">{formatCurrency(item.total_amount)}</span>
+              <div className="flex justify-between gap-2 text-sm font-bold border-t border-border pt-2 mt-2">
+                <span>Item Total</span><span className="mono text-primary truncate">{formatCurrency(item.total_amount)}</span>
               </div>
             </>
           )}
