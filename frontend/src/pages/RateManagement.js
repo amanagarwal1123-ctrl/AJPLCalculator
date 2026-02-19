@@ -26,10 +26,38 @@ export default function RateManagement() {
         apiClient.get('/rates'),
         apiClient.get('/purities'),
       ]);
+      const allPurities = puritiesRes.data;
+      setPurities(allPurities);
+
+      // Build rates map, syncing purities from the purities collection
       const ratesMap = {};
-      ratesRes.data.forEach(r => ratesMap[r.rate_type] = r);
+      ratesRes.data.forEach(r => {
+        const ratePurities = r.purities || [];
+        // If rate card has no purities or fewer than collection, re-sync
+        if (ratePurities.length === 0 && allPurities.length > 0) {
+          r.purities = allPurities.map(p => ({
+            purity_id: p.id,
+            purity_name: p.name,
+            purity_percent: p.percent,
+            rate_per_10g: 0,
+          }));
+        } else if (ratePurities.length < allPurities.length) {
+          // Add missing purities that exist in collection but not in rate card
+          const existingNames = new Set(ratePurities.map(p => p.purity_name));
+          allPurities.forEach(p => {
+            if (!existingNames.has(p.name)) {
+              r.purities.push({
+                purity_id: p.id,
+                purity_name: p.name,
+                purity_percent: p.percent,
+                rate_per_10g: 0,
+              });
+            }
+          });
+        }
+        ratesMap[r.rate_type] = r;
+      });
       setRates(ratesMap);
-      setPurities(puritiesRes.data);
     } catch (err) {
       toast.error('Failed to load rates');
     }

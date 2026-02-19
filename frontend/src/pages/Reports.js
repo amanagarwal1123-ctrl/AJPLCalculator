@@ -258,7 +258,7 @@ export default function Reports() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="bg-secondary">
+          <TabsList className="bg-secondary flex flex-wrap h-auto gap-1 p-1">
             <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
             <TabsTrigger value="kt" data-testid="tab-kt">KT Analysis</TabsTrigger>
             <TabsTrigger value="branches" data-testid="tab-branches">Branches</TabsTrigger>
