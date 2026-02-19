@@ -65,23 +65,23 @@ export default function ManagerDashboard() {
   };
 
   const BillCard = ({ bill: b, showApprove = false }) => (
-    <div className="p-3 rounded-lg bg-secondary/20 border border-border" data-testid={`manager-bill-card-${b.id}`}>
+    <div className="p-3 rounded-lg bg-secondary/20 border border-border overflow-hidden" data-testid={`manager-bill-card-${b.id}`}>
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 overflow-hidden">
           <p className="font-medium text-sm truncate text-primary cursor-pointer hover:underline" onClick={() => navigate(`/customer/${b.customer_phone}`)}>{b.customer_name}</p>
-          <p className="text-[10px] text-muted-foreground mono mt-0.5">{b.bill_number}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">by {b.executive_name}{b.salesperson_name ? ` / ${b.salesperson_name}` : ''}</p>
+          <p className="text-[10px] text-muted-foreground mono mt-0.5 truncate">{b.bill_number}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">by {b.executive_name}{b.salesperson_name ? ` / ${b.salesperson_name}` : ''}</p>
         </div>
-        <div className="text-right shrink-0">
+        <div className="text-right shrink-0 min-w-0">
           {statusBadge(b.status)}
-          <p className="mono text-sm font-bold text-primary mt-1">{formatCurrency(b.grand_total)}</p>
+          <p className="mono text-sm font-bold text-primary mt-1 whitespace-nowrap">{formatCurrency(b.grand_total)}</p>
         </div>
       </div>
       <div className="flex gap-2 mt-3">
-        <Button variant="secondary" size="sm" className="flex-1 h-10" onClick={() => viewSummary(b.id)} data-testid={`manager-summary-${b.id}`}><ClipboardList size={14} className="mr-1" /> Summary</Button>
-        <Button variant="secondary" size="sm" className="flex-1 h-10" onClick={() => navigate(`/bill/${b.id}`)} data-testid={`manager-view-${b.id}`}><Eye size={14} className="mr-1" /> View</Button>
+        <Button variant="secondary" size="sm" className="flex-1 h-10 min-w-0" onClick={() => viewSummary(b.id)} data-testid={`manager-summary-${b.id}`}><ClipboardList size={14} className="mr-1 shrink-0" /> <span className="truncate">Summary</span></Button>
+        <Button variant="secondary" size="sm" className="flex-1 h-10 min-w-0" onClick={() => navigate(`/bill/${b.id}`)} data-testid={`manager-view-${b.id}`}><Eye size={14} className="mr-1 shrink-0" /> <span className="truncate">View</span></Button>
         {showApprove && b.status !== 'approved' && (
-          <Button size="sm" className="h-10 bg-[hsl(160,52%,46%)] hover:bg-[hsl(160,52%,40%)] text-white" onClick={() => approveBill(b.id)} data-testid={`manager-approve-${b.id}`}><CheckCircle size={14} className="mr-1" /> Approve</Button>
+          <Button size="sm" className="h-10 bg-[hsl(160,52%,46%)] hover:bg-[hsl(160,52%,40%)] text-white min-w-0 shrink-0" onClick={() => approveBill(b.id)} data-testid={`manager-approve-${b.id}`}><CheckCircle size={14} className="mr-1 shrink-0" /> <span className="truncate">Approve</span></Button>
         )}
       </div>
     </div>
