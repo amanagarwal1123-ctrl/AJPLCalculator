@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { ArrowLeft, Eye, Trash2, Printer, Phone, MapPin, Calendar, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Eye, Trash2, Printer, Phone, MapPin, Calendar, ShoppingBag, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CustomerHistoryPage() {
@@ -60,14 +60,19 @@ export default function CustomerHistoryPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/admin/customers')} data-testid="back-to-customers">
-            <ArrowLeft size={18} />
-          </Button>
-          <div>
-            <h1 className="heading text-3xl font-bold" data-testid="customer-name">{customer.name}</h1>
-            <p className="text-muted-foreground mt-1">Customer History & Bill Records</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/admin/customers')} data-testid="back-to-customers">
+              <ArrowLeft size={18} />
+            </Button>
+            <div>
+              <h1 className="heading text-3xl font-bold" data-testid="customer-name">{customer.name}</h1>
+              <p className="text-muted-foreground mt-1">Customer History & Bill Records</p>
+            </div>
           </div>
+          <Button variant="secondary" size="sm" onClick={() => navigate(`/customer/${customer.phone || customerId}`)} data-testid="edit-customer-details-btn">
+            <Edit size={14} className="mr-1" /> Edit Details
+          </Button>
         </div>
 
         {/* Customer Profile Card */}
