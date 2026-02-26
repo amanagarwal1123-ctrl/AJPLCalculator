@@ -1453,6 +1453,18 @@ async def get_inactive_customers(
     await require_role(user, ["admin", "manager"])
     customers = await db.customers.find({}).to_list(5000)
     
+    # Calculate actual spending from approved/sent/edited bills per customer
+    all_bills = await db.bills.find(
+        {"status": {"$in": ["sent", "approved", "edited"]}}
+    ).to_list(10000)
+    customer_bill_spending = {}
+    for bill in all_bills:
+        phone = bill.get('customer_phone', '')
+        if phone:
+            if phone not in customer_bill_spending:
+                customer_bill_spending[phone] = 0
+            customer_bill_spending[phone] += bill.get('grand_total', 0)
+    
     inactive = []
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     
@@ -1464,6 +1476,9 @@ async def get_inactive_customers(
                 if lv < cutoff:
                     c_data = serialize_doc(c)
                     c_data['days_since_last_visit'] = (datetime.now(timezone.utc) - lv).days
+                    # Use actual bill-based spending instead of cached total_spent
+                    phone = c.get('phone', '')
+                    c_data['total_spent'] = round(customer_bill_spending.get(phone, 0), 2)
                     inactive.append(c_data)
             except Exception:
                 pass
