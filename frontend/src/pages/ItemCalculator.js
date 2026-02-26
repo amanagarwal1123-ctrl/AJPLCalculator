@@ -451,7 +451,7 @@ export default function ItemCalculator() {
                       </div>
                       <div className="space-y-2">
                         <Label>Item Name *</Label>
-                        <Select value={itemName || undefined} onValueChange={setItemName}>
+                        <Select value={itemName} onValueChange={setItemName} key={dataLoaded ? 'loaded' : 'loading'}>
                           <SelectTrigger className="h-11 bg-secondary/50" data-testid="item-name-select">
                             <SelectValue placeholder="Select item" />
                           </SelectTrigger>
