@@ -1780,6 +1780,7 @@ async def create_salesperson(req: SalespersonCreate, user=Depends(get_current_us
     doc = {
         "id": str(uuid.uuid4()),
         "name": req.name,
+        "branch_id": req.branch_id or "",
         "is_active": True,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -1787,9 +1788,19 @@ async def create_salesperson(req: SalespersonCreate, user=Depends(get_current_us
     return serialize_doc(doc)
 
 @api_router.get("/salespeople")
-async def list_salespeople(user=Depends(get_current_user)):
-    people = await db.salespeople.find({"is_active": True}).to_list(500)
-    return [serialize_doc(p) for p in people]
+async def list_salespeople(branch_id: Optional[str] = None, user=Depends(get_current_user)):
+    query = {"is_active": True}
+    if branch_id:
+        query["branch_id"] = branch_id
+    people = await db.salespeople.find(query).to_list(500)
+    # Lookup branch names
+    branches = {b["id"]: b["name"] for b in await db.branches.find({}).to_list(100)}
+    result = []
+    for p in people:
+        p_data = serialize_doc(p)
+        p_data["branch_name"] = branches.get(p.get("branch_id", ""), "")
+        result.append(p_data)
+    return result
 
 @api_router.delete("/salespeople/{sp_id}")
 async def delete_salesperson(sp_id: str, user=Depends(get_current_user)):
