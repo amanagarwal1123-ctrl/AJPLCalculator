@@ -10,6 +10,7 @@ import { Plus, Trash2, UserCheck, Building, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function SalespeopleManagement() {
+  const navigate = useNavigate();
   const [people, setPeople] = useState([]);
   const [branches, setBranches] = useState([]);
   const [newName, setNewName] = useState('');
