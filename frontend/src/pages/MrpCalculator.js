@@ -24,6 +24,7 @@ export default function MrpCalculator() {
   const [itemNames, setItemNames] = useState([]);
   const [saving, setSaving] = useState(false);
   const [bill, setBill] = useState(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -33,7 +34,7 @@ export default function MrpCalculator() {
         apiClient.get('/item-names'),
         apiClient.get(`/bills/${billId}`),
       ]);
-      setItemNames(itemsRes.data);
+      setItemNames(itemsRes.data || []);
       setBill(billRes.data);
 
       // Pre-fill if editing
@@ -52,7 +53,11 @@ export default function MrpCalculator() {
           value: String(d.value || ''),
         })));
       }
-    } catch (err) { toast.error('Failed to load data'); }
+      setDataLoaded(true);
+    } catch (err) {
+      toast.error('Failed to load data');
+      setDataLoaded(true);
+    }
   };
 
   // Calculations
