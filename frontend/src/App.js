@@ -25,6 +25,7 @@ import FeedbackPage from "@/pages/FeedbackPage";
 import CustomerProfilePage from "@/pages/CustomerProfilePage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import MrpCalculator from "@/pages/MrpCalculator";
+import SalespersonPerformance from "@/pages/SalespersonPerformance";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
