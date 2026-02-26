@@ -122,6 +122,7 @@ export default function AllBillsPage() {
                       <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Date</TableHead>
                       <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Customer</TableHead>
                       <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Phone</TableHead>
+                      <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Reference</TableHead>
                       <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Executive</TableHead>
                       <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Items</TableHead>
                       <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Status</TableHead>
@@ -139,6 +140,7 @@ export default function AllBillsPage() {
                         <TableCell className="mono text-sm">{bill.created_at?.slice(0, 10)}</TableCell>
                         <TableCell className="font-medium">{bill.customer_name}</TableCell>
                         <TableCell className="mono text-sm">{bill.customer_phone}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{bill.customer_reference || '-'}</TableCell>
                         <TableCell className="text-muted-foreground">{bill.executive_name}</TableCell>
                         <TableCell>
                           <div className="space-y-0.5">
