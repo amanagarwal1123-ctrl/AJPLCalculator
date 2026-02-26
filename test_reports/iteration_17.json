@@ -1,0 +1,103 @@
+{
+  "summary": "Testing completed for 3 fixes in iteration 17: 1) Analytics Fix verified - customer analytics now uses only approved/sent/edited bills for total_spent calculations, 2) Salespeople Branch features working - branch select in add form and filter dropdown present, 3) Customer Edit button working - navigates to /customer/:phone edit page",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  
+  "passed_tests": [
+    "Analytics Fix: GET /api/analytics/customers returns correct total_spent based on approved bills only",
+    "Analytics Fix: GET /api/analytics/customers/frequency calculates cohort totals from approved bills only",
+    "Analytics Fix: GET /api/customers/{id}/bills returns total_spent matching sum of approved/sent/edited bills",
+    "Analytics Fix: Draft bills (₹125,505.50 in test) correctly EXCLUDED from total_spent (₹210,411.09)",
+    "Analytics Fix: Reports Customers tab shows reasonable frequency cohort values",
+    "Salespeople Branch: GET /api/salespeople returns branch_name if assigned",
+    "Salespeople Branch: POST /api/salespeople accepts branch_id parameter",
+    "Salespeople Branch: Branch select dropdown EXISTS in add form (data-testid='salesperson-branch-select')",
+    "Salespeople Branch: Branch filter dropdown EXISTS at top of list (data-testid='filter-branch-select')",
+    "Salespeople Branch: Creating salesperson with branch_id correctly associates and returns branch_name",
+    "Customer Edit: 'Edit Details' button EXISTS on Customer History page (data-testid='edit-customer-details-btn')",
+    "Customer Edit: Button contains Edit icon and 'Edit Details' text",
+    "Customer Edit: Clicking button navigates to /customer/:phone correctly",
+    "Customer Edit: Customer profile edit page shows all fields (Name, Phone, Email, Location, Reference, DOB, Anniversary, Address, Notes)"
+  ],
+  
+  "test_report_links": [
+    "/app/backend/tests/test_iteration17_features.py",
+    "/app/test_reports/pytest/iteration17_results.xml",
+    ".screenshots/salespeople_page.png",
+    ".screenshots/customer_history_page.png",
+    ".screenshots/customer_edit_page.png",
+    ".screenshots/reports_customers_tab.png"
+  ],
+  
+  "action_items": [],
+  
+  "critical_code_review_comments": [
+    "server.py: GET /api/analytics/customers now queries bills with status in ['sent','approved','edited'] instead of using cached customer.total_spent",
+    "server.py: GET /api/analytics/customers/frequency uses bill-based spending per customer phone number for cohort calculations",
+    "SalespeopleManagement.js: Complete rewrite with branch_id support - add form has branch select, list has filter dropdown",
+    "CustomerHistoryPage.js: Edit Details button at line 73 navigates to /customer/:phone route"
+  ],
+  
+  "updated_files": [
+    "/app/backend/tests/test_iteration17_features.py"
+  ],
+  
+  "success_rate": {
+    "backend": "100% (8/8 tests passed)",
+    "frontend": "100% (all features verified)"
+  },
+  
+  "test_credentials": {
+    "admin": {
+      "username": "admin",
+      "password": "admin1123",
+      "method": "Click 'Admin Login' link on login page"
+    }
+  },
+  
+  "seed_data_creation": "Created test salesperson with branch_id during testing (cleaned up)",
+  
+  "retest_needed": false,
+  
+  "should_main_agent_self_test": false,
+  
+  "context_for_next_testing_agent": "All 3 fixes verified working: 1) Analytics Fix - total_spent now calculated from approved/sent/edited bills only (Test Customer has ₹210,411 from 3 approved bills, 4 draft bills excluded), 2) Salespeople Branch - UI has branch select in add form and filter dropdown, existing salespeople don't have branches (created before feature), 3) Customer Edit - button on CustomerHistoryPage navigates to /customer/:phone profile edit page with all fields",
+  
+  "feature_verification_details": {
+    "analytics_fix": {
+      "status": "PASS",
+      "test_customer_phone": "9876543210",
+      "api_total_spent": 210411.09,
+      "approved_bills_sum": 210411.09,
+      "excluded_draft_bills_sum": 125505.5,
+      "note": "Total matches sum of approved/sent/edited bills only"
+    },
+    "salespeople_branch": {
+      "status": "PASS",
+      "add_form_branch_select": "present (data-testid='salesperson-branch-select')",
+      "filter_dropdown": "present (data-testid='filter-branch-select')",
+      "branch_name_display": "working when salesperson has branch_id",
+      "note": "Existing salespeople (Rahul, Priya) don't have branches - created before this feature"
+    },
+    "customer_edit_button": {
+      "status": "PASS",
+      "button_location": "CustomerHistoryPage top right",
+      "button_testid": "edit-customer-details-btn",
+      "navigation_target": "/customer/:phone",
+      "edit_page_fields": ["Name", "Phone", "Email", "Location", "Reference", "DOB", "Anniversary", "Address", "Notes"]
+    }
+  },
+  
+  "mocked_apis": {
+    "OTP_delivery": "OTP codes shown on admin dashboard instead of actual delivery"
+  }
+}
