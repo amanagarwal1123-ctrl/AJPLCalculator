@@ -1,0 +1,102 @@
+{
+  "summary": "Testing iteration 18: Verified 3 bug fixes/features - 1) Inactive customers total_spent now calculated from bills (not cached), 2) Salespeople page shows branch name or 'No branch', 3) New salesperson performance page with charts and summary cards",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  
+  "passed_tests": [
+    "Bug Fix: GET /api/analytics/customers/inactive returns total_spent calculated from approved/sent/edited bills",
+    "Bug Fix: Inactive customers total_spent matches sum of approved bills (verified: Test Customer ₹56,753)",
+    "UI Fix: Salespeople list shows 'No branch' text for salespeople without branch assignment",
+    "UI Fix: Salespeople add form includes branch select dropdown",
+    "UI Fix: Salespeople list has 'All Branches' filter dropdown",
+    "Navigation: Clicking salesperson row navigates to /admin/salespeople/:spName",
+    "New Feature: /api/salespeople/:spName/performance endpoint returns correct structure",
+    "New Feature: Performance endpoint returns name, branch_name, total_sales, total_bills, daily_sales",
+    "New Feature: Performance page shows 4 summary cards (Total Sales, Total Bills, Avg Daily, Performance Trend)",
+    "New Feature: Performance page shows Day-wise Sales Breakdown table",
+    "New Feature: Performance page shows 'No sales data available' when no bills exist",
+    "New Feature: Back button navigates to /admin/salespeople",
+    "Auth: Performance endpoint requires authentication (returns 401 without token)"
+  ],
+  
+  "test_report_links": [
+    "/app/backend/tests/test_iteration18_features.py",
+    "/app/test_reports/pytest/iteration18_results.xml",
+    ".screenshots/salespeople_management.png",
+    ".screenshots/after_click_rahul.png"
+  ],
+  
+  "action_items": [],
+  
+  "critical_code_review_comments": [
+    "server.py line ~1457: get_inactive_customers correctly calculates total_spent from bills with status in ['sent','approved','edited'] instead of using cached customer.total_spent",
+    "server.py line ~1828: get_salesperson_performance endpoint correctly aggregates bills by salesperson_name",
+    "SalespeopleManagement.js: Row click handler correctly encodes name in URL with encodeURIComponent()",
+    "SalespersonPerformance.js: Charts only render when daily_sales has data, preventing empty chart display"
+  ],
+  
+  "updated_files": [
+    "/app/backend/tests/test_iteration18_features.py"
+  ],
+  
+  "success_rate": {
+    "backend": "100% (8/8 pytest tests passed)",
+    "frontend": "100% (all features verified via Playwright)"
+  },
+  
+  "test_credentials": {
+    "admin": {
+      "username": "admin",
+      "password": "admin1123",
+      "method": "Click 'Admin Login' link on login page"
+    }
+  },
+  
+  "seed_data_creation": "None required - used existing data",
+  
+  "retest_needed": false,
+  
+  "should_main_agent_self_test": false,
+  
+  "context_for_next_testing_agent": "All 3 features verified working: 1) Inactive customers bug fix - total_spent calculated from approved/sent/edited bills (Test Customer has ₹56,753 from 1 sent bill), 2) Salespeople branch display - shows 'No branch' for Rahul and Priya since they have no branch_id, 3) Salesperson performance page shows empty state with ₹0 values and 'No sales data' message because no bills have salesperson_name set",
+  
+  "feature_verification_details": {
+    "inactive_customers_bug_fix": {
+      "status": "PASS",
+      "endpoint": "/api/analytics/customers/inactive",
+      "verified_customer": "Test Customer (9999988888)",
+      "total_spent_from_api": 56753,
+      "verified_against_bills": "1 sent bill with grand_total=56753",
+      "note": "total_spent now calculated from bills, not cached customer.total_spent"
+    },
+    "salespeople_branch_display": {
+      "status": "PASS",
+      "branch_display": "'No branch' shown in gray italic text for salespeople without branch_id",
+      "add_form": "Has branch select dropdown",
+      "list_filter": "Has 'All Branches' filter dropdown",
+      "note": "Rahul and Priya show 'No branch' as expected"
+    },
+    "salesperson_performance_page": {
+      "status": "PASS",
+      "url_pattern": "/admin/salespeople/:spName",
+      "summary_cards": ["Total Sales", "Total Bills", "Avg Daily Sale", "Performance Trend"],
+      "charts": "AreaChart and BarChart (hidden when no data)",
+      "table": "Day-wise Sales Breakdown with 'No sales data available' empty state",
+      "back_button": "Works - navigates to /admin/salespeople",
+      "note": "Shows empty/zero state because no bills have salesperson_name='Rahul' set"
+    }
+  },
+  
+  "mocked_apis": {
+    "OTP_delivery": "OTP codes shown on admin dashboard instead of actual delivery"
+  }
+}
