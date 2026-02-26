@@ -14,7 +14,7 @@ from datetime import datetime
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://admin-dashboard-v2-14.preview.emergentagent.com"
+    BASE_URL = "https://dashboard-upgrade-42.preview.emergentagent.com"
 
 class TestAuthAndSetup:
     """Auth setup tests"""

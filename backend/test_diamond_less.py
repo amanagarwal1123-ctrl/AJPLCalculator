@@ -11,7 +11,7 @@ from datetime import datetime
 
 class DiamondLessAPITester:
     def __init__(self):
-        self.base_url = "https://admin-dashboard-v2-14.preview.emergentagent.com/api"
+        self.base_url = "https://dashboard-upgrade-42.preview.emergentagent.com/api"
         self.token = None
         self.tests_run = 0
         self.tests_passed = 0
