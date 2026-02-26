@@ -84,6 +84,15 @@ export default function MrpCalculator() {
   const removeDiscount = (idx) => setDiscounts(discounts.filter((_, i) => i !== idx));
   const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val || 0);
 
+  if (!dataLoaded) {
+    return (
+      <div className="kintsugi-page flex items-center justify-center min-h-screen">
+        <div className="kintsugi-veins" />
+        <p className="relative z-10 heading text-xl text-primary">Loading calculator...</p>
+      </div>
+    );
+  }
+
   const saveItem = async () => {
     if (!itemName) { toast.error('Select an item name'); return; }
     if (!grossWeight) { toast.error('Enter gross weight'); return; }
