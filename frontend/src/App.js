@@ -117,6 +117,7 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <AuthProvider>
+          <ErrorBoundary>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<PrivateRoute><DashboardRouter /></PrivateRoute>} />
@@ -136,14 +137,15 @@ function App() {
             <Route path="/manager" element={<PrivateRoute roles={['manager']}><ManagerDashboard /></PrivateRoute>} />
             <Route path="/sales" element={<PrivateRoute roles={['executive']}><SalesExecDashboard /></PrivateRoute>} />
             <Route path="/bill/:billId" element={<PrivateRoute><BillPage /></PrivateRoute>} />
-            <Route path="/bill/:billId/add-item" element={<PrivateRoute><ItemCalculator /></PrivateRoute>} />
-            <Route path="/bill/:billId/edit-item/:itemIndex" element={<PrivateRoute><ItemCalculator /></PrivateRoute>} />
+            <Route path="/bill/:billId/add-item" element={<PrivateRoute><ErrorBoundary><ItemCalculator /></ErrorBoundary></PrivateRoute>} />
+            <Route path="/bill/:billId/edit-item/:itemIndex" element={<PrivateRoute><ErrorBoundary><ItemCalculator /></ErrorBoundary></PrivateRoute>} />
             <Route path="/bill/:billId/print" element={<PrivateRoute><BillPrintView /></PrivateRoute>} />
             <Route path="/bill/:billId/feedback" element={<FeedbackPage />} />
-            <Route path="/bill/:billId/mrp" element={<PrivateRoute><MrpCalculator /></PrivateRoute>} />
-            <Route path="/bill/:billId/edit-mrp/:itemIndex" element={<PrivateRoute><MrpCalculator /></PrivateRoute>} />
+            <Route path="/bill/:billId/mrp" element={<PrivateRoute><ErrorBoundary><MrpCalculator /></ErrorBoundary></PrivateRoute>} />
+            <Route path="/bill/:billId/edit-mrp/:itemIndex" element={<PrivateRoute><ErrorBoundary><MrpCalculator /></ErrorBoundary></PrivateRoute>} />
             <Route path="/customer/:customerId" element={<PrivateRoute><CustomerProfilePage /></PrivateRoute>} />
           </Routes>
+          </ErrorBoundary>
           <Toaster position="top-right" richColors />
         </AuthProvider>
       </BrowserRouter>
