@@ -141,6 +141,10 @@ export default function CustomerProfilePage() {
                   <Input value={form.location || ''} onChange={e => setForm({...form, location: e.target.value})} readOnly={!editing} className={`h-10 ${!editing ? 'bg-muted/50' : 'bg-secondary/50'}`} />
                 </div>
                 <div className="space-y-1.5">
+                  <Label className="text-xs flex items-center gap-1"><Star size={12} /> Reference</Label>
+                  <Input value={form.reference || ''} onChange={e => setForm({...form, reference: e.target.value})} readOnly={!editing} className={`h-10 ${!editing ? 'bg-muted/50' : 'bg-secondary/50'}`} data-testid="customer-reference" />
+                </div>
+                <div className="space-y-1.5">
                   <Label className="text-xs flex items-center gap-1"><Calendar size={12} /> Date of Birth</Label>
                   <Input type="date" value={form.dob || ''} onChange={e => setForm({...form, dob: e.target.value})} readOnly={!editing} className={`h-10 ${!editing ? 'bg-muted/50' : 'bg-secondary/50'}`} data-testid="customer-dob" />
                 </div>
