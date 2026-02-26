@@ -13,58 +13,43 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 ## What's Been Implemented
 
 ### Authentication & Authorization
-- [x] OTP-based login for non-admin users (OTPs shown on admin dashboard)
-- [x] Separate password-based admin login (admin/admin1123)
-- [x] JWT token with 10 PM IST expiry for managers/executives
-- [x] Role-based access control (admin, manager, executive)
-- [x] Single-device sessions for non-admin users
-- [x] Admin multi-login allowed (no session restriction)
-- [x] Active sessions panel for admin with terminate capability
+- [x] OTP-based login, admin password login, JWT tokens
+- [x] Role-based access control, single-device sessions, admin multi-login
 
 ### Admin Features
-- [x] Dashboard with KPIs, OTP panel
-- [x] Bills grouped by date with datetime, salesman, weight, phone, item count
-- [x] Daily serial numbers on bills (reset to 1 each day)
-- [x] Simple bill numbers: `0001-DDMMYYYY` format
-- [x] S.No column in All Bills table showing daily_serial (Feb 2026)
-- [x] MMI entered toggle per bill
-- [x] Active sessions management - view/terminate user sessions
-- [x] Bills tabs: Pending, Approved, Draft, All with approve buttons
-- [x] Rate Management - Normal & AJPL rates, auto-heal for empty purities (Feb 2026)
-- [x] Branch Management, User Management, Salesperson Management
-- [x] Item Name Management with edit/rename
-- [x] Customer List with tier-based classification
-- [x] Feedback Questions Management, Customer Tier Settings
-- [x] Notifications panel
+- [x] Dashboard with KPIs, OTP panel, active sessions
+- [x] Bills with daily serial numbers, `0001-DDMMYYYY` bill format
+- [x] S.No column + Reference column in All Bills table (Feb 2026)
+- [x] Rate Management with auto-heal for empty purities
+- [x] Branch/User/Salesperson/Item Name Management
+- [x] Customer List with Total Spent, Feedback Questions, Notifications
+
+### Customer Management
+- [x] Customer List with Total Spent column
+- [x] Customer Profile with all fields: Name, Phone, Email, Location, Reference, DOB, Anniversary, Address, Notes (Feb 2026)
+- [x] Customer tier classification
 
 ### Reports & Analytics
-- [x] Overview, KT Analysis, Branches, Executives, References, Customers, Top Items tabs
-- [x] Feedbacks tab with date range filter + asc/desc sort by bill value (Feb 2026)
+- [x] 8 tabs: Overview, KT Analysis, Branches, Executives, References, Customers, Top Items, Feedbacks
+- [x] Feedbacks tab with date range filter + asc/desc sort by bill value
+- [x] Inactive Customers section with user-specified days threshold
 - [x] CSV export for all reports
-- [x] TabsList with flex-wrap for 8 tabs
 
 ### Calculator Pages
-- [x] ErrorBoundary wrapping all routes (prevents blank screen crashes) (Feb 2026)
-- [x] Loading state in ItemCalculator and MrpCalculator (Feb 2026)
-- [x] Fixed Select component value handling for stable rendering (Feb 2026)
-- [x] Gold/Diamond/MRP calculation flows
-- [x] Making charges (percentage, per gram, per piece)
-- [x] Stone charges (kundan, stone, moti)
-- [x] Diamond studded charges with L/NL weight deduction
+- [x] ErrorBoundary wrapping all routes
+- [x] Loading state in ItemCalculator and MrpCalculator
+- [x] Gold/Diamond/MRP calculation flows with making/stone/studded charges
+
+### Bill Print View
+- [x] B&W printer friendly: white bg, black borders, grayscale logo (Feb 2026)
+- [x] Heading: "TENTATIVE INVOICE"
+- [x] High contrast for legible B&W output
 
 ### Manager Dashboard
-- [x] KPI cards with overflow-hidden, Bill table with fixed widths, Summary dialog
+- [x] KPI cards, Bill table with fixed widths, Summary dialog
 
 ### Sales Executive Features
-- [x] Customer intake, Salesperson dropdown, Multi-bill tab bar
-- [x] Gold/Diamond/MRP calculators, Photo upload, Feedback flow
-
-## Key API Endpoints
-- `POST /api/auth/login` / `POST /api/auth/request-otp` / `POST /api/auth/verify-otp`
-- `GET/PUT /api/rates/{rate_type}` - Rate management with auto-heal
-- `GET /api/feedbacks` - All feedbacks with bill details
-- `GET /api/bills` - All bills with daily_serial field
-- `POST /api/upload/photo` / `GET /api/uploads/{filename}`
+- [x] Customer intake, multi-bill tab bar, calculators, photo upload, feedback flow
 
 ## Credentials
 - **Admin:** username=admin, password=admin1123
@@ -75,4 +60,4 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 
 ## Prioritized Backlog
 - P1: Refactor server.py into route modules (admin, billing, reports)
-- P2: Decompose large frontend components (AdminDashboard, SalesExecDashboard)
+- P2: Decompose large frontend components
