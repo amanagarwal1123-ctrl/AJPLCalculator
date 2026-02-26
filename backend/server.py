@@ -1350,6 +1350,18 @@ async def get_customer_frequency(user=Depends(get_current_user)):
     await require_role(user, ["admin", "manager"])
     customers = await db.customers.find({}).to_list(5000)
     
+    # Calculate actual spending from approved/sent bills per customer
+    all_bills = await db.bills.find(
+        {"status": {"$in": ["sent", "approved", "edited"]}}
+    ).to_list(10000)
+    customer_bill_spending = {}
+    for bill in all_bills:
+        phone = bill.get('customer_phone', '')
+        if phone:
+            if phone not in customer_bill_spending:
+                customer_bill_spending[phone] = 0
+            customer_bill_spending[phone] += bill.get('grand_total', 0)
+    
     # Define cohort buckets
     cohorts = {
         "1 visit": {"count": 0, "total_spent": 0},
@@ -1360,7 +1372,8 @@ async def get_customer_frequency(user=Depends(get_current_user)):
     
     for c in customers:
         visits = c.get('total_visits', 1)
-        spent = c.get('total_spent', 0)
+        phone = c.get('phone', '')
+        spent = customer_bill_spending.get(phone, 0)
         if visits <= 1:
             cohorts["1 visit"]["count"] += 1
             cohorts["1 visit"]["total_spent"] += spent
