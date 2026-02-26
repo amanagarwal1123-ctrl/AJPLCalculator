@@ -39,6 +39,7 @@ export default function ItemCalculator() {
   const [bill, setBill] = useState(null);
   const [calculated, setCalculated] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -52,9 +53,9 @@ export default function ItemCalculator() {
         apiClient.get('/item-names'),
         apiClient.get(`/bills/${billId}`),
       ]);
-      setPurities(puritiesRes.data);
-      setRates(ratesRes.data);
-      setItemNames(itemNamesRes.data);
+      setPurities(puritiesRes.data || []);
+      setRates(ratesRes.data || []);
+      setItemNames(itemNamesRes.data || []);
       setBill(billRes.data);
 
       // If editing, pre-fill
@@ -72,8 +73,10 @@ export default function ItemCalculator() {
         setStuddedCharges(item.studded_charges || []);
         setStep('calculate');
       }
+      setDataLoaded(true);
     } catch (err) {
       toast.error('Failed to load data');
+      setDataLoaded(true);
     }
   };
 
