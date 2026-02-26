@@ -39,9 +39,18 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 
 ### Reports & Analytics
 - [x] Overview, KT Analysis, Branches, Executives, References, Customers, Top Items tabs
-- [x] Feedbacks tab with date range filter (from/to) + ascending/descending sort by bill value (Feb 2026)
+- [x] Feedbacks tab with date range filter + asc/desc sort by bill value (Feb 2026)
 - [x] CSV export for all reports
 - [x] TabsList with flex-wrap for 8 tabs
+
+### Calculator Pages
+- [x] ErrorBoundary wrapping all routes (prevents blank screen crashes) (Feb 2026)
+- [x] Loading state in ItemCalculator and MrpCalculator (Feb 2026)
+- [x] Fixed Select component value handling for stable rendering (Feb 2026)
+- [x] Gold/Diamond/MRP calculation flows
+- [x] Making charges (percentage, per gram, per piece)
+- [x] Stone charges (kundan, stone, moti)
+- [x] Diamond studded charges with L/NL weight deduction
 
 ### Manager Dashboard
 - [x] KPI cards with overflow-hidden, Bill table with fixed widths, Summary dialog
