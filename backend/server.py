@@ -200,6 +200,7 @@ class BillCreate(BaseModel):
 
 class SalespersonCreate(BaseModel):
     name: str
+    branch_id: Optional[str] = ""
 
 class CustomerUpdate(BaseModel):
     name: Optional[str] = None
