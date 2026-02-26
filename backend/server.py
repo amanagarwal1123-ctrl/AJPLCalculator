@@ -765,12 +765,14 @@ async def get_customer_bills(customer_id: str, user=Depends(get_current_user)):
     
     # Get all bills for this customer by phone
     bills = await db.bills.find({"customer_phone": customer["phone"]}).sort("created_at", -1).to_list(10000)
+    # Only count approved/sent/edited bills for total_spent
+    approved_total = sum(b.get('grand_total', 0) for b in bills if b.get('status') in ('sent', 'approved', 'edited'))
     
     return {
         "customer": c_data,
         "bills": [serialize_doc(b) for b in bills],
         "total_bills": len(bills),
-        "total_spent": sum(b.get('grand_total', 0) for b in bills),
+        "total_spent": approved_total,
     }
 
 @api_router.get("/customers/{customer_id}")
