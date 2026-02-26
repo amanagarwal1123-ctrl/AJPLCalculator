@@ -1313,9 +1313,25 @@ async def get_dashboard_analytics(
 async def get_customer_analytics(user=Depends(get_current_user)):
     await require_role(user, ["admin", "manager"])
     customers = await db.customers.find({}).to_list(5000)
+    
+    # Calculate actual spending from approved/sent bills per customer
+    all_bills = await db.bills.find(
+        {"status": {"$in": ["sent", "approved", "edited"]}}
+    ).to_list(10000)
+    customer_bill_spending = {}
+    for bill in all_bills:
+        phone = bill.get('customer_phone', '')
+        if phone:
+            if phone not in customer_bill_spending:
+                customer_bill_spending[phone] = 0
+            customer_bill_spending[phone] += bill.get('grand_total', 0)
+    
     result = []
     for c in customers:
         c_data = serialize_doc(c)
+        # Use actual bill-based spending instead of cached total_spent
+        phone = c.get('phone', '')
+        c_data['total_spent'] = round(customer_bill_spending.get(phone, 0), 2)
         # Calculate days since last visit
         last_visit = c.get('last_visit', '')
         if last_visit:
