@@ -21,6 +21,7 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - [x] Rate Management with auto-heal for empty purities
 - [x] Branch/User/Item Name Management
 - [x] Salespeople Management with branch assignment & branch filter (Feb 2026)
+- [x] Salesperson Performance Page: total sales, day-wise breakdown, charts, trend analysis (Feb 2026)
 
 ### Customer Management
 - [x] Customer List with Total Spent (calculated from approved bills only) (Feb 2026)
