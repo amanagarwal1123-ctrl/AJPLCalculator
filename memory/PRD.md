@@ -34,6 +34,7 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - [x] Frequency cohorts & spending tiers based on approved/sent/edited bills only
 - [x] Feedbacks tab with date range filter + asc/desc sort
 - [x] Inactive Customers with user-specified days threshold
+- [x] Inactive Customers total_spent calculated from approved bills (not cached) (Feb 2026)
 
 ### Calculator Pages
 - [x] ErrorBoundary, loading states, Gold/Diamond/MRP flows
