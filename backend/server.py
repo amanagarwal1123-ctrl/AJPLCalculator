@@ -1825,6 +1825,53 @@ async def delete_salesperson(sp_id: str, user=Depends(get_current_user)):
     await db.salespeople.delete_one({"id": sp_id})
     return {"status": "deleted"}
 
+@api_router.get("/salespeople/{sp_name}/performance")
+async def get_salesperson_performance(sp_name: str, user=Depends(get_current_user)):
+    """Get salesperson performance data: total sales, day-wise breakdown, branch."""
+    await require_role(user, ["admin", "manager"])
+    
+    sp = await db.salespeople.find_one({"name": sp_name})
+    branch_name = ""
+    if sp and sp.get("branch_id"):
+        branch = await db.branches.find_one({"id": sp["branch_id"]})
+        branch_name = branch.get("name", "") if branch else ""
+    
+    bills = await db.bills.find({
+        "salesperson_name": sp_name,
+        "status": {"$in": ["sent", "approved", "edited"]}
+    }).to_list(10000)
+    
+    total_sales = sum(b.get("grand_total", 0) for b in bills)
+    total_bills = len(bills)
+    
+    daily_sales = {}
+    for b in bills:
+        date_str = b.get("created_date", "")
+        if not date_str:
+            created_at = b.get("created_at", "")
+            if created_at:
+                try:
+                    date_str = created_at[:10]
+                except Exception:
+                    continue
+        if date_str:
+            if date_str not in daily_sales:
+                daily_sales[date_str] = {"date": date_str, "amount": 0, "bill_count": 0}
+            daily_sales[date_str]["amount"] += b.get("grand_total", 0)
+            daily_sales[date_str]["bill_count"] += 1
+    
+    daily_list = sorted(daily_sales.values(), key=lambda x: x["date"])
+    for d in daily_list:
+        d["amount"] = round(d["amount"], 2)
+    
+    return {
+        "name": sp_name,
+        "branch_name": branch_name,
+        "total_sales": round(total_sales, 2),
+        "total_bills": total_bills,
+        "daily_sales": daily_list,
+    }
+
 # ============ ENHANCED CUSTOMER MANAGEMENT ============
 @api_router.put("/customers/{customer_id}")
 async def update_customer(customer_id: str, req: CustomerUpdate, user=Depends(get_current_user)):
