@@ -13,43 +13,32 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 ## What's Been Implemented
 
 ### Authentication & Authorization
-- [x] OTP-based login, admin password login, JWT tokens
-- [x] Role-based access control, single-device sessions, admin multi-login
+- [x] OTP-based login, admin password login, JWT tokens, role-based access control
 
 ### Admin Features
 - [x] Dashboard with KPIs, OTP panel, active sessions
-- [x] Bills with daily serial numbers, `0001-DDMMYYYY` bill format
-- [x] S.No column + Reference column in All Bills table (Feb 2026)
+- [x] Bills with S.No column, Reference column, `0001-DDMMYYYY` format
 - [x] Rate Management with auto-heal for empty purities
-- [x] Branch/User/Salesperson/Item Name Management
-- [x] Customer List with Total Spent, Feedback Questions, Notifications
+- [x] Branch/User/Item Name Management
+- [x] Salespeople Management with branch assignment & branch filter (Feb 2026)
 
 ### Customer Management
-- [x] Customer List with Total Spent column
-- [x] Customer Profile with all fields: Name, Phone, Email, Location, Reference, DOB, Anniversary, Address, Notes (Feb 2026)
-- [x] Customer tier classification
+- [x] Customer List with Total Spent (calculated from approved bills only) (Feb 2026)
+- [x] Customer History page with "Edit Details" button (Feb 2026)
+- [x] Customer Profile with all fields: Name, Phone, Email, Location, Reference, DOB, Anniversary, Address, Notes
 
 ### Reports & Analytics
 - [x] 8 tabs: Overview, KT Analysis, Branches, Executives, References, Customers, Top Items, Feedbacks
-- [x] Feedbacks tab with date range filter + asc/desc sort by bill value
-- [x] Inactive Customers section with user-specified days threshold
-- [x] CSV export for all reports
+- [x] Customer analytics uses actual approved bill spending (not cached values) (Feb 2026)
+- [x] Frequency cohorts & spending tiers based on approved/sent/edited bills only
+- [x] Feedbacks tab with date range filter + asc/desc sort
+- [x] Inactive Customers with user-specified days threshold
 
 ### Calculator Pages
-- [x] ErrorBoundary wrapping all routes
-- [x] Loading state in ItemCalculator and MrpCalculator
-- [x] Gold/Diamond/MRP calculation flows with making/stone/studded charges
+- [x] ErrorBoundary, loading states, Gold/Diamond/MRP flows
 
 ### Bill Print View
-- [x] B&W printer friendly: white bg, black borders, grayscale logo (Feb 2026)
-- [x] Heading: "TENTATIVE INVOICE"
-- [x] High contrast for legible B&W output
-
-### Manager Dashboard
-- [x] KPI cards, Bill table with fixed widths, Summary dialog
-
-### Sales Executive Features
-- [x] Customer intake, multi-bill tab bar, calculators, photo upload, feedback flow
+- [x] B&W printer friendly: white bg, black borders, grayscale logo, "TENTATIVE INVOICE"
 
 ## Credentials
 - **Admin:** username=admin, password=admin1123
@@ -59,5 +48,5 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - OTP delivery: codes shown on admin dashboard instead of SMS/email
 
 ## Prioritized Backlog
-- P1: Refactor server.py into route modules (admin, billing, reports)
+- P1: Refactor server.py into route modules
 - P2: Decompose large frontend components
