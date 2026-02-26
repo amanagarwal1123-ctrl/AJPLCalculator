@@ -152,9 +152,9 @@ export default function MrpCalculator() {
                     </div>
                     <div className="space-y-2">
                       <Label>Item Name *</Label>
-                      <Select value={itemName} onValueChange={setItemName}>
+                      <Select value={itemName || undefined} onValueChange={setItemName}>
                         <SelectTrigger className="h-11 bg-secondary/50" data-testid="mrp-item-name"><SelectValue placeholder="Select item" /></SelectTrigger>
-                        <SelectContent>{itemNames.map(n => <SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>)}</SelectContent>
+                        <SelectContent className="z-[200] max-h-60">{itemNames.map(n => <SelectItem key={n.id} value={n.name}>{n.name}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                   </div>
