@@ -101,19 +101,24 @@ export default function SalespeopleManagement() {
               filtered.length === 0 ? <p className="text-muted-foreground py-4 text-center">No salespeople found</p> :
                 <div className="space-y-2">
                   {filtered.map(p => (
-                    <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/20 border border-border" data-testid={`salesperson-${p.id}`}>
+                    <div key={p.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/20 border border-border hover:bg-secondary/40 transition-colors cursor-pointer" data-testid={`salesperson-${p.id}`} onClick={() => navigate(`/admin/salespeople/${encodeURIComponent(p.name)}`)}>
                       <div className="flex items-center gap-3">
                         <UserCheck size={16} className="text-primary" />
                         <span className="font-medium">{p.name}</span>
-                        {p.branch_name && (
+                        {p.branch_name ? (
                           <span className="flex items-center gap-1 text-xs text-muted-foreground px-2 py-0.5 rounded bg-secondary/50 border border-border">
                             <Building size={10} /> {p.branch_name}
                           </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/50 italic">No branch</span>
                         )}
                       </div>
-                      <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={() => remove(p.id)} data-testid={`delete-sp-${p.id}`}>
-                        <Trash2 size={14} />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" className="text-destructive h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); remove(p.id); }} data-testid={`delete-sp-${p.id}`}>
+                          <Trash2 size={14} />
+                        </Button>
+                        <ChevronRight size={14} className="text-muted-foreground" />
+                      </div>
                     </div>
                   ))}
                 </div>
