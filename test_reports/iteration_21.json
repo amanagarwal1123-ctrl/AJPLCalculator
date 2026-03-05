@@ -1,0 +1,103 @@
+{
+  "summary": "All 3 bug fixes verified: 1) Photo lightbox opens/closes correctly, 2) Admin view shows both making % and ₹/g while print view shows only ₹/g, 3) Back button navigates to previous page instead of dashboard",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "Photo lightbox opens when clicking photo thumbnail on bill page",
+    "Photo lightbox displays image correctly (green test image visible)",
+    "Photo lightbox closes via X button (data-testid='lightbox-close')",
+    "Photo lightbox closes by clicking outside the image on dark overlay",
+    "Admin bill view (per_gram making): shows '7.7% ₹500/g' in item details",
+    "Admin bill view (percentage making): shows '15.0% ₹978/g' in item details",
+    "Admin bill summary sidebar shows making breakdown with % and ₹/g for each item",
+    "Print view (BillPrintView) shows only per gram - 'Making (Rs.978/g)' - NO percentage",
+    "Print view (BillPrintView) for per_gram type shows only 'Making (Rs.500/g)' - NO percentage",
+    "Back button: Customer List → Customer History → Bill → Back returns to Customer History",
+    "Back button: All Bills → Bill → Back returns to All Bills page"
+  ],
+
+  "test_report_links": [
+    ".screenshots/06_photo_lightbox_opened.png",
+    ".screenshots/08_bill_percentage_making.png",
+    ".screenshots/09_print_view.png",
+    ".screenshots/13_after_back.png",
+    ".screenshots/16_after_back_all_bills.png"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "BillPage.js lines 544-566: Photo lightbox implementation using simple overlay with onClick handler - works correctly",
+    "BillPage.js lines 64-87: getMakingPerGram and getMakingPercent functions correctly calculate both values for display",
+    "BillPage.js lines 349-376: Item making charges display shows both % and ₹/g for admin, only ₹/g for others",
+    "BillPage.js lines 433-450: Summary sidebar shows making breakdown with % and ₹/g for admin users",
+    "BillPrintView.js lines 147-167: Print view correctly shows only ₹/g format without percentage",
+    "BillPage.js lines 54-60: goBack function uses window.history to navigate back, falls back to dashboard if no history"
+  ],
+
+  "updated_files": [],
+
+  "success_rate": {
+    "backend": "N/A (frontend-only testing)",
+    "frontend": "100% (11/11 tests passed)"
+  },
+
+  "test_credentials": {
+    "admin": {
+      "username": "admin",
+      "password": "admin1123",
+      "method": "Click 'Admin Login' link on login page, then fill credentials and click 'Sign In as Admin'"
+    }
+  },
+
+  "seed_data_creation": "None - used existing test data",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "All 3 bugs/features are fixed and working: (1) Photo lightbox no longer shows error - opens as simple overlay with dark bg, closes via X or clicking outside; (2) Admin sees '7.7% ₹500/g' format while print/PDF shows only 'Rs.500/g'; (3) Back button uses history.back() to return to previous page instead of always going to dashboard.",
+
+  "feature_verification_details": {
+    "photo_lightbox": {
+      "status": "PASS",
+      "test_bill_id": "880c3622-5986-425f-9fdf-8f73d949bee9",
+      "bill_number": "0001-19022026",
+      "lightbox_testid": "photo-lightbox",
+      "close_button_testid": "lightbox-close",
+      "implementation": "Simple fixed overlay div with onClick to close, image with stopPropagation"
+    },
+    "making_charges_admin_view": {
+      "status": "PASS",
+      "per_gram_type_bill": "880c3622-5986-425f-9fdf-8f73d949bee9 shows '7.7% ₹500/g'",
+      "percentage_type_bill": "d70d822e-0543-4a1a-b263-110849fa4697 shows '15.0% ₹978/g'",
+      "summary_sidebar": "Shows 'Ring: 7.7% ₹500/g' breakdown for admin"
+    },
+    "making_charges_print_view": {
+      "status": "PASS",
+      "format": "Making (Rs.XXX/g)",
+      "percentage_shown": false,
+      "verified_bills": ["d70d822e-0543-4a1a-b263-110849fa4697", "67490e21-3119-421b-bc95-d56fb6269988"]
+    },
+    "back_button_navigation": {
+      "status": "PASS",
+      "customer_history_flow": "Customer List → Customer History → Bill → Back → Customer History (NOT dashboard)",
+      "all_bills_flow": "All Bills → Bill → Back → All Bills (NOT dashboard)",
+      "implementation": "Uses window.history.state.idx to determine if there's history, then navigate(-1)"
+    }
+  },
+
+  "mocked_apis": {
+    "OTP_delivery": "OTP codes shown on admin dashboard instead of actual delivery"
+  }
+}

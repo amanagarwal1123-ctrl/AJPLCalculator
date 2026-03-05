@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Send, Printer, Download, ArrowLeft, Edit, CheckCircle, Clock, History, Layers, ChevronRight, User, Camera, X, ZoomIn } from 'lucide-react';
+import { Plus, Trash2, Send, Printer, Download, ArrowLeft, Edit, CheckCircle, Clock, History, Layers, ChevronRight, User, Camera, X, ZoomIn, Percent } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BillPage() {
@@ -50,6 +49,41 @@ export default function BillPage() {
     if (user?.role === 'admin') navigate('/admin');
     else if (user?.role === 'manager') navigate('/manager');
     else navigate('/sales');
+  };
+
+  const goBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      goHome();
+    }
+  };
+
+  const isAdmin = user?.role === 'admin';
+
+  // Calculate making_per_gram for percentage type if not present
+  const getMakingPerGram = (mc, item) => {
+    if (mc.making_per_gram) return mc.making_per_gram;
+    if (mc.type === 'percentage' && item.purity_percent && item.rate_per_10g) {
+      const rate24kt = item.rate_per_10g / (item.purity_percent / 100);
+      return (mc.value / 100) * (rate24kt / 10);
+    }
+    if (mc.type === 'per_gram') return mc.value;
+    if (mc.type === 'per_piece' && item.net_weight > 0 && mc.calculated_amount) {
+      return mc.calculated_amount / item.net_weight;
+    }
+    return null;
+  };
+
+  // Calculate equivalent percentage for per_gram type
+  const getMakingPercent = (mc, item) => {
+    if (mc.type === 'percentage') return mc.value;
+    if (mc.type === 'per_gram' && item.purity_percent && item.rate_per_10g) {
+      const rate24kt = item.rate_per_10g / (item.purity_percent / 100);
+      const rate24ktPerGram = rate24kt / 10;
+      if (rate24ktPerGram > 0) return (mc.value / rate24ktPerGram) * 100;
+    }
+    return null;
   };
 
   const handlePhotoUpload = async (index, file) => {
@@ -186,7 +220,7 @@ export default function BillPage() {
         <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50 no-print">
           <div className="flex items-center justify-between px-3 sm:px-4 py-3 max-w-6xl mx-auto">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <Button variant="ghost" size="sm" className="shrink-0" onClick={goHome} data-testid="bill-back-button"><ArrowLeft size={18} /></Button>
+              <Button variant="ghost" size="sm" className="shrink-0" onClick={goBack} data-testid="bill-back-button"><ArrowLeft size={18} /></Button>
               <div className="min-w-0">
                 <h1 className="heading text-sm sm:text-lg font-bold text-primary truncate">{bill.bill_number}</h1>
                 <p className="text-xs text-muted-foreground truncate">{bill.customer_name} | {bill.customer_phone}</p>
@@ -315,11 +349,29 @@ export default function BillPage() {
                                   {/* Making charge details */}
                                   {item.making_charges?.length > 0 && (
                                     <div className="mt-1.5 text-[10px] text-muted-foreground">
-                                      Making: {item.making_charges.map((mc, mi) => (
-                                        <span key={mi} className="mr-2">
-                                          {mc.type === 'percentage' ? <>{mc.value}% <sub className="text-primary">{mc.making_per_gram ? `₹${Number(mc.making_per_gram).toFixed(0)}/g` : ''}</sub></> : mc.type === 'per_gram' ? `₹${mc.value}/g` : `₹${mc.value} x${mc.quantity}pc`}
-                                        </span>
-                                      ))}
+                                      Making: {item.making_charges.map((mc, mi) => {
+                                        const mpg = getMakingPerGram(mc, item);
+                                        const pct = getMakingPercent(mc, item);
+                                        return (
+                                          <span key={mi} className="mr-2">
+                                            {mc.type === 'percentage' ? (
+                                              isAdmin ? (
+                                                <>{pct?.toFixed(1)}% <sub className="text-primary">{mpg ? `₹${Number(mpg).toFixed(0)}/g` : ''}</sub></>
+                                              ) : (
+                                                <>{mpg ? `₹${Number(mpg).toFixed(0)}/g` : `${mc.value}%`}</>
+                                              )
+                                            ) : mc.type === 'per_gram' ? (
+                                              isAdmin && pct ? (
+                                                <>{pct.toFixed(1)}% <sub className="text-primary">₹{mc.value}/g</sub></>
+                                              ) : (
+                                                <>₹{mc.value}/g</>
+                                              )
+                                            ) : (
+                                              <>₹{mc.value} x{mc.quantity}pc</>
+                                            )}
+                                          </span>
+                                        );
+                                      })}
                                     </div>
                                   )}
                                 </>
@@ -334,6 +386,7 @@ export default function BillPage() {
                                         alt=""
                                         className="w-14 h-14 rounded object-cover border border-border cursor-pointer hover:opacity-80"
                                         onClick={() => setLightboxImg(`${process.env.REACT_APP_BACKEND_URL}${p}`)}
+                                        onError={(e) => { e.target.style.opacity = '0.4'; }}
                                         data-testid={`photo-thumb-${idx}-${pi}`}
                                       />
                                       {canEdit() && (
@@ -376,6 +429,26 @@ export default function BillPage() {
                 <CardHeader className="pb-3"><CardTitle className="heading text-lg">Bill Summary</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between text-sm"><span className="text-muted-foreground">Items Total</span><span className="mono font-medium">{formatCurrency(bill.items_total)}</span></div>
+                  {/* Admin: Show making charge breakdown per item */}
+                  {isAdmin && bill.items?.some(item => item.making_charges?.length > 0 && item.item_type !== 'mrp') && (
+                    <div className="space-y-1.5 pl-2 border-l-2 border-primary/20">
+                      {bill.items.map((item, idx) => {
+                        if (item.item_type === 'mrp' || !item.making_charges?.length) return null;
+                        return item.making_charges.map((mc, mi) => {
+                          const mpg = getMakingPerGram(mc, item);
+                          const pct = getMakingPercent(mc, item);
+                          return (
+                            <div key={`${idx}-${mi}`} className="text-[11px] text-muted-foreground" data-testid={`summary-making-${idx}-${mi}`}>
+                              <span className="truncate">{item.item_name}: </span>
+                              {pct != null && <span className="text-primary font-medium">{pct.toFixed(1)}%</span>}
+                              {mpg != null && <span className="mono ml-1">₹{Number(mpg).toFixed(0)}/g</span>}
+                              {mc.type === 'per_piece' && <span className="mono">₹{mc.value} x{mc.quantity}pc</span>}
+                            </div>
+                          );
+                        });
+                      })}
+                    </div>
+                  )}
                   <Separator className="bg-border" />
                   <div>
                     <div className="flex items-center justify-between mb-2">
@@ -468,14 +541,29 @@ export default function BillPage() {
           </div>
         </div>
 
-        {/* Photo Lightbox */}
-        <Dialog open={!!lightboxImg} onOpenChange={() => setLightboxImg(null)}>
-          <DialogContent className="bg-black/95 border-none max-w-3xl p-2" aria-describedby="photo-preview-desc">
-            <DialogTitle className="sr-only">Photo Preview</DialogTitle>
-            <p id="photo-preview-desc" className="sr-only">Full size item photo</p>
-            {lightboxImg && <img src={lightboxImg} alt="Item photo" className="w-full h-auto max-h-[80vh] object-contain rounded" />}
-          </DialogContent>
-        </Dialog>
+        {/* Photo Lightbox - Simple overlay instead of Dialog to avoid ErrorBoundary crashes */}
+        {lightboxImg && (
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 cursor-pointer"
+            onClick={() => setLightboxImg(null)}
+            data-testid="photo-lightbox"
+          >
+            <button
+              className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white transition-colors"
+              onClick={(e) => { e.stopPropagation(); setLightboxImg(null); }}
+              data-testid="lightbox-close"
+            >
+              <X size={20} />
+            </button>
+            <img
+              src={lightboxImg}
+              alt="Item photo"
+              className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

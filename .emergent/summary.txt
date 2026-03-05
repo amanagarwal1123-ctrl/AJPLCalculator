@@ -1,47 +1,41 @@
 <analysis>**original_problem_statement:**
-The user has requested a series of features and bug fixes for their jewelry business management application. The core requirements from this session include:
+The user requested several features and bug fixes for their jewelry business management application.
 
--   **Bug Fix (Critical):** The Calculations page shows a blank screen intermittently when an item is selected.
--   **Bug Fix (Recurring):** The AJPL rate management textboxes disappear after saving, and the Feedbacks tab is not visible due to UI overflow.
--   **Bug Fix (Data Integrity):** Customer analytics (e.g., Total Spent) are showing incorrect, inflated values.
--   **Feature: Enhanced Feedback Filtering:** Implement a date range filter and a value-based sort (ascending/descending) that can be applied simultaneously on the Feedbacks page.
--   **Feature: UI Enhancements:**
-    -   Add a serial number (S.No) column to the main All Bills list.
-    -   Add the Reference field to the All Bills list.
-    -   Add an Edit button on the customer details page.
-    -   On the Salespeople tab, add an option to filter by branch and display the branch name next to each salesperson.
--   **Feature: Black & White Printer Friendly Bills:** Redesign the printed bill layout to be high-contrast and legible when printed on a B&W printer.
+Initial requests for this session:
+-   **Bug Fix:** In the inactive customers report, the Total Spent values are incorrect.
+-   **UI Enhancement:** Display the salesperson's branch name next to their name in the list.
+-   **New Feature:** Create a dedicated performance page for each salesperson, showing their total sales, day-wise sales breakdown, branch, and a performance graph.
+
+Subsequent requests added during the session:
+-   **Bug Fix:** In the Reports page, the Total Customers count does not update when a date filter is applied. The user also requested a check to ensure all other fields and graphs on the page respect the filters.
+-   **UI Enhancement:** On the Inactive Customers report, display the count as X out of Y total customers.
+-   **New Feature:** On the Reports page, add the ability to select multiple customer references (e.g., Facebook, Instagram) and see a combined breakdown of gold vs. diamond sales for those selected references.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack FastAPI, React, and MongoDB solution for jewelry business management. In this session, the agent successfully resolved several critical bugs and implemented a large batch of user-requested features.
+The application is a full-stack FastAPI and React solution. During this session, the agent successfully implemented a significant batch of features and bug fixes requested by the user.
 
--   **Critical Bug Fixes:**
-    -   The recurring blank screen crash on the calculator pages was fixed by introducing a global , adding loading states to the calculator components, and preventing rendering with incomplete API data.
-    -   The AJPL rate management bug was resolved with a two-part fix: an auto-heal mechanism on the frontend to prevent state corruption and a backend guard to reject invalid data submissions.
-    -   The invisible Feedbacks tab issue was fixed by making the tab bar scrollable.
+-   **Bug Fixes Completed:**
+    -   The  calculation for inactive customers was corrected to use only approved/sent bills, fixing the data integrity issue.
+    -   The main analytics dashboard now correctly filters the  count when date or other filters are applied, ensuring all summary cards and charts are coherent.
 
--   **Data Integrity Fix:**
-    -   A major bug causing inflated customer analytics was corrected. The backend logic was updated to calculate  and other metrics using only approved or sent bills, excluding drafts.
-
--   **New Features & UI Improvements:**
-    -   The Feedbacks tab now has a functional date range filter and value-based sorting.
-    -   The All Bills table now displays both the daily serial number and the customer reference.
-    -   Salespeople can now be filtered by branch, and their branch is displayed in the list.
-    -   An Edit Customer button has been added to the customer detail page.
-    -   The bill print view has been redesigned with a high-contrast, black-and-white-friendly theme.
+-   **New Features Implemented:**
+    -   A new **Salesperson Performance page** has been created. It is accessible by clicking a salesperson's name and displays key performance indicators, a day-wise sales table, and a sales trend graph.
+    -   The **Salespeople list** now displays the branch name next to each salesperson.
+    -   The **Inactive Customers** report now shows a clear X out of Y customers count.
+    -   The **Reports page** includes a new powerful feature to get a **gold vs. diamond sales breakdown** for multiple, user-selected customer references, complete with a summary, chart, and detailed table.
 
 **Last working item**:
--   Last item agent was working: Implementing a batch of three user requests: 1) Fixing incorrect customer analytics calculations. 2) Adding branch filtering to the salespeople page. 3) Adding an Edit button to the customer details page.
+-   Last item agent was working: The agent just finished implementing two user requests: 1) Displaying the X out of Y customers count in the inactive customer section. 2) Adding the feature to analyze gold vs. diamond sales for multiple selected references on the Reports page.
 -   Status: USER VERIFICATION PENDING
 -   Agent Testing Done: Y
--   Which testing method agent to use? The user should be guided to test the latest changes. For a comprehensive check, the  should be used to verify the analytics calculations, salesperson filtering, and customer editing flow.
+-   Which testing method agent to use? The user should be guided to test the new features. If any regressions are found, the  should be used for a comprehensive check.
 -   User Testing Done: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: User Verification for all recent fixes (P0)**
-    -   **Description:** The user needs to verify the latest batch of fixes and features, including the corrected analytics, salesperson branch filtering, and the new customer edit functionality.
+-   **Issue 1: User Verification for all recent features (P0)**
+    -   **Description:** The user needs to test and verify the functionality of all features implemented in this session, particularly the latest ones: the inactive customer count format and the multi-reference gold/diamond sales breakdown.
     -   **Status:** USER VERIFICATION PENDING
     -   **Is recurring issue?** N
     -   **Blocked on other issue:** None
@@ -50,19 +44,20 @@ The application is a full-stack FastAPI, React, and MongoDB solution for jewelry
 -   None.
 
 **Upcoming and Future Tasks**
--   **P1: Refactor **: This file has grown significantly and now contains logic for billing, admin functions, analytics, and user management. It should be broken down into multiple FastAPI router files (e.g., , , ) to improve maintainability and separation of concerns.
--   **P2: Refactor Complex Frontend Components**: Pages like , , and the calculator pages manage significant state and UI logic. They should be decomposed into smaller, reusable sub-components.
+-   **P1: Refactor **: This file has become critically oversized and complex due to the addition of multiple new endpoints and business logic. It must be broken down into separate FastAPI router files (e.g., , , ) to improve maintainability.
+-   **P2: Refactor **: This component now contains very complex state management and UI logic for multiple tabs and interactive features. It should be decomposed into smaller, more manageable sub-components and custom hooks.
 
 **Completed work in this session**
--   **Fixed Blank Screen Crash:** Implemented an  and added loading states/defensive guards to  and .
--   **Fixed AJPL Rate Management Bug:** Implemented an auto-heal state sync in  and a backend validation guard in .
--   **Fixed Feedbacks Tab Visibility:** Made the tab list scrollable in .
--   **Fixed Incorrect Customer Analytics:** Modified all relevant endpoints in  to filter bills by status ( or ) before calculating totals.
--   **Implemented Enhanced Feedback Filtering:** Added date range and sort controls to  and corresponding backend logic in .
--   **Added S.No and Reference to Bills List:** Updated  to display  and .
--   **Implemented Salesperson Branch Filtering:** Updated the  model in , added filtering logic to , and implemented the UI in .
--   **Added Customer Edit Functionality:** Added an Edit button to .
--   **Created B&W Friendly Print View:** Redesigned  with a high-contrast color scheme.
+-   **Fixed Inactive Customer Analytics:** Corrected the  endpoint in  to calculate  from approved/sent bills, ensuring data accuracy.
+-   **Fixed Report Filter Coherence:** Modified the  endpoint in  to ensure the  count respects all active filters.
+-   **Created Salesperson Performance Page:**
+    -   Added a new backend endpoint: .
+    -   Created a new frontend page: , utilizing  for the graph.
+    -   Updated  to link to the new page and display the salesperson's branch.
+-   **Implemented Multi-Reference Sales Breakdown:**
+    -   Added a new backend endpoint: .
+    -   Enhanced the References tab in  with a multi-select UI, API integration, and a new results section with a chart and table.
+-   **Implemented X out of Y Inactive Customer Count:** Updated the UI in  to display the enhanced count format.
 
 **Earlier issues found/mentioned but not fixed**
 -   None.
@@ -74,75 +69,62 @@ The application is a full-stack FastAPI, React, and MongoDB solution for jewelry
 
 
 **Key Technical Concepts**
--   **Robust Frontend Architecture:** The implementation of a global  and the pattern of using loading states and defensive data access in components () are critical for preventing application crashes and improving user experience.
--   **Data Integrity in Aggregations:** The fix for the analytics bug highlights the importance of precise filtering ( stage in MongoDB) in data aggregation pipelines to ensure calculations are based on the correct subset of data.
--   **Resilient State Management:** The auto-heal pattern in , where component state is synchronized with a source of truth on load, is a powerful technique for recovering from invalid or corrupted state.
--   **Backend Validation:** Adding server-side guards (as seen in the  endpoint) prevents invalid data from entering the database, acting as a final line of defense.
+-   **Complex Backend Aggregations:** Extensive use of MongoDB aggregation pipelines in  was key to delivering the new analytics features, using stages like , , , and .
+-   **Data-Driven UI:** The frontend was updated to be more dynamic and data-driven. The  component now conditionally renders a complex data breakdown based on user selections in a multi-select chip group.
+-   **State Management with Hooks:** The agent relied heavily on  and  in React to manage complex component state, such as API data, user selections, and loading statuses.
 
 **key DB schema**
--   **User:** The model in  was updated to include an optional .
--   **Bill:** The  field (e.g., approved, sent, draft) is now critically important for all financial calculations and analytics.
+-   **Bill:** The , , , and  fields were essential for the new salesperson performance and reference breakdown features. The  field remains critical for all financial reporting.
+-   **Customer:** The  field was used as the basis for the new multi-reference sales breakdown feature.
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   : Major changes to analytics endpoints, rate-saving logic, and salesperson filtering.
--   : Overhauled with loading states and defensive guards to prevent crashes.
--   : Same overhaul as .
--   : Wrapped routes in the new .
--   : New file created to catch React rendering errors.
--   : Added complex state management for new filters.
--   : Added branch filter dropdown and updated the display table.
--   : Added an Edit button.
--   : Redesigned for B&W printing.
--   : Updated the  model.
+-   : The central point for all business logic changes, including bug fixes and new endpoints.
+-   : The main UI file that received the most significant feature enhancements.
+-   : A new page created from scratch.
+-   : Updated to integrate with the new performance page.
+-   : Modified to add the new route.
 
 **Areas that need refactoring**:
--   ****: This is a critical priority. The file's complexity has increased substantially, making it difficult to maintain. It must be broken down into separate FastAPI routers.
--   ****: Now handles multiple tabs with complex, independent state for filtering and sorting. This logic should be extracted into custom hooks or smaller child components.
+-   ** (CRITICAL):** The file's size and complexity are now a significant liability. It must be refactored into smaller, domain-focused routers to ensure the project remains maintainable.
+-   ** (High Priority):** This component is overloaded with logic for multiple features. Its state management and rendering logic should be broken down into custom hooks and smaller child components.
 
 **key api endpoints**
--   : Logic fixed to only count approved/sent bills.
--   : Logic fixed to only count approved/sent bills.
--   : Modified to support , , and  parameters. Also fixed to correctly join with bill details.
--   : Modified to support filtering by .
--   : Added a backend guard to prevent saving empty purities.
+-   ** (New):** Retrieves performance metrics and daily sales data for a specific salesperson.
+-   ** (New):** Accepts a list of reference names and returns a combined gold vs. diamond sales breakdown.
+-   ** (Modified):** Logic fixed to calculate  accurately.
+-   ** (Modified):** Logic fixed to ensure  respects active filters.
 
 **Critical Info for New Agent**
--   **Priority is User Verification:** The immediate next step is to present the latest set of implemented features and fixes to the user for their approval. Be prepared to guide them through testing the corrected analytics, the salesperson filter, and the customer edit flow.
--   **Refactoring is Urgent:** The technical debt in  is significant. After user verification, proposing and executing the backend refactoring should be the highest priority to ensure the project remains scalable and maintainable.
--   **Data Integrity is Key:** The analytics bug was caused by not filtering by . Remember this pattern for any future feature involving financial calculations. Always confirm which bill statuses should be included.
+-   **Priority 1: User Verification:** The immediate next step is to present the full suite of newly implemented features to the user and guide them through testing.
+-   **Priority 2: Urgent Refactoring:** After user verification, the highest priority task is to refactor . The project's health and future scalability depend on breaking this monolithic file into smaller routers. Refactoring  should follow.
+-   **Data Integrity is Paramount:** Always double-check that any new financial or counting logic is based on the correct set of bills (i.e., filtered by status: , , etc.) and not on potentially stale cached data.
 
 **documents and test reports created in this job**
--    (updated multiple times)
 -   
 -   
 -   
 -   
 
 **Last 10 User Messages and any pending HUMAN messages**
--   **User Message (latest):** Reported three issues: 1) Incorrect  in customer analytics. 2) The salespeople tab needs a branch filter. 3) The customer details page is missing an edit/update option.
--   **User Message:** Requested five UI/feature changes: Add Reference to bills list, show total purchase by customer, show all fields on customer page, create an inactive customer report, and make the printed bill B&W friendly.
--   **User Message:** Reported a critical bug where the calculations page gives a blank screen.
--   **User Message:** Provided new requirements for the Feedbacks tab: add a date range filter and an ascending/descending sort option. Also noted that bill serial numbers were not appearing in the main list.
--   **User Message:** Confirmed the initial bugs were still present (Feedbacks tab is still not visible and the ajpl textboxes are still absent).
+-   : User requested the X out of Y format for inactive customers and the gold/diamond sales breakdown for multiple references.
+-   User reported that the total customers count in reports wasn't updating with the date filter and asked for a full review of filter coherence.
+-   User reported incorrect Total Spent values for inactive customers, asked for the branch name to be displayed next to salespeople, and requested a new salesperson performance page with a graph.
 
 **Project Health Check:**
--   **Broken:** None. All reported issues and requested features from this session have been addressed.
--   **Mocked:** The OTP delivery mechanism for user login is still mocked (OTP is displayed on the admin dashboard).
+-   **Broken:** None.
+-   **Mocked:** The OTP delivery mechanism for user login remains mocked.
 
 **3rd Party Integrations**
 -   FastAPI
 -   React
 -   MongoDB (via Beanie ODM)
 -   
--   
--   
--   
 
 **Testing status**
--   Testing agent used after significant changes: YES. The testing agent was used multiple times to verify all major bug fixes and feature implementations, with all tests passing.
+-   Testing agent used after significant changes: YES. The testing agent was successfully used after each major feature implementation, with all tests passing.
 -   Troubleshoot agent used after agent stuck in loop: NO
 -   Test files created: None
 -   Known regressions: None.
@@ -151,12 +133,6 @@ The application is a full-stack FastAPI, React, and MongoDB solution for jewelry
 -   **Role:** Admin
     -   **Username:** 
     -   **Password:** 
--   **Role:** Manager
-    -   **Username:** 
-    -   **Password:** (None - uses OTP from Admin dashboard)
--   **Role:** Sales Executive
-    -   **Username:** 
-    -   **Password:** (None - uses OTP from Admin dashboard)
 
 **What agent forgot to execute**
--   The agent successfully implemented all user requests from the session. The planned refactoring tasks were correctly deferred as lower-priority future work. No tasks were forgotten.</analysis>
+-   The agent successfully implemented all user requests from the session. No tasks were forgotten.</analysis>

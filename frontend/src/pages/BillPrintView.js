@@ -144,15 +144,27 @@ export default function BillPrintView() {
                         <span style={{ color: '#555' }}>Gold Value</span>
                         <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{fmt(item.gold_value)}</span>
                       </div>
-                      {item.making_charges?.length > 0 && item.making_charges.map((mc, mi) => (
-                        <div key={mi} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
-                          <span style={{ color: '#555' }}>
-                            Making ({mc.type === 'percentage' ? `${mc.value}%` : mc.type === 'per_gram' ? `Rs.${mc.value}/g` : `Rs.${mc.value} x${mc.quantity}pc`})
-                            {mc.type === 'percentage' && mc.making_per_gram ? <span style={{ marginLeft: '4px', fontSize: '9px' }}>Rs.{Number(mc.making_per_gram).toFixed(0)}/g</span> : null}
-                          </span>
-                          <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}></span>
-                        </div>
-                      ))}
+                      {item.making_charges?.length > 0 && item.making_charges.map((mc, mi) => {
+                        let mpgDisplay = '';
+                        if (mc.type === 'percentage') {
+                          let mpg = mc.making_per_gram;
+                          if (!mpg && item.purity_percent && item.rate_per_10g) {
+                            const rate24kt = item.rate_per_10g / (item.purity_percent / 100);
+                            mpg = (mc.value / 100) * (rate24kt / 10);
+                          }
+                          mpgDisplay = mpg ? `Rs.${Number(mpg).toFixed(0)}/g` : `${mc.value}%`;
+                        } else if (mc.type === 'per_gram') {
+                          mpgDisplay = `Rs.${mc.value}/g`;
+                        } else {
+                          mpgDisplay = `Rs.${mc.value} x${mc.quantity}pc`;
+                        }
+                        return (
+                          <div key={mi} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
+                            <span style={{ color: '#555' }}>Making ({mpgDisplay})</span>
+                            <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}></span>
+                          </div>
+                        );
+                      })}
                       {item.total_making > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                           <span style={{ color: '#555' }}>Making Charges Total</span>
