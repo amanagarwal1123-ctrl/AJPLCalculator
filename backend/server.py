@@ -194,6 +194,7 @@ class BillCreate(BaseModel):
     customer_location: Optional[str] = ""
     customer_reference: Optional[str] = ""
     salesperson_name: Optional[str] = ""
+    narration: Optional[str] = ""
     items: List[Dict[str, Any]] = []
     external_charges: List[Dict[str, Any]] = []
     bill_mode: Optional[str] = "regular"  # regular or mrp
@@ -289,6 +290,7 @@ async def startup_event():
     await db.bills.create_index("customer_phone")
     await db.bills.create_index("created_date")
     await db.customers.create_index("phone")
+    await db.customers.create_index("phones")
     await db.otps.create_index("username")
     await db.otps.create_index("expires_at")
     await db.sessions.create_index("user_id")
@@ -740,8 +742,61 @@ async def list_customers(user=Depends(get_current_user)):
 async def search_customer(phone: str = Query(""), user=Depends(get_current_user)):
     if not phone:
         return []
-    customers = await db.customers.find({"phone": {"$regex": phone}}).to_list(20)
+    customers = await db.customers.find({"$or": [
+        {"phone": {"$regex": phone}},
+        {"phones": {"$regex": phone}}
+    ]}).to_list(20)
     return [serialize_doc(c) for c in customers]
+
+@api_router.get("/customers/lookup-phone")
+async def lookup_customer_by_phone(phone: str = Query(...), user=Depends(get_current_user)):
+    """Lookup a customer by any of their phone numbers (primary or additional)."""
+    if not phone or len(phone.strip()) < 10:
+        return {"found": False}
+    phone = phone.strip()
+    # Search primary phone first
+    customer = await db.customers.find_one({"phone": phone})
+    if not customer:
+        # Search in additional phones array
+        customer = await db.customers.find_one({"phones": phone})
+    if customer:
+        c_data = serialize_doc(customer)
+        c_data['all_phones'] = [customer.get('phone', '')] + customer.get('phones', [])
+        return {"found": True, "customer": c_data}
+    return {"found": False}
+
+@api_router.post("/customers/{customer_id}/add-phone")
+async def add_phone_to_customer(customer_id: str, body: dict, user=Depends(get_current_user)):
+    """Add an additional phone number to an existing customer."""
+    new_phone = body.get('phone', '').strip()
+    if not new_phone or len(new_phone) != 10:
+        raise HTTPException(status_code=400, detail="Valid 10-digit phone number required")
+    
+    customer = await db.customers.find_one({"id": customer_id})
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    # Check if phone already exists on any customer
+    existing = await db.customers.find_one({"phone": new_phone})
+    if existing and existing.get('id') != customer_id:
+        raise HTTPException(status_code=400, detail="This phone number belongs to another customer")
+    existing_in_phones = await db.customers.find_one({"phones": new_phone})
+    if existing_in_phones and existing_in_phones.get('id') != customer_id:
+        raise HTTPException(status_code=400, detail="This phone number belongs to another customer")
+    
+    # Don't add if it's already the primary phone or in the phones array
+    if new_phone == customer.get('phone'):
+        return {"status": "already_exists", "message": "This is already the primary phone"}
+    
+    current_phones = customer.get('phones', [])
+    if new_phone in current_phones:
+        return {"status": "already_exists", "message": "Phone already added"}
+    
+    await db.customers.update_one(
+        {"id": customer_id},
+        {"$push": {"phones": new_phone}}
+    )
+    return {"status": "added"}
 
 @api_router.get("/customers/{customer_id}/bills")
 async def get_customer_bills(customer_id: str, user=Depends(get_current_user)):
@@ -824,8 +879,10 @@ async def _get_daily_serial():
 
 @api_router.post("/bills")
 async def create_bill(req: BillCreate, user=Depends(get_current_user)):
-    # Create or get customer
+    # Create or get customer - search primary phone and phones array
     customer = await db.customers.find_one({"phone": req.customer_phone})
+    if not customer:
+        customer = await db.customers.find_one({"phones": req.customer_phone})
     if not customer:
         customer = {
             "id": str(uuid.uuid4()),
@@ -833,6 +890,7 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
             "phone": req.customer_phone,
             "location": req.customer_location,
             "reference": req.customer_reference,
+            "phones": [],
             "first_visit": datetime.now(timezone.utc).isoformat(),
             "last_visit": datetime.now(timezone.utc).isoformat(),
             "total_visits": 1,
@@ -840,10 +898,12 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
         }
         await db.customers.insert_one(customer)
     else:
+        update_fields = {"last_visit": datetime.now(timezone.utc).isoformat()}
+        if req.customer_location:
+            update_fields["location"] = req.customer_location
         await db.customers.update_one(
-            {"phone": req.customer_phone},
-            {"$set": {"last_visit": datetime.now(timezone.utc).isoformat()},
-             "$inc": {"total_visits": 1}}
+            {"id": customer["id"]},
+            {"$set": update_fields, "$inc": {"total_visits": 1}}
         )
 
     # Calculate items
@@ -875,6 +935,7 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
         "customer_location": req.customer_location,
         "customer_reference": req.customer_reference,
         "salesperson_name": req.salesperson_name,
+        "narration": req.narration or "",
         "bill_mode": req.bill_mode,
         "items": calculated_items,
         "external_charges": req.external_charges,

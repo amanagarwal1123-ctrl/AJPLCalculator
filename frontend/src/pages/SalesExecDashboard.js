@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth, apiClient } from '@/App';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,17 +8,31 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, FileText, Eye, ArrowRight, Clock, Send, CheckCircle, Layers, LogOut, UserCheck } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, FileText, Eye, ArrowRight, Clock, Send, CheckCircle, Layers, LogOut, UserCheck, Search, Phone, UserPlus, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export default function SalesExecDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [customerName, setCustomerName] = useState('');
+  
+  // Phone-first flow state
   const [customerPhone, setCustomerPhone] = useState('');
+  const [lookupState, setLookupState] = useState('idle'); // idle, searching, found, not_found
+  const [foundCustomer, setFoundCustomer] = useState(null);
+  
+  // Customer details (editable)
+  const [customerName, setCustomerName] = useState('');
   const [customerLocation, setCustomerLocation] = useState('');
   const [customerReference, setCustomerReference] = useState('');
+  const [narration, setNarration] = useState('');
+  
+  // Add new phone to existing customer
+  const [showAddPhone, setShowAddPhone] = useState(false);
+  const [newPhone, setNewPhone] = useState('');
+  const [addingPhone, setAddingPhone] = useState(false);
+  
   const [myBills, setMyBills] = useState([]);
   const [creating, setCreating] = useState(false);
   const [branches, setBranches] = useState([]);
@@ -55,10 +69,87 @@ export default function SalesExecDashboard() {
 
   const userBranch = branches.find(b => b.id === user?.branch_id);
 
+  // Phone lookup - auto-trigger when 10 digits entered
+  const lookupPhone = useCallback(async (phone) => {
+    if (phone.length !== 10) {
+      setLookupState('idle');
+      setFoundCustomer(null);
+      setCustomerName('');
+      setCustomerLocation('');
+      setCustomerReference('');
+      setNarration('');
+      setShowAddPhone(false);
+      setNewPhone('');
+      return;
+    }
+    setLookupState('searching');
+    try {
+      const res = await apiClient.get(`/customers/lookup-phone?phone=${phone}`);
+      if (res.data.found) {
+        setLookupState('found');
+        setFoundCustomer(res.data.customer);
+        setCustomerName(res.data.customer.name || '');
+        setCustomerLocation(res.data.customer.location || '');
+        setCustomerReference('Repeat Customer');
+      } else {
+        setLookupState('not_found');
+        setFoundCustomer(null);
+        setCustomerName('');
+        setCustomerLocation('');
+        setCustomerReference('');
+      }
+    } catch (err) {
+      setLookupState('not_found');
+      setFoundCustomer(null);
+    }
+  }, []);
+
+  const handlePhoneChange = (val) => {
+    const cleaned = val.replace(/\D/g, '').slice(0, 10);
+    setCustomerPhone(cleaned);
+    if (cleaned.length === 10) {
+      lookupPhone(cleaned);
+    } else {
+      setLookupState('idle');
+      setFoundCustomer(null);
+    }
+  };
+
+  const handleAddPhone = async () => {
+    if (!foundCustomer || newPhone.length !== 10) return;
+    setAddingPhone(true);
+    try {
+      const res = await apiClient.post(`/customers/${foundCustomer.id}/add-phone`, { phone: newPhone });
+      if (res.data.status === 'added') {
+        toast.success(`Phone ${newPhone} added to ${foundCustomer.name}`);
+        setNewPhone('');
+        setShowAddPhone(false);
+      } else {
+        toast.info(res.data.message || 'Phone already exists');
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to add phone');
+    } finally {
+      setAddingPhone(false);
+    }
+  };
+
+  const resetForm = () => {
+    setCustomerPhone('');
+    setCustomerName('');
+    setCustomerLocation('');
+    setCustomerReference('');
+    setNarration('');
+    setLookupState('idle');
+    setFoundCustomer(null);
+    setShowAddPhone(false);
+    setNewPhone('');
+    setSalesperson('');
+  };
+
   const handleMakeBill = async () => {
+    if (!customerPhone.trim() || customerPhone.length !== 10) { toast.error('Valid 10-digit phone number is required'); return; }
     if (!customerName.trim()) { toast.error('Customer Name is mandatory'); return; }
-    if (!customerPhone.trim()) { toast.error('Phone Number is mandatory'); return; }
-    if (customerPhone.replace(/\D/g, '').length !== 10) { toast.error('Phone number must be exactly 10 digits'); return; }
     if (!customerLocation.trim()) { toast.error('Location is mandatory'); return; }
     if (!customerReference) { toast.error('Reference is mandatory'); return; }
     if (!salesperson) { toast.error('Please select a salesperson'); return; }
@@ -70,10 +161,12 @@ export default function SalesExecDashboard() {
         customer_location: customerLocation,
         customer_reference: customerReference,
         salesperson_name: salesperson,
+        narration: narration,
         items: [],
         external_charges: [],
       });
       toast.success('Bill created! Add items now.');
+      resetForm();
       navigate(`/bill/${res.data.id}`);
     } catch (err) {
       toast.error('Failed to create bill');
@@ -197,58 +290,181 @@ export default function SalesExecDashboard() {
             </div>
           )}
 
-          {/* Customer Capture */}
+          {/* Customer Capture - Phone First Flow */}
           <Card className="bg-card/90 backdrop-blur-sm border-border shadow-[var(--shadow-elev-1)]">
             <CardHeader className="pb-3">
               <CardTitle className="heading text-xl sm:text-2xl">New Bill</CardTitle>
-              <p className="text-xs sm:text-sm text-muted-foreground">Enter customer details to start a bill</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Enter phone number to start</p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cname" className="text-sm">Customer Name *</Label>
-                  <Input id="cname" placeholder="Customer name" value={customerName} onChange={e => setCustomerName(e.target.value)} className="h-11 bg-secondary/50" data-testid="customer-name-input" />
+              {/* Step 1: Phone Number */}
+              <div className="space-y-2 mb-4">
+                <Label htmlFor="cphone" className="text-sm flex items-center gap-2">
+                  <Phone size={14} className="text-primary" /> Phone Number * (10 digits)
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="cphone"
+                    placeholder="Enter 10-digit phone number"
+                    value={customerPhone}
+                    onChange={e => handlePhoneChange(e.target.value)}
+                    className={`h-12 bg-secondary/50 text-lg mono pr-10 ${
+                      lookupState === 'found' ? 'border-[hsl(160,52%,46%)] ring-1 ring-[hsl(160,52%,46%)]/30' :
+                      lookupState === 'not_found' && customerPhone.length === 10 ? 'border-[hsl(196,70%,52%)] ring-1 ring-[hsl(196,70%,52%)]/30' : ''
+                    }`}
+                    data-testid="customer-phone-input"
+                    inputMode="numeric"
+                    maxLength={10}
+                    autoFocus
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {lookupState === 'searching' && <Loader2 size={18} className="animate-spin text-muted-foreground" />}
+                    {lookupState === 'found' && <UserCheck size={18} className="text-[hsl(160,52%,46%)]" />}
+                    {lookupState === 'not_found' && <UserPlus size={18} className="text-[hsl(196,70%,52%)]" />}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cphone" className="text-sm">Phone Number * (10 digits)</Label>
-                  <Input id="cphone" placeholder="Phone number" value={customerPhone} onChange={e => setCustomerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} className="h-11 bg-secondary/50" data-testid="customer-phone-input" inputMode="numeric" maxLength={10} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cloc" className="text-sm">Location *</Label>
-                  <Input id="cloc" placeholder="City / Area" value={customerLocation} onChange={e => setCustomerLocation(e.target.value)} className="h-11 bg-secondary/50" data-testid="customer-location-input" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cref" className="text-sm">Reference *</Label>
-                  <Select value={customerReference} onValueChange={setCustomerReference}>
-                    <SelectTrigger className="h-11 bg-secondary/50" data-testid="customer-reference-select">
-                      <SelectValue placeholder="How did they find us?" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {references.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="csp" className="text-sm">Salesperson *</Label>
-                  <Select value={salesperson} onValueChange={setSalesperson}>
-                    <SelectTrigger className="h-11 bg-secondary/50" data-testid="salesperson-select">
-                      <SelectValue placeholder="Select salesperson" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {salespeople.map(sp => <SelectItem key={sp.id} value={sp.name}>{sp.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Lookup Status */}
+                {lookupState === 'found' && foundCustomer && (
+                  <div className="p-3 rounded-lg bg-[hsl(160,52%,46%)]/10 border border-[hsl(160,52%,46%)]/30" data-testid="customer-found-banner">
+                    <div className="flex items-center gap-2">
+                      <UserCheck size={16} className="text-[hsl(160,52%,46%)] shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-[hsl(160,52%,46%)]">
+                          Returning Customer: <span className="text-foreground">{foundCustomer.name}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {foundCustomer.total_visits || 1} visit{(foundCustomer.total_visits || 1) > 1 ? 's' : ''} 
+                          {foundCustomer.location ? ` | ${foundCustomer.location}` : ''}
+                          {foundCustomer.all_phones?.length > 1 ? ` | ${foundCustomer.all_phones.length} phone numbers` : ''}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {lookupState === 'not_found' && customerPhone.length === 10 && (
+                  <div className="p-3 rounded-lg bg-[hsl(196,70%,52%)]/10 border border-[hsl(196,70%,52%)]/30" data-testid="new-customer-banner">
+                    <div className="flex items-center gap-2">
+                      <UserPlus size={16} className="text-[hsl(196,70%,52%)]" />
+                      <p className="text-sm font-medium text-[hsl(196,70%,52%)]">New Customer — fill in details below</p>
+                    </div>
+                  </div>
+                )}
               </div>
-              <Button
-                className="mt-4 sm:mt-6 w-full sm:w-auto h-12 px-8 text-base font-semibold rounded-xl"
-                onClick={handleMakeBill}
-                disabled={creating}
-                data-testid="make-bill-button"
-              >
-                <Plus size={18} className="mr-2" />
-                {creating ? 'Creating...' : 'Make Bill'}
-              </Button>
+
+              {/* Step 2: Customer Details (shown after phone lookup) */}
+              {(lookupState === 'found' || lookupState === 'not_found') && (
+                <div className="space-y-4 border-t border-border/50 pt-4" data-testid="customer-details-section">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cname" className="text-sm">Customer Name *</Label>
+                      <Input
+                        id="cname"
+                        placeholder="Customer name"
+                        value={customerName}
+                        onChange={e => setCustomerName(e.target.value)}
+                        className="h-11 bg-secondary/50"
+                        data-testid="customer-name-input"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cloc" className="text-sm">Location *</Label>
+                      <Input
+                        id="cloc"
+                        placeholder="City / Area"
+                        value={customerLocation}
+                        onChange={e => setCustomerLocation(e.target.value)}
+                        className="h-11 bg-secondary/50"
+                        data-testid="customer-location-input"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cref" className="text-sm">Reference *</Label>
+                      {lookupState === 'found' ? (
+                        <div className="h-11 flex items-center px-3 rounded-md bg-secondary/30 border border-border text-sm" data-testid="reference-locked">
+                          <span className="text-muted-foreground">Repeat Customer</span>
+                        </div>
+                      ) : (
+                        <Select value={customerReference} onValueChange={setCustomerReference}>
+                          <SelectTrigger className="h-11 bg-secondary/50" data-testid="customer-reference-select">
+                            <SelectValue placeholder="How did they find us?" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {references.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="csp" className="text-sm">Salesperson *</Label>
+                      <Select value={salesperson} onValueChange={setSalesperson}>
+                        <SelectTrigger className="h-11 bg-secondary/50" data-testid="salesperson-select">
+                          <SelectValue placeholder="Select salesperson" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {salespeople.map(sp => <SelectItem key={sp.id} value={sp.name}>{sp.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Narration (optional) */}
+                  <div className="space-y-2">
+                    <Label htmlFor="narration" className="text-sm text-muted-foreground">Narration (optional)</Label>
+                    <Input
+                      id="narration"
+                      placeholder="e.g. Actual buyer name, purpose, notes..."
+                      value={narration}
+                      onChange={e => setNarration(e.target.value)}
+                      className="h-10 bg-secondary/30 text-sm"
+                      data-testid="narration-input"
+                    />
+                  </div>
+
+                  {/* Add another phone (for returning customers) */}
+                  {lookupState === 'found' && foundCustomer && (
+                    <div className="space-y-2">
+                      {!showAddPhone ? (
+                        <button
+                          onClick={() => setShowAddPhone(true)}
+                          className="text-xs text-primary hover:underline flex items-center gap-1"
+                          data-testid="add-phone-toggle"
+                        >
+                          <Plus size={12} /> Add another phone number for this customer
+                        </button>
+                      ) : (
+                        <div className="flex items-end gap-2 p-3 rounded-lg bg-secondary/20 border border-border/50">
+                          <div className="flex-1 space-y-1">
+                            <Label className="text-xs">New Phone for {foundCustomer.name}</Label>
+                            <Input
+                              placeholder="10-digit number"
+                              value={newPhone}
+                              onChange={e => setNewPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                              className="h-9 bg-secondary/50 mono"
+                              inputMode="numeric"
+                              maxLength={10}
+                              data-testid="new-phone-input"
+                            />
+                          </div>
+                          <Button size="sm" className="h-9" onClick={handleAddPhone} disabled={newPhone.length !== 10 || addingPhone} data-testid="add-phone-button">
+                            {addingPhone ? <Loader2 size={14} className="animate-spin" /> : 'Add'}
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-9" onClick={() => { setShowAddPhone(false); setNewPhone(''); }}>Cancel</Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <Button
+                    className="w-full sm:w-auto h-12 px-8 text-base font-semibold rounded-xl"
+                    onClick={handleMakeBill}
+                    disabled={creating}
+                    data-testid="make-bill-button"
+                  >
+                    <Plus size={18} className="mr-2" />
+                    {creating ? 'Creating...' : 'Make Bill'}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 

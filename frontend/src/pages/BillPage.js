@@ -278,6 +278,7 @@ export default function BillPage() {
                     <div><span className="text-muted-foreground text-xs">Location:</span> <span className="block sm:inline">{bill.customer_location || '-'}</span></div>
                     <div><span className="text-muted-foreground text-xs">Reference:</span> <span className="block sm:inline">{bill.customer_reference || '-'}</span></div>
                     {bill.salesperson_name && <div><span className="text-muted-foreground text-xs">Salesperson:</span> <span className="block sm:inline">{bill.salesperson_name}</span></div>}
+                    {bill.narration && <div className="col-span-2"><span className="text-muted-foreground text-xs">Narration:</span> <span className="block sm:inline italic text-muted-foreground">{bill.narration}</span></div>}
                   </div>
                   <Button variant="secondary" size="sm" className="mt-2 h-8 text-xs" onClick={() => navigate(`/customer/${bill.customer_phone}`)} data-testid="view-customer-profile">
                     <User size={12} className="mr-1" /> Customer Profile
