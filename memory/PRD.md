@@ -27,6 +27,11 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - [x] Customer List with Total Spent (calculated from approved bills only) (Feb 2026)
 - [x] Customer History page with "Edit Details" button (Feb 2026)
 - [x] Customer Profile with all fields: Name, Phone, Email, Location, Reference, DOB, Anniversary, Address, Notes
+- [x] Phone-first customer entry: Salesman enters phone → auto-lookup → auto-fill for returning customers (Mar 2026)
+- [x] Returning customer reference locked to "Repeat Customer" (Mar 2026)
+- [x] Multi-phone support: customers can have multiple phone numbers, all mapped to same profile (Mar 2026)
+- [x] Add-phone feature for returning customers during bill creation (Mar 2026)
+- [x] Narration field on bills: optional note for actual buyer name/purpose (Mar 2026)
 
 ### Reports & Analytics
 - [x] 8 tabs: Overview, KT Analysis, Branches, Executives, References, Customers, Top Items, Feedbacks
@@ -84,3 +89,6 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - Mar 2026: Fixed customer count discrepancy - reference_analysis now filters by sent/approved/edited status
 - Mar 2026: New References tab with Total/Approved/NP sub-tabs and expandable bill drill-down
 - Mar 2026: New /api/analytics/reference-report endpoint with date filtering
+- Mar 2026: Phone-first customer entry flow with auto-lookup, auto-fill, reference lock for returning customers
+- Mar 2026: Multi-phone customer support (phones array, lookup-phone endpoint, add-phone endpoint)
+- Mar 2026: Narration field on bills for noting actual buyer name/purpose
