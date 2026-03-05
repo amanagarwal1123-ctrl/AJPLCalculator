@@ -31,6 +31,8 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 ### Reports & Analytics
 - [x] 8 tabs: Overview, KT Analysis, Branches, Executives, References, Customers, Top Items, Feedbacks
 - [x] Customer analytics uses actual approved bill spending (not cached values) (Feb 2026)
+- [x] Dashboard date filters now correctly update all fields including Total Customers (Mar 2026)
+- [x] Reference analysis shows unique customers vs bills count (Mar 2026)
 - [x] Frequency cohorts & spending tiers based on approved/sent/edited bills only
 - [x] Feedbacks tab with date range filter + asc/desc sort
 - [x] Inactive Customers with user-specified days threshold
