@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 
 class AJPLTestRunner:
-    def __init__(self, base_url="https://customer-breakdown.preview.emergentagent.com"):
+    def __init__(self, base_url="https://making-charge-fix.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.token = None
