@@ -52,9 +52,11 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 
 ### Bill Page Features
 - [x] Photo lightbox: Simple overlay for viewing item photos without Dialog crashes (Mar 2026)
-- [x] Admin-only making % display: Admin sees both % and ₹/g; others see only ₹/g (Mar 2026)
-- [x] Admin bill summary sidebar shows per-item making breakdown with % and ₹/g (Mar 2026)
+- [x] Admin-only making % display: Admin sees % and ₹/g only for actual percentage-type charges; per_gram shows only ₹/g (Mar 2026)
+- [x] Admin bill summary sidebar shows per-item making breakdown (Mar 2026)
 - [x] Smart back navigation: Back button returns to previous page instead of always going to dashboard (Mar 2026)
+- [x] Navigation loop fix: Edit Item/MRP Calculator use replace:true to prevent Bill↔Edit loop (Mar 2026)
+- [x] Making charge type preservation: Percentage charges saved correctly as percentage type going forward (Mar 2026)
 
 ## Credentials
 - **Admin:** username=admin, password=admin1123
@@ -69,6 +71,8 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 
 ## Changelog
 - Mar 2026: Fixed photo lightbox (replaced Dialog with simple overlay)
-- Mar 2026: Admin-only making % display in bill details and summary
+- Mar 2026: Admin-only making % display in bill details and summary (percentage type only, not calculated for per_gram)
 - Mar 2026: Smart back navigation on bill page
 - Mar 2026: Print/PDF shows only making per gram
+- Mar 2026: Fixed navigation loop (Bill↔Edit Item) using replace:true
+- Mar 2026: Making charge type correctly preserved as percentage during save/edit
