@@ -75,14 +75,9 @@ export default function BillPage() {
     return null;
   };
 
-  // Calculate equivalent percentage for per_gram type
-  const getMakingPercent = (mc, item) => {
+  // Only return percentage for actual percentage type charges
+  const getMakingPercent = (mc) => {
     if (mc.type === 'percentage') return mc.value;
-    if (mc.type === 'per_gram' && item.purity_percent && item.rate_per_10g) {
-      const rate24kt = item.rate_per_10g / (item.purity_percent / 100);
-      const rate24ktPerGram = rate24kt / 10;
-      if (rate24ktPerGram > 0) return (mc.value / rate24ktPerGram) * 100;
-    }
     return null;
   };
 
@@ -351,7 +346,7 @@ export default function BillPage() {
                                     <div className="mt-1.5 text-[10px] text-muted-foreground">
                                       Making: {item.making_charges.map((mc, mi) => {
                                         const mpg = getMakingPerGram(mc, item);
-                                        const pct = getMakingPercent(mc, item);
+                                        const pct = getMakingPercent(mc);
                                         return (
                                           <span key={mi} className="mr-2">
                                             {mc.type === 'percentage' ? (
@@ -361,11 +356,7 @@ export default function BillPage() {
                                                 <>{mpg ? `₹${Number(mpg).toFixed(0)}/g` : `${mc.value}%`}</>
                                               )
                                             ) : mc.type === 'per_gram' ? (
-                                              isAdmin && pct ? (
-                                                <>{pct.toFixed(1)}% <sub className="text-primary">₹{mc.value}/g</sub></>
-                                              ) : (
-                                                <>₹{mc.value}/g</>
-                                              )
+                                              <>₹{mc.value}/g</>
                                             ) : (
                                               <>₹{mc.value} x{mc.quantity}pc</>
                                             )}
@@ -436,7 +427,7 @@ export default function BillPage() {
                         if (item.item_type === 'mrp' || !item.making_charges?.length) return null;
                         return item.making_charges.map((mc, mi) => {
                           const mpg = getMakingPerGram(mc, item);
-                          const pct = getMakingPercent(mc, item);
+                          const pct = getMakingPercent(mc);
                           return (
                             <div key={`${idx}-${mi}`} className="text-[11px] text-muted-foreground" data-testid={`summary-making-${idx}-${mi}`}>
                               <span className="truncate">{item.item_name}: </span>

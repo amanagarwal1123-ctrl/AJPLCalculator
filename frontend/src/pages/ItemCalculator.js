@@ -287,7 +287,7 @@ export default function ItemCalculator() {
         external_charges: bill?.external_charges || [],
       });
       toast.success(isEditing ? 'Item updated!' : 'Item added!');
-      navigate(`/bill/${billId}`);
+      navigate(`/bill/${billId}`, { replace: true });
     } catch (err) {
       toast.error('Failed to save item');
     } finally {
@@ -313,11 +313,11 @@ export default function ItemCalculator() {
         <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="flex items-center gap-3 px-4 py-3 max-w-5xl mx-auto">
             <Button variant="ghost" size="sm" onClick={() => {
-              if (step === 'calculate' || step === 'type') navigate(`/bill/${billId}`);
+              if (step === 'calculate' || step === 'type') navigate(`/bill/${billId}`, { replace: true });
               else if (step === 'diamond_choice') setStep('type');
               else if (step === 'purity') setStep('rate_mode');
               else if (step === 'rate_mode') setStep(itemType === 'diamond' ? 'diamond_choice' : 'type');
-              else navigate(`/bill/${billId}`);
+              else navigate(`/bill/${billId}`, { replace: true });
             }} data-testid="back-button">
               <ArrowLeft size={18} />
             </Button>

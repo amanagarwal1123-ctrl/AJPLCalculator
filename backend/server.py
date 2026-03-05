@@ -2293,6 +2293,7 @@ async def update_item_name(item_id: str, updates: dict, user=Depends(get_current
     await db.item_names.update_one({"id": item_id}, {"$set": {"name": new_name}})
     return {"status": "updated", "name": new_name}
 
+
 # ============ ROOT ============
 @api_router.get("/")
 async def root():

@@ -1,0 +1,110 @@
+{
+  "summary": "All bug fixes verified: 1) Edit form shows correct making charge labels (% Making vs Per Gram), 2) BillPage shows percentage+₹/g only for percentage type, only ₹/g for per_gram type, 3) Navigation loop fixed with replace:true - back from Edit Item goes to Bill, not looping",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "Edit form for PERCENTAGE making charge shows '% Making' label with value 15",
+    "Edit form for PERCENTAGE type shows helper text '15% ₹978.26/g' below input",
+    "Edit form for PER_GRAM making charge shows 'Per Gram (Rs.)' label with value 500",
+    "BillPage (d70d822e): Percentage type item shows 'Making: 15.0% ₹978g' format",
+    "BillPage (d70d822e): Bill Summary shows 'Necklace: 15.0% ₹978/g'",
+    "BillPage (880c3622): Per gram type item shows 'Making: ₹500/g' - NO percentage",
+    "BillPage (880c3622): Bill Summary shows 'Ring: ₹500/g' - NO percentage",
+    "Navigation: Edit Item → Back goes to Bill page",
+    "Navigation: NO LOOP - Bill → Back never returns to Edit Item",
+    "Navigation: Bill → Back (multiple) eventually reaches Dashboard",
+    "Navigation: Save/Update Item returns to Bill page with replace:true"
+  ],
+
+  "test_report_links": [
+    ".screenshots/03_bill_percentage_making.png",
+    ".screenshots/04_bill_per_gram_making.png",
+    ".screenshots/05_edit_form_percentage.png",
+    ".screenshots/06_edit_form_per_gram.png",
+    ".screenshots/12_nav_loop_test.png",
+    ".screenshots/13_save_navigation.png"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "BillPage.js getMakingPercent() at line 79-82: Correctly returns percentage only for type==='percentage', null otherwise",
+    "ItemCalculator.js line 290,316-320: replace:true used on both save and back navigation to prevent history piling",
+    "Making charge label logic at ItemCalculator.js line 523: Shows '% Making' for percentage, 'Per Gram (Rs.)' for per_gram"
+  ],
+
+  "updated_files": [],
+
+  "success_rate": {
+    "backend": "N/A (frontend-only testing)",
+    "frontend": "100% (11/11 tests passed)"
+  },
+
+  "test_credentials": {
+    "admin": {
+      "username": "admin",
+      "password": "admin1123",
+      "method": "Click 'Admin Login' link on login page, fill credentials, click 'Sign In as Admin'"
+    }
+  },
+
+  "seed_data_creation": "None - used existing bills",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "All 3 making charge fixes verified: (1) Edit form labels show '% Making' vs 'Per Gram (Rs.)' correctly based on type; (2) BillPage shows 'X% ₹Y/g' for percentage type, only '₹Y/g' for per_gram type; (3) Navigation loop fixed with replace:true - Bill->Edit->Back->Bill->Back never loops to Edit. Test bills: 880c3622 (per_gram ₹500/g), d70d822e (percentage 15%)",
+
+  "feature_verification_details": {
+    "edit_form_making_charge_labels": {
+      "status": "PASS",
+      "percentage_type": {
+        "bill_id": "d70d822e-0543-4a1a-b263-110849fa4697",
+        "label": "% Making",
+        "value": "15",
+        "helper_text": "15% ₹978.26/g"
+      },
+      "per_gram_type": {
+        "bill_id": "880c3622-5986-425f-9fdf-8f73d949bee9",
+        "label": "Per Gram (Rs.)",
+        "value": "500",
+        "helper_text": "none (correct - no percentage shown)"
+      }
+    },
+    "billpage_making_charge_display": {
+      "status": "PASS",
+      "percentage_type_bill": {
+        "bill_id": "d70d822e",
+        "item_details_format": "Making: 15.0% ₹978g (subscript)",
+        "summary_format": "Necklace: 15.0% ₹978/g"
+      },
+      "per_gram_type_bill": {
+        "bill_id": "880c3622",
+        "item_details_format": "Making: ₹500/g (NO percentage)",
+        "summary_format": "Ring: ₹500/g (NO percentage)"
+      }
+    },
+    "navigation_loop_prevention": {
+      "status": "PASS",
+      "test_flow": "Dashboard → Bill → Edit Item → Back → Bill → Back → Dashboard",
+      "loop_detected": false,
+      "implementation": "ItemCalculator uses replace:true for back and save navigation",
+      "notes": "First back from Bill may stay on Bill (history replacement behavior), but never loops to Edit Item"
+    }
+  },
+
+  "mocked_apis": {
+    "OTP_delivery": "OTP codes shown on admin dashboard instead of actual delivery"
+  }
+}

@@ -120,7 +120,7 @@ export default function MrpCalculator() {
       }
       await apiClient.put(`/bills/${billId}`, { items: currentItems, external_charges: bill?.external_charges || [] });
       toast.success(isEditing ? 'MRP item updated!' : 'MRP item added!');
-      navigate(`/bill/${billId}`);
+      navigate(`/bill/${billId}`, { replace: true });
     } catch (err) { toast.error('Failed to save item'); }
     finally { setSaving(false); }
   };
@@ -131,7 +131,7 @@ export default function MrpCalculator() {
       <div className="relative z-10">
         <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="flex items-center gap-3 px-4 py-3 max-w-5xl mx-auto">
-            <Button variant="ghost" size="sm" onClick={() => navigate(`/bill/${billId}`)} data-testid="mrp-back-btn"><ArrowLeft size={18} /></Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate(`/bill/${billId}`, { replace: true })} data-testid="mrp-back-btn"><ArrowLeft size={18} /></Button>
             <div>
               <h1 className="heading text-lg font-bold text-primary">{isEditing ? 'Edit MRP Item' : 'MRP Calculator'}</h1>
               <p className="text-xs text-muted-foreground">{isEditing ? 'Update MRP-based item' : 'Add MRP-based item'}</p>
