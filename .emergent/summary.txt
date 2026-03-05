@@ -1,41 +1,35 @@
 <analysis>**original_problem_statement:**
-The user requested several features and bug fixes for their jewelry business management application.
+The user initially reported an analytics discrepancy where customer counts for 'Facebook' and 'Instagram' references were inconsistent across different parts of the UI. They also requested two major features:
 
-Initial requests for this session:
--   **Bug Fix:** In the inactive customers report, the Total Spent values are incorrect.
--   **UI Enhancement:** Display the salesperson's branch name next to their name in the list.
--   **New Feature:** Create a dedicated performance page for each salesperson, showing their total sales, day-wise sales breakdown, branch, and a performance graph.
-
-Subsequent requests added during the session:
--   **Bug Fix:** In the Reports page, the Total Customers count does not update when a date filter is applied. The user also requested a check to ensure all other fields and graphs on the page respect the filters.
--   **UI Enhancement:** On the Inactive Customers report, display the count as X out of Y total customers.
--   **New Feature:** On the Reports page, add the ability to select multiple customer references (e.g., Facebook, Instagram) and see a combined breakdown of gold vs. diamond sales for those selected references.
+1.  **New Reference-Based Report:** A new report accessible from the Reports page to analyze customer traffic based on their reference source. This report needed to show:
+    *   **Total:** All customers who visited, regardless of purchase.
+    *   **Approved:** Customers who made a purchase.
+    *   **NP (Non-Purchasers):** Customers who visited but did not make a purchase.
+2.  **Phone-First Customer Entry Workflow:** A complete overhaul of the new bill creation process for salespeople.
+    *   The flow must start by entering a customer's phone number.
+    *   If the number exists in the database, the system should auto-fill the customer's details, lock the reference to Repeat Customer, and allow the salesperson to add an additional phone number to that same customer's profile.
+    *   If the number is new, the system should then ask for the rest of the customer's details.
+    *   A Narration field should be added to the bill to allow for notes, such as the actual purchaser's name if it differs from the customer on file.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The application is a full-stack FastAPI and React solution. During this session, the agent successfully implemented a significant batch of features and bug fixes requested by the user.
+The application is a full-stack FastAPI and React solution for jewelry business management. In this session, the agent successfully implemented all user requests.
 
--   **Bug Fixes Completed:**
-    -   The  calculation for inactive customers was corrected to use only approved/sent bills, fixing the data integrity issue.
-    -   The main analytics dashboard now correctly filters the  count when date or other filters are applied, ensuring all summary cards and charts are coherent.
-
--   **New Features Implemented:**
-    -   A new **Salesperson Performance page** has been created. It is accessible by clicking a salesperson's name and displays key performance indicators, a day-wise sales table, and a sales trend graph.
-    -   The **Salespeople list** now displays the branch name next to each salesperson.
-    -   The **Inactive Customers** report now shows a clear X out of Y customers count.
-    -   The **Reports page** includes a new powerful feature to get a **gold vs. diamond sales breakdown** for multiple, user-selected customer references, complete with a summary, chart, and detailed table.
+*   **Analytics Fix:** The discrepancy in the dashboard analytics was resolved by ensuring all calculations correctly filter bills by their status (, , ).
+*   **New Reference Report:** The Reports page now features a References tab with three sub-tabs (Total, Approved, NP) that display detailed, expandable reports on customer traffic and conversion, complete with summary cards and charts.
+*   **Phone-First Workflow:** The salesperson's new bill creation form has been completely redesigned. It now enforces a phone-first workflow, supports multiple phone numbers per customer, auto-fills returning customer data, and includes a narration field for bills. The backend models and API endpoints have been updated to support this new logic.
 
 **Last working item**:
--   Last item agent was working: The agent just finished implementing two user requests: 1) Displaying the X out of Y customers count in the inactive customer section. 2) Adding the feature to analyze gold vs. diamond sales for multiple selected references on the Reports page.
+-   Last item agent was working: The agent completed the implementation of the new phone-first customer entry workflow. This involved significant backend changes to the  and  models and the creation of new API endpoints for phone lookups. The frontend  was completely rewritten to support the new multi-step form logic.
 -   Status: USER VERIFICATION PENDING
 -   Agent Testing Done: Y
--   Which testing method agent to use? The user should be guided to test the new features. If any regressions are found, the  should be used for a comprehensive check.
+-   Which testing method agent to use? User should be guided to test the new workflow. If issues arise, use  for comprehensive validation.
 -   User Testing Done: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: User Verification for all recent features (P0)**
-    -   **Description:** The user needs to test and verify the functionality of all features implemented in this session, particularly the latest ones: the inactive customer count format and the multi-reference gold/diamond sales breakdown.
+-   **Issue 1: User Verification for New Features (P0)**
+    -   **Description:** The user needs to test and verify the two major features delivered in this session: the new Reference Report on the  page and the new Phone-First customer entry workflow on the  page.
     -   **Status:** USER VERIFICATION PENDING
     -   **Is recurring issue?** N
     -   **Blocked on other issue:** None
@@ -44,20 +38,25 @@ The application is a full-stack FastAPI and React solution. During this session,
 -   None.
 
 **Upcoming and Future Tasks**
--   **P1: Refactor **: This file has become critically oversized and complex due to the addition of multiple new endpoints and business logic. It must be broken down into separate FastAPI router files (e.g., , , ) to improve maintainability.
--   **P2: Refactor **: This component now contains very complex state management and UI logic for multiple tabs and interactive features. It should be decomposed into smaller, more manageable sub-components and custom hooks.
+-   **P1: Refactor  (CRITICAL)**: This file's size and complexity have increased, making it the highest priority technical debt. It must be broken down into modular FastAPI routers (e.g., for analytics, customers, billing).
+-   **P2: Refactor  (High)**: This large component was further expanded. It should be decomposed into smaller, manageable sub-components and custom hooks to improve maintainability.
+-   **P3: Refactor  (Medium)**: This page now contains complex state management for the new workflow and is a good candidate for refactoring into smaller, dedicated components.
 
 **Completed work in this session**
--   **Fixed Inactive Customer Analytics:** Corrected the  endpoint in  to calculate  from approved/sent bills, ensuring data accuracy.
--   **Fixed Report Filter Coherence:** Modified the  endpoint in  to ensure the  count respects all active filters.
--   **Created Salesperson Performance Page:**
-    -   Added a new backend endpoint: .
-    -   Created a new frontend page: , utilizing  for the graph.
-    -   Updated  to link to the new page and display the salesperson's branch.
--   **Implemented Multi-Reference Sales Breakdown:**
-    -   Added a new backend endpoint: .
-    -   Enhanced the References tab in  with a multi-select UI, API integration, and a new results section with a chart and table.
--   **Implemented X out of Y Inactive Customer Count:** Updated the UI in  to display the enhanced count format.
+-   **Fixed Analytics Discrepancy:** Corrected logic in  to filter  by bill status, ensuring consistent data on the dashboard.
+-   **Implemented Reference Report:**
+    -   Added a  endpoint in .
+    -   Redesigned the References tab in  with Total, Approved, and NP sub-tabs, summary cards, and data tables.
+    -   Fixed incorrect navigation routes within .
+-   **Implemented Phone-First Customer Workflow:**
+    -   **Backend ():**
+        -   Modified  model to support a  array.
+        -   Added an optional  field to the  model.
+        -   Created new endpoints:  and .
+        -   Updated search and bill creation logic to handle multiple phone numbers.
+    -   **Frontend:**
+        -   Completely rebuilt the customer creation form in  to implement the new phone-first logic.
+        -   Added the  field to the bill view in .
 
 **Earlier issues found/mentioned but not fixed**
 -   None.
@@ -69,53 +68,57 @@ The application is a full-stack FastAPI and React solution. During this session,
 
 
 **Key Technical Concepts**
--   **Complex Backend Aggregations:** Extensive use of MongoDB aggregation pipelines in  was key to delivering the new analytics features, using stages like , , , and .
--   **Data-Driven UI:** The frontend was updated to be more dynamic and data-driven. The  component now conditionally renders a complex data breakdown based on user selections in a multi-select chip group.
--   **State Management with Hooks:** The agent relied heavily on  and  in React to manage complex component state, such as API data, user selections, and loading statuses.
+-   **Stateful Frontend Workflow:** A multi-step form was created in React () using state to guide the user through the phone lookup, customer confirmation, and bill creation process.
+-   **Backend Data Model Extension:** The  model in MongoDB was updated to support an array of phone numbers (), and the  model was extended with an optional  field.
+-   **API Design:** New, specific REST endpoints were designed and implemented for core business logic, including  and .
+-   **Complex UI with Sub-Tabs:** The  component was enhanced to manage active sub-tabs and conditionally render different data visualizations for the new report.
 
 **key DB schema**
--   **Bill:** The , , , and  fields were essential for the new salesperson performance and reference breakdown features. The  field remains critical for all financial reporting.
--   **Customer:** The  field was used as the basis for the new multi-reference sales breakdown feature.
+-   **customers**:
+    -    (new field to store multiple phone numbers for one customer)
+-   **bills**:
+    -    (new field for optional transaction notes)
 
 **changes in tech stack**
 -   None.
 
 **All files of reference**
--   : The central point for all business logic changes, including bug fixes and new endpoints.
--   : The main UI file that received the most significant feature enhancements.
--   : A new page created from scratch.
--   : Updated to integrate with the new performance page.
--   : Modified to add the new route.
+-    (Major backend logic changes)
+-    (New report implementation)
+-    (New customer workflow)
+-    (UI update for narration field)
+-    (Updated with new features)
 
 **Areas that need refactoring**:
--   ** (CRITICAL):** The file's size and complexity are now a significant liability. It must be refactored into smaller, domain-focused routers to ensure the project remains maintainable.
--   ** (High Priority):** This component is overloaded with logic for multiple features. Its state management and rendering logic should be broken down into custom hooks and smaller child components.
+-   ** (CRITICAL):** This monolithic file is now responsible for even more application logic. It must be broken into separate FastAPI router files to avoid future development bottlenecks.
+-   ** (High Priority):** This file is extremely large and complex. It needs to be decomposed into smaller components for readability and maintenance.
+-   ** (Medium Priority):** The complex state logic for the new phone-first workflow should be encapsulated into custom hooks or smaller components.
 
 **key api endpoints**
--   ** (New):** Retrieves performance metrics and daily sales data for a specific salesperson.
--   ** (New):** Accepts a list of reference names and returns a combined gold vs. diamond sales breakdown.
--   ** (Modified):** Logic fixed to calculate  accurately.
--   ** (Modified):** Logic fixed to ensure  respects active filters.
+-   : Fetches data for the new reference report.
+-   : Finds a customer by any of their associated phone numbers.
+-   : Adds a new phone number to an existing customer's profile.
 
 **Critical Info for New Agent**
--   **Priority 1: User Verification:** The immediate next step is to present the full suite of newly implemented features to the user and guide them through testing.
--   **Priority 2: Urgent Refactoring:** After user verification, the highest priority task is to refactor . The project's health and future scalability depend on breaking this monolithic file into smaller routers. Refactoring  should follow.
--   **Data Integrity is Paramount:** Always double-check that any new financial or counting logic is based on the correct set of bills (i.e., filtered by status: , , etc.) and not on potentially stale cached data.
+-   **User Verification is Priority #1:** The immediate next step is to get confirmation from the user on the two major features implemented: the **Reference Report** and the **Phone-First Customer Workflow**.
+-   **Refactoring is Overdue:** Once the user verifies the new features, you must prioritize the refactoring of . This is a significant piece of technical debt that is actively harming maintainability.
+-   **Salesperson Login is Mocked:** The OTP login for salespeople is not functional. To test the  page, either use the  or use  to obtain a valid auth token for an executive user.
 
 **documents and test reports created in this job**
 -   
 -   
 -   
--   
 
 **Last 10 User Messages and any pending HUMAN messages**
--   : User requested the X out of Y format for inactive customers and the gold/diamond sales breakdown for multiple references.
--   User reported that the total customers count in reports wasn't updating with the date filter and asked for a full review of filter coherence.
--   User reported incorrect Total Spent values for inactive customers, asked for the branch name to be displayed next to salespeople, and requested a new salesperson performance page with a graph.
+-   User clarified the workflow for adding a new phone number to an existing customer. (Implemented)
+-   User requested the phone-first workflow, support for multiple phone numbers, and a bill narration field. (Implemented)
+-   User provided specifications for the Total, Approved, and NP tabs in the new reference report. (Implemented)
+-   User confirmed the logic for fixing the analytics discrepancy. (Implemented)
+-   User reported the initial analytics bug and requested the new reference report feature. (Implemented)
 
 **Project Health Check:**
 -   **Broken:** None.
--   **Mocked:** The OTP delivery mechanism for user login remains mocked.
+-   **Mocked:** The OTP delivery mechanism for the salesperson login remains mocked.
 
 **3rd Party Integrations**
 -   FastAPI
@@ -124,15 +127,17 @@ The application is a full-stack FastAPI and React solution. During this session,
 -   
 
 **Testing status**
--   Testing agent used after significant changes: YES. The testing agent was successfully used after each major feature implementation, with all tests passing.
+-   Testing agent used after significant changes: YES. The testing agent was successfully run after both major feature implementations, with all tests passing.
 -   Troubleshoot agent used after agent stuck in loop: NO
--   Test files created: None
+-   Test files created: None.
 -   Known regressions: None.
 
 **Credentials to test flow:**
 -   **Role:** Admin
     -   **Username:** 
     -   **Password:** 
+-   **Role:** Sales Executive (Login requires OTP bypass or using the testing agent)
+    -   **Phone:**  (Example executive user)
 
 **What agent forgot to execute**
--   The agent successfully implemented all user requests from the session. No tasks were forgotten.</analysis>
+-   The agent correctly deferred the planned refactoring tasks from the previous session to prioritize and fully implement the user's new, urgent feature requests. Nothing was forgotten.</analysis>
