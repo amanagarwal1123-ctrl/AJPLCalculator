@@ -46,6 +46,11 @@ export default function Reports() {
   const [dateTo, setDateTo] = useState('');
   const [filterBranch, setFilterBranch] = useState('all');
   const [filterExecutive, setFilterExecutive] = useState('all');
+  
+  // Reference breakdown state
+  const [selectedRefs, setSelectedRefs] = useState([]);
+  const [refBreakdown, setRefBreakdown] = useState(null);
+  const [loadingRefBreakdown, setLoadingRefBreakdown] = useState(false);
 
   useEffect(() => { loadInitialData(); loadFeedbacks(); }, []);
 
@@ -127,6 +132,25 @@ export default function Reports() {
   };
 
   const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
+
+  const toggleRef = (refName) => {
+    setSelectedRefs(prev => prev.includes(refName) ? prev.filter(r => r !== refName) : [...prev, refName]);
+  };
+
+  const fetchRefBreakdown = async () => {
+    if (selectedRefs.length === 0) { setRefBreakdown(null); return; }
+    try {
+      setLoadingRefBreakdown(true);
+      const params = new URLSearchParams({ references: selectedRefs.join(',') });
+      if (dateFrom) params.append('date_from', dateFrom);
+      if (dateTo) params.append('date_to', dateTo);
+      const res = await apiClient.get(`/analytics/reference-breakdown?${params.toString()}`);
+      setRefBreakdown(res.data);
+    } catch (err) { toast.error('Failed to load breakdown'); }
+    finally { setLoadingRefBreakdown(false); }
+  };
+
+  useEffect(() => { fetchRefBreakdown(); }, [selectedRefs]);
 
   const exportCSV = (data, filename) => {
     if (!data || data.length === 0) return;
@@ -475,49 +499,163 @@ export default function Reports() {
 
           {/* References */}
           <TabsContent value="reference" data-testid="tab-content-reference">
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                <CardTitle className="text-base">Customer References</CardTitle>
-                <Button variant="ghost" size="sm" className="text-xs" onClick={() => exportCSV(referenceData, 'references')}><Download size={12} className="mr-1" /> CSV</Button>
-              </CardHeader>
-              <CardContent>
-                <div className="h-72">
-                  {referenceData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={referenceData} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(224, 30%, 30%)" />
-                        <XAxis type="number" stroke="hsl(220, 15%, 75%)" fontSize={10} />
-                        <YAxis dataKey="name" type="category" stroke="hsl(220, 15%, 75%)" fontSize={11} width={80} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="customers" fill={TEAL_COLOR} radius={[0, 4, 4, 0]} name="Customers" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : <div className="flex items-center justify-center h-full text-muted-foreground">No data yet</div>}
-                </div>
-                {referenceData.length > 0 && (
-                  <Table className="mt-4">
-                    <TableHeader>
-                      <TableRow className="border-border">
-                        <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Reference</TableHead>
-                        <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Customers</TableHead>
-                        <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Bills</TableHead>
-                        <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total Sales</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {[...referenceData].sort((a, b) => b.total - a.total).map((r, i) => (
-                        <TableRow key={i} className="border-border">
-                          <TableCell>{r.name}</TableCell>
-                          <TableCell className="mono text-right">{r.customers}</TableCell>
-                          <TableCell className="mono text-right text-muted-foreground">{r.bills}</TableCell>
-                          <TableCell className="mono text-right font-medium">{formatCurrency(r.total)}</TableCell>
+            <div className="space-y-6">
+              <Card className="bg-card border-border">
+                <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                  <CardTitle className="text-base">Customer References</CardTitle>
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => exportCSV(referenceData, 'references')}><Download size={12} className="mr-1" /> CSV</Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-72">
+                    {referenceData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={referenceData} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(224, 30%, 30%)" />
+                          <XAxis type="number" stroke="hsl(220, 15%, 75%)" fontSize={10} />
+                          <YAxis dataKey="name" type="category" stroke="hsl(220, 15%, 75%)" fontSize={11} width={80} />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Bar dataKey="customers" fill={TEAL_COLOR} radius={[0, 4, 4, 0]} name="Customers" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : <div className="flex items-center justify-center h-full text-muted-foreground">No data yet</div>}
+                  </div>
+                  {referenceData.length > 0 && (
+                    <Table className="mt-4">
+                      <TableHeader>
+                        <TableRow className="border-border">
+                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Reference</TableHead>
+                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Customers</TableHead>
+                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Bills</TableHead>
+                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total Sales</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {[...referenceData].sort((a, b) => b.total - a.total).map((r, i) => (
+                          <TableRow key={i} className="border-border">
+                            <TableCell>{r.name}</TableCell>
+                            <TableCell className="mono text-right">{r.customers}</TableCell>
+                            <TableCell className="mono text-right text-muted-foreground">{r.bills}</TableCell>
+                            <TableCell className="mono text-right font-medium">{formatCurrency(r.total)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Gold vs Diamond Breakdown by Reference */}
+              <Card className="bg-card border-border" data-testid="ref-breakdown-card">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Gold vs Diamond Sales by Reference</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Select references to compare their gold and diamond sales</p>
+                </CardHeader>
+                <CardContent>
+                  {referenceData.length > 0 ? (
+                    <>
+                      <div className="flex flex-wrap gap-2 mb-4" data-testid="ref-selector">
+                        {referenceData.map(r => (
+                          <button
+                            key={r.name}
+                            onClick={() => toggleRef(r.name)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                              selectedRefs.includes(r.name)
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'bg-secondary/30 text-muted-foreground border-border hover:border-primary/50'
+                            }`}
+                            data-testid={`ref-chip-${r.name}`}
+                          >
+                            {r.name}
+                          </button>
+                        ))}
+                      </div>
+
+                      {selectedRefs.length === 0 ? (
+                        <p className="text-muted-foreground text-center py-6 text-sm">Select one or more references above to see gold vs diamond breakdown</p>
+                      ) : loadingRefBreakdown ? (
+                        <p className="text-muted-foreground text-center py-6">Loading...</p>
+                      ) : refBreakdown ? (
+                        <div className="space-y-4">
+                          {/* Combined Summary */}
+                          {selectedRefs.length > 1 && (
+                            <div className="p-4 rounded-lg bg-secondary/20 border border-border" data-testid="ref-combined-summary">
+                              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">Combined ({selectedRefs.join(' + ')})</p>
+                              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                                <div>
+                                  <p className="text-[10px] uppercase text-muted-foreground">Gold Sales</p>
+                                  <p className="mono text-lg font-bold text-primary">{formatCurrency(refBreakdown.combined.gold_total)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] uppercase text-muted-foreground">Diamond Sales</p>
+                                  <p className="mono text-lg font-bold text-[hsl(196,70%,52%)]">{formatCurrency(refBreakdown.combined.diamond_total)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] uppercase text-muted-foreground">Total</p>
+                                  <p className="mono text-lg font-bold">{formatCurrency(refBreakdown.combined.total)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] uppercase text-muted-foreground">Bills</p>
+                                  <p className="mono text-lg font-bold">{refBreakdown.combined.bills}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] uppercase text-muted-foreground">Customers</p>
+                                  <p className="mono text-lg font-bold">{refBreakdown.combined.customers}</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Per-Reference Breakdown */}
+                          {refBreakdown.references.length > 0 && (
+                            <>
+                              <div className="h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart data={refBreakdown.references}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(224, 30%, 30%)" />
+                                    <XAxis dataKey="reference" stroke="hsl(220, 15%, 75%)" fontSize={11} />
+                                    <YAxis stroke="hsl(220, 15%, 75%)" fontSize={10} tickFormatter={v => v >= 100000 ? `${(v/100000).toFixed(1)}L` : v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Legend />
+                                    <Bar dataKey="gold_total" fill={GOLD_COLOR} radius={[4, 4, 0, 0]} name="Gold Sales" />
+                                    <Bar dataKey="diamond_total" fill={TEAL_COLOR} radius={[4, 4, 0, 0]} name="Diamond Sales" />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </div>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="border-border">
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Reference</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Gold Sales</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Diamond Sales</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Bills</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Customers</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {refBreakdown.references.map((r, i) => (
+                                    <TableRow key={i} className="border-border">
+                                      <TableCell className="font-medium">{r.reference}</TableCell>
+                                      <TableCell className="mono text-right text-primary font-medium">{formatCurrency(r.gold_total)}</TableCell>
+                                      <TableCell className="mono text-right text-[hsl(196,70%,52%)] font-medium">{formatCurrency(r.diamond_total)}</TableCell>
+                                      <TableCell className="mono text-right font-medium">{formatCurrency(r.total)}</TableCell>
+                                      <TableCell className="mono text-right">{r.bills}</TableCell>
+                                      <TableCell className="mono text-right">{r.customers}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </>
+                          )}
+                        </div>
+                      ) : null}
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-6">No reference data available</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Customer Analytics */}
@@ -670,7 +808,7 @@ export default function Reports() {
               <Card className="bg-card border-border">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <CardTitle className="text-base flex items-center gap-2">
                         <AlertTriangle size={16} className="text-[hsl(14,78%,62%)]" />
                         Inactive Customers
@@ -687,6 +825,11 @@ export default function Reports() {
                         />
                         <Label className="text-xs text-muted-foreground whitespace-nowrap">days</Label>
                       </div>
+                      {inactiveCustomers && (
+                        <span className="text-sm font-medium text-[hsl(14,78%,62%)]" data-testid="inactive-ratio">
+                          {inactiveCustomers.inactive_count} out of {inactiveCustomers.total_customers} customers
+                        </span>
+                      )}
                     </div>
                     <Button variant="ghost" size="sm" className="text-xs" onClick={() => exportCSV(inactiveCustomers?.inactive_customers || [], 'inactive-customers')} data-testid="export-inactive-csv">
                       <Download size={12} className="mr-1" /> CSV

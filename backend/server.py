@@ -1320,6 +1320,83 @@ async def get_dashboard_analytics(
         "all_time_total": round(all_time_total, 2),
     }
 
+@api_router.get("/analytics/reference-breakdown")
+async def get_reference_breakdown(
+    references: str = Query(..., description="Comma-separated list of references"),
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    user=Depends(get_current_user)
+):
+    """Get gold vs diamond sales breakdown for selected references."""
+    await require_role(user, ["admin", "manager"])
+    
+    ref_list = [r.strip() for r in references.split(',') if r.strip()]
+    if not ref_list:
+        return {"references": [], "combined": {"gold_total": 0, "diamond_total": 0, "total": 0, "bills": 0, "customers": 0}}
+    
+    query = {"customer_reference": {"$in": ref_list}, "status": {"$in": ["sent", "approved", "edited"]}}
+    if date_from or date_to:
+        query.setdefault('created_at', {})
+        if date_from:
+            query['created_at']['$gte'] = date_from
+        if date_to:
+            query['created_at']['$lte'] = date_to + 'T23:59:59'
+    
+    bills = await db.bills.find(query).to_list(10000)
+    
+    per_ref = {}
+    combined_phones = set()
+    for bill in bills:
+        ref = bill.get('customer_reference', '')
+        phone = bill.get('customer_phone', '')
+        if phone:
+            combined_phones.add(phone)
+        
+        if ref not in per_ref:
+            per_ref[ref] = {"reference": ref, "gold_total": 0, "diamond_total": 0, "total": 0, "bills": 0, "_phones": set()}
+        per_ref[ref]["bills"] += 1
+        per_ref[ref]["total"] += bill.get('grand_total', 0)
+        if phone:
+            per_ref[ref]["_phones"].add(phone)
+        
+        for item in bill.get('items', []):
+            item_type = item.get('item_type', 'gold')
+            amount = item.get('total_amount', 0)
+            if item_type in ('diamond', 'mrp'):
+                per_ref[ref]["diamond_total"] += amount
+            else:
+                per_ref[ref]["gold_total"] += amount
+    
+    result = []
+    combined_gold = 0
+    combined_diamond = 0
+    combined_total = 0
+    combined_bills = 0
+    for ref_data in per_ref.values():
+        combined_gold += ref_data["gold_total"]
+        combined_diamond += ref_data["diamond_total"]
+        combined_total += ref_data["total"]
+        combined_bills += ref_data["bills"]
+        result.append({
+            "reference": ref_data["reference"],
+            "gold_total": round(ref_data["gold_total"], 2),
+            "diamond_total": round(ref_data["diamond_total"], 2),
+            "total": round(ref_data["total"], 2),
+            "bills": ref_data["bills"],
+            "customers": len(ref_data["_phones"]),
+        })
+    
+    return {
+        "references": result,
+        "combined": {
+            "gold_total": round(combined_gold, 2),
+            "diamond_total": round(combined_diamond, 2),
+            "total": round(combined_total, 2),
+            "bills": combined_bills,
+            "customers": len(combined_phones),
+        }
+    }
+
 @api_router.get("/analytics/customers")
 async def get_customer_analytics(user=Depends(get_current_user)):
     await require_role(user, ["admin", "manager"])

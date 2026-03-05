@@ -1,0 +1,120 @@
+{
+  "summary": "Both features verified: 1) Inactive Customers ratio shows 'X out of Y customers' and updates dynamically when days threshold changes, 2) New reference-breakdown endpoint with multi-select chips, combined summary, chart with legend, and per-reference table",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Reports page charts", "issues": ["Console warnings about chart width/height (-1) - cosmetic issue in Recharts library when tabs switch. Not blocking."]}
+    ]
+  },
+
+  "passed_tests": [
+    "Feature 1: Inactive Customers 'X out of Y customers' text displayed (data-testid='inactive-ratio')",
+    "Feature 1: Ratio updates dynamically - 30 days: '0 out of 23', 15 days: '15 out of 23', 1 day: '23 out of 23'",
+    "Feature 2: GET /api/analytics/reference-breakdown?references=Instagram returns gold_total, diamond_total, total, bills, customers",
+    "Feature 2: Instagram breakdown: gold_total=204282.61, diamond_total=0, total=210411.09, bills=3, customers=1",
+    "Feature 2: Multi-reference: returns combined totals + per-reference breakdown array",
+    "Feature 2: Empty references returns zeroed combined object",
+    "Feature 2: ref-breakdown-card data-testid exists",
+    "Feature 2: Reference chips toggleable - ref-chip-Instagram, ref-chip-Repeat Customer",
+    "Feature 2: ref-combined-summary appears when 2+ refs selected",
+    "Feature 2: Chart shows gold_total and diamond_total bars per reference with legend",
+    "Feature 2: Table shows REFERENCE, GOLD SALES, DIAMOND SALES, TOTAL, BILLS, CUSTOMERS columns",
+    "Feature 2: Placeholder text shows when no refs selected",
+    "API auth: /api/analytics/reference-breakdown requires authentication (401 without token)"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_iteration20_features.py",
+    "/app/test_reports/pytest/iteration20_results.xml",
+    ".screenshots/customers_tab.png",
+    ".screenshots/inactive_ratio_updated.png",
+    ".screenshots/references_tab.png",
+    ".screenshots/instagram_breakdown.png",
+    ".screenshots/multi_ref_selected.png"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "server.py lines 1323-1398: /api/analytics/reference-breakdown endpoint correctly filters by approved/sent/edited status and returns per-ref + combined summaries",
+    "server.py lines 1573-1579: /api/analytics/customers/inactive returns inactive_count and total_customers fields for ratio display",
+    "Reports.js line 829: inactive-ratio span correctly displays '{inactive_count} out of {total_customers} customers'",
+    "Reports.js lines 548-656: Gold vs Diamond breakdown card with multi-select chips, combined summary, chart, and table"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_iteration20_features.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (10/10 pytest tests passed)",
+    "frontend": "100% (all UI features verified via Playwright)"
+  },
+
+  "test_credentials": {
+    "admin": {
+      "username": "admin",
+      "password": "admin1123",
+      "method": "Click 'Admin Login' link on login page"
+    }
+  },
+
+  "seed_data_creation": "None required - used existing data",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Both features fully verified: 1) Inactive customers ratio dynamically updates - 0/23 at 30d, 15/23 at 15d, 23/23 at 1d. 2) Reference breakdown shows Instagram with ₹2,04,283 gold / ₹0 diamond / 3 bills / 1 customer. Repeat Customer has 0 approved bills so shows no data in breakdown (1 draft bill only). Multi-select works, combined summary appears when 2+ refs selected.",
+
+  "feature_verification_details": {
+    "inactive_ratio_display": {
+      "status": "PASS",
+      "data_testid": "inactive-ratio",
+      "display_format": "{inactive_count} out of {total_customers} customers",
+      "dynamic_update": true,
+      "test_values": {
+        "30_days": "0 out of 23 customers",
+        "15_days": "15 out of 23 customers",
+        "1_day": "23 out of 23 customers"
+      }
+    },
+    "reference_breakdown_api": {
+      "status": "PASS",
+      "endpoint": "/api/analytics/reference-breakdown",
+      "query_param": "references=Instagram,Repeat%20Customer",
+      "response_structure": {
+        "references": "[{reference, gold_total, diamond_total, total, bills, customers}]",
+        "combined": "{gold_total, diamond_total, total, bills, customers}"
+      },
+      "instagram_data": {
+        "gold_total": 204282.61,
+        "diamond_total": 0,
+        "total": 210411.09,
+        "bills": 3,
+        "customers": 1
+      }
+    },
+    "reference_breakdown_ui": {
+      "status": "PASS",
+      "card_testid": "ref-breakdown-card",
+      "chips_testid_pattern": "ref-chip-{refName}",
+      "combined_summary_testid": "ref-combined-summary",
+      "chart_type": "BarChart with gold_total and diamond_total bars",
+      "legend": "Shows 'Gold Sales' and 'Diamond Sales'",
+      "table_columns": ["REFERENCE", "GOLD SALES", "DIAMOND SALES", "TOTAL", "BILLS", "CUSTOMERS"],
+      "placeholder_text": "Select one or more references above to see gold vs diamond breakdown"
+    }
+  },
+
+  "mocked_apis": {
+    "OTP_delivery": "OTP codes shown on admin dashboard instead of actual delivery"
+  }
+}
