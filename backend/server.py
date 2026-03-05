@@ -1214,13 +1214,16 @@ async def get_dashboard_analytics(
     reference_analysis = {}
     
     for bill in all_bills:
-        # Reference tracking
+        # Reference tracking - count unique customers per reference
         ref = bill.get('customer_reference', 'unknown')
+        phone = bill.get('customer_phone', '')
         if ref:
             if ref not in reference_analysis:
-                reference_analysis[ref] = {'count': 0, 'total': 0}
+                reference_analysis[ref] = {'count': 0, 'total': 0, '_phones': set()}
             reference_analysis[ref]['count'] += 1
             reference_analysis[ref]['total'] += bill.get('grand_total', 0)
+            if phone:
+                reference_analysis[ref]['_phones'].add(phone)
         
         for item in bill.get('items', []):
             item_type = item.get('item_type', 'gold')
@@ -1288,8 +1291,13 @@ async def get_dashboard_analytics(
     for bs in branch_sales.values():
         bs['branch_name'] = branch_map.get(bs['branch_id'], 'Unassigned')
     
-    # Customer analytics
-    total_customers = await db.customers.count_documents({})
+    # Customer analytics - unique customers from filtered bills
+    unique_customer_phones = set()
+    for bill in all_bills:
+        phone = bill.get('customer_phone', '')
+        if phone:
+            unique_customer_phones.add(phone)
+    total_customers_in_period = len(unique_customer_phones)
     
     # All-time total 
     all_time_total = sum(b.get('grand_total', 0) for b in all_bills)
@@ -1303,11 +1311,11 @@ async def get_dashboard_analytics(
         "item_analysis": list(item_analysis.values()),
         "gold_total": round(gold_total, 2),
         "diamond_total": round(diamond_total, 2),
-        "reference_analysis": reference_analysis,
+        "reference_analysis": {k: {"count": v["count"], "total": v["total"], "customers": len(v.get("_phones", set()))} for k, v in reference_analysis.items()},
         "daily_sales": sorted(daily_sales.values(), key=lambda x: x['date']),
         "branch_sales": list(branch_sales.values()),
         "executive_sales": sorted(executive_sales.values(), key=lambda x: x['total'], reverse=True),
-        "total_customers": total_customers,
+        "total_customers": total_customers_in_period,
         "total_bills": len(all_bills),
         "all_time_total": round(all_time_total, 2),
     }

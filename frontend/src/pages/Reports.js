@@ -141,10 +141,12 @@ export default function Reports() {
     window.URL.revokeObjectURL(url);
   };
 
+  const filtersActive = dateFrom || dateTo || (filterBranch && filterBranch !== 'all') || (filterExecutive && filterExecutive !== 'all');
+
   // Prepare chart data
   const ktData = analytics ? Object.entries(analytics.kt_analysis || {}).map(([k, v]) => ({ name: k, count: v.count, total: Math.round(v.total) })) : [];
   const goldVsDiamond = analytics ? [{ name: 'Gold', value: Math.round(analytics.gold_total) }, { name: 'Diamond', value: Math.round(analytics.diamond_total) }].filter(d => d.value > 0) : [];
-  const referenceData = analytics ? Object.entries(analytics.reference_analysis || {}).map(([k, v]) => ({ name: k, customers: v.count, total: Math.round(v.total) })) : [];
+  const referenceData = analytics ? Object.entries(analytics.reference_analysis || {}).map(([k, v]) => ({ name: k, customers: v.customers || v.count, bills: v.count, total: Math.round(v.total) })) : [];
   const dailySales = analytics?.daily_sales || [];
   const topItems = [...(analytics?.item_analysis || [])].sort((a, b) => b.total - a.total).slice(0, 10);
   const branchSales = [...(analytics?.branch_sales || [])];
@@ -227,32 +229,39 @@ export default function Reports() {
         </Card>
 
         {/* Summary Cards */}
+        {filtersActive && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-primary/10 border border-primary/20 text-xs text-primary w-fit" data-testid="filters-active-badge">
+            <Filter size={12} /> Showing filtered results
+            {dateFrom && <span className="mono">from {dateFrom}</span>}
+            {dateTo && <span className="mono">to {dateTo}</span>}
+          </div>
+        )}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card className="bg-card border-border">
+          <Card className="bg-card border-border" data-testid="total-sales-summary">
             <CardContent className="p-4">
               <p className="text-xs uppercase tracking-widest text-muted-foreground">Total Sales</p>
               <p className="mono text-xl font-bold text-primary mt-1">{formatCurrency(analytics?.all_time_total)}</p>
             </CardContent>
           </Card>
-          <Card className="bg-card border-border">
+          <Card className="bg-card border-border" data-testid="total-customers-summary">
             <CardContent className="p-4">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Total Customers</p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">{filtersActive ? 'Unique Customers' : 'Total Customers'}</p>
               <p className="mono text-2xl font-bold text-[hsl(196,70%,52%)] mt-1">{analytics?.total_customers || 0}</p>
             </CardContent>
           </Card>
-          <Card className="bg-card border-border">
+          <Card className="bg-card border-border" data-testid="total-bills-summary">
             <CardContent className="p-4">
               <p className="text-xs uppercase tracking-widest text-muted-foreground">Total Bills</p>
               <p className="mono text-2xl font-bold text-[hsl(160,52%,46%)] mt-1">{analytics?.total_bills || 0}</p>
             </CardContent>
           </Card>
-          <Card className="bg-card border-border">
+          <Card className="bg-card border-border" data-testid="gold-sales-summary">
             <CardContent className="p-4">
               <p className="text-xs uppercase tracking-widest text-muted-foreground">Gold Sales</p>
               <p className="mono text-lg font-bold text-primary mt-1">{formatCurrency(analytics?.gold_total)}</p>
             </CardContent>
           </Card>
-          <Card className="bg-card border-border">
+          <Card className="bg-card border-border" data-testid="diamond-sales-summary">
             <CardContent className="p-4">
               <p className="text-xs uppercase tracking-widest text-muted-foreground">Diamond Sales</p>
               <p className="mono text-lg font-bold text-[hsl(196,70%,52%)] mt-1">{formatCurrency(analytics?.diamond_total)}</p>
@@ -491,6 +500,7 @@ export default function Reports() {
                       <TableRow className="border-border">
                         <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Reference</TableHead>
                         <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Customers</TableHead>
+                        <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Bills</TableHead>
                         <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total Sales</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -499,6 +509,7 @@ export default function Reports() {
                         <TableRow key={i} className="border-border">
                           <TableCell>{r.name}</TableCell>
                           <TableCell className="mono text-right">{r.customers}</TableCell>
+                          <TableCell className="mono text-right text-muted-foreground">{r.bills}</TableCell>
                           <TableCell className="mono text-right font-medium">{formatCurrency(r.total)}</TableCell>
                         </TableRow>
                       ))}

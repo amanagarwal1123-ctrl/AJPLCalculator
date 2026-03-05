@@ -1,0 +1,92 @@
+{
+  "summary": "Bug fix verified: Reports page 'Total Customers' field now changes coherently when date filters are applied. The /api/analytics/dashboard endpoint correctly computes total_customers from unique customer phones in filtered bills, not from total customers in DB.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Reports page charts", "issues": ["Console warnings about chart width/height (-1) - cosmetic issue in Recharts library when tabs switch"]}
+    ]
+  },
+
+  "passed_tests": [
+    "Bug Fix: total_customers computed from unique customer phones in filtered bills (not from db.customers.count_documents)",
+    "Unfiltered: total_customers=7, total_bills=15 (all unique customers from all bills)",
+    "Filtered (date_from=2026-02-15): total_customers=5, total_bills=7 (reduced correctly)",
+    "Future date (2099-01-01): total_customers=0, total_bills=0, all_time_total=0",
+    "Gold and Diamond totals filter coherently with date filters",
+    "reference_analysis returns 'customers' field (unique customer count) alongside 'count' (bill count)",
+    "Frontend shows 'Showing filtered results from YYYY-MM-DD' badge when filters active",
+    "Frontend label changes from 'TOTAL CUSTOMERS' to 'UNIQUE CUSTOMERS' when filters active",
+    "Daily sales chart reflects filtered data",
+    "Branch sales reflect filtered data",
+    "Executive sales reflect filtered data",
+    "KT analysis reflects filtered data",
+    "Reference tab table shows both Customers and Bills columns"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_dashboard_date_filter_fix.py",
+    "/app/test_reports/pytest/iteration19_results.xml",
+    ".screenshots/reports_unfiltered.png",
+    ".screenshots/reports_filtered.png",
+    ".screenshots/reports_future_date.png",
+    ".screenshots/reports_reference_tab.png"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "server.py line ~1295-1300: unique_customer_phones set correctly populated from all filtered bills, then total_customers_in_period = len(unique_customer_phones)",
+    "server.py line ~1314: reference_analysis correctly tracks unique customers via _phones set and returns 'customers' count",
+    "Reports.js line ~144: filtersActive helper correctly checks dateFrom, dateTo, filterBranch, filterExecutive",
+    "Reports.js line ~248: Label conditionally shows 'Unique Customers' vs 'Total Customers' based on filtersActive",
+    "Reports.js line ~149: referenceData correctly maps customers field from API response"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_dashboard_date_filter_fix.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (9/9 pytest tests passed)",
+    "frontend": "100% (all UI features verified via Playwright)"
+  },
+
+  "test_credentials": {
+    "admin": {
+      "username": "admin",
+      "password": "admin1123",
+      "method": "Click 'Admin Login' link on login page"
+    }
+  },
+
+  "seed_data_creation": "None required - used existing data",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Bug fix confirmed working. Reports page date filter coherence is now correct. When filters are applied: total_customers shows unique customers from filtered bills (not all DB customers). Unfiltered gives 7 customers/15 bills. Filtered (>=2026-02-15) gives 5 customers/7 bills. Future date (2099) gives 0/0. Reference table now shows separate Customers and Bills columns.",
+
+  "bug_verification_details": {
+    "original_issue": "In Reports page, when date filters applied, 'Total Customers' field doesn't change",
+    "root_cause": "total_customers was using db.customers.count_documents({}) instead of counting unique customers from filtered bills",
+    "fix_location": "server.py line ~1295-1300: unique_customer_phones set populated from all_bills loop",
+    "verification_tests": {
+      "unfiltered": {"total_customers": 7, "total_bills": 15},
+      "filtered_2026_02_15": {"total_customers": 5, "total_bills": 7},
+      "future_date_2099": {"total_customers": 0, "total_bills": 0}
+    },
+    "status": "FIXED AND VERIFIED"
+  },
+
+  "mocked_apis": {
+    "OTP_delivery": "OTP codes shown on admin dashboard instead of actual SMS delivery"
+  }
+}
