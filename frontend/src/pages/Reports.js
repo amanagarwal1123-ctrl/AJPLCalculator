@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiClient } from '@/App';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +10,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { BarChart3, Download, Filter, Calendar, Users, UserX, TrendingUp, AlertTriangle, MessageSquare, Star } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { BarChart3, Download, Filter, Calendar, Users, UserX, TrendingUp, AlertTriangle, MessageSquare, Star, ChevronDown, ChevronUp, ExternalLink, ShoppingBag, UserCheck, UserMinus } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 import { toast } from 'sonner';
 
@@ -21,6 +23,7 @@ const AMETHYST_COLOR = 'hsl(270, 35%, 66%)';
 const PIE_COLORS = [GOLD_COLOR, TEAL_COLOR, EMERALD_COLOR, CORAL_COLOR, AMETHYST_COLOR];
 
 export default function Reports() {
+  const navigate = useNavigate();
   const [analytics, setAnalytics] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [branches, setBranches] = useState([]);
@@ -51,6 +54,12 @@ export default function Reports() {
   const [selectedRefs, setSelectedRefs] = useState([]);
   const [refBreakdown, setRefBreakdown] = useState(null);
   const [loadingRefBreakdown, setLoadingRefBreakdown] = useState(false);
+  
+  // Reference report state
+  const [refReport, setRefReport] = useState(null);
+  const [loadingRefReport, setLoadingRefReport] = useState(false);
+  const [refSubTab, setRefSubTab] = useState('total');
+  const [expandedRef, setExpandedRef] = useState(null);
 
   useEffect(() => { loadInitialData(); loadFeedbacks(); }, []);
 
@@ -95,6 +104,7 @@ export default function Reports() {
       
       const res = await apiClient.get(`/analytics/dashboard?${params.toString()}`);
       setAnalytics(res.data);
+      if (activeTab === 'reference') fetchRefReport();
       toast.success('Filters applied');
     } catch (err) {
       toast.error('Failed to apply filters');
@@ -109,6 +119,7 @@ export default function Reports() {
     setFilterBranch('all');
     setFilterExecutive('all');
     loadInitialData();
+    if (activeTab === 'reference') setTimeout(() => fetchRefReport(), 100);
   };
 
   const fetchInactiveCustomers = async (days) => {
@@ -151,6 +162,20 @@ export default function Reports() {
   };
 
   useEffect(() => { fetchRefBreakdown(); }, [selectedRefs]);
+
+  const fetchRefReport = async () => {
+    try {
+      setLoadingRefReport(true);
+      const params = new URLSearchParams();
+      if (dateFrom) params.append('date_from', dateFrom);
+      if (dateTo) params.append('date_to', dateTo);
+      const res = await apiClient.get(`/analytics/reference-report?${params.toString()}`);
+      setRefReport(res.data);
+    } catch (err) { toast.error('Failed to load reference report'); }
+    finally { setLoadingRefReport(false); }
+  };
+
+  useEffect(() => { if (activeTab === 'reference') fetchRefReport(); }, [activeTab]);
 
   const exportCSV = (data, filename) => {
     if (!data || data.length === 0) return;
@@ -499,52 +524,309 @@ export default function Reports() {
 
           {/* References */}
           <TabsContent value="reference" data-testid="tab-content-reference">
-            <div className="space-y-6">
+            <div className="space-y-4">
+              {/* Summary Cards */}
+              {refReport?.summary && (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3" data-testid="ref-summary-cards">
+                  <Card className="bg-card border-border">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2 mb-1"><ShoppingBag size={13} className="text-primary" /><p className="text-[10px] uppercase tracking-widest text-muted-foreground">Total Bills</p></div>
+                      <p className="mono text-xl font-bold text-primary">{refReport.summary.total_bills}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-card border-border">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2 mb-1"><Users size={13} className="text-[hsl(196,70%,52%)]" /><p className="text-[10px] uppercase tracking-widest text-muted-foreground">Total Visitors</p></div>
+                      <p className="mono text-xl font-bold text-[hsl(196,70%,52%)]">{refReport.summary.total_customers}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-card border-border">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2 mb-1"><UserCheck size={13} className="text-[hsl(160,52%,46%)]" /><p className="text-[10px] uppercase tracking-widest text-muted-foreground">Purchased</p></div>
+                      <p className="mono text-xl font-bold text-[hsl(160,52%,46%)]">{refReport.summary.approved_customers}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-card border-border">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2 mb-1"><UserMinus size={13} className="text-[hsl(14,78%,62%)]" /><p className="text-[10px] uppercase tracking-widest text-muted-foreground">Non-Purchasers</p></div>
+                      <p className="mono text-xl font-bold text-[hsl(14,78%,62%)]">{refReport.summary.np_customers}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-card border-border">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2 mb-1"><TrendingUp size={13} className="text-primary" /><p className="text-[10px] uppercase tracking-widest text-muted-foreground">Conversion</p></div>
+                      <p className="mono text-xl font-bold text-primary">
+                        {refReport.summary.total_customers > 0 ? Math.round((refReport.summary.approved_customers / refReport.summary.total_customers) * 100) : 0}%
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Sub-tabs */}
               <Card className="bg-card border-border">
-                <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                  <CardTitle className="text-base">Customer References</CardTitle>
-                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => exportCSV(referenceData, 'references')}><Download size={12} className="mr-1" /> CSV</Button>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-72">
-                    {referenceData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={referenceData} layout="vertical">
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(224, 30%, 30%)" />
-                          <XAxis type="number" stroke="hsl(220, 15%, 75%)" fontSize={10} />
-                          <YAxis dataKey="name" type="category" stroke="hsl(220, 15%, 75%)" fontSize={11} width={80} />
-                          <Tooltip content={<CustomTooltip />} />
-                          <Bar dataKey="customers" fill={TEAL_COLOR} radius={[0, 4, 4, 0]} name="Customers" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : <div className="flex items-center justify-center h-full text-muted-foreground">No data yet</div>}
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <button
+                      onClick={() => { setRefSubTab('total'); setExpandedRef(null); }}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${refSubTab === 'total' ? 'bg-primary text-primary-foreground' : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50'}`}
+                      data-testid="ref-subtab-total"
+                    >
+                      <ShoppingBag size={14} className="inline mr-1.5 -mt-0.5" />Total
+                    </button>
+                    <button
+                      onClick={() => { setRefSubTab('approved'); setExpandedRef(null); }}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${refSubTab === 'approved' ? 'bg-[hsl(160,52%,46%)] text-white' : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50'}`}
+                      data-testid="ref-subtab-approved"
+                    >
+                      <UserCheck size={14} className="inline mr-1.5 -mt-0.5" />Approved
+                    </button>
+                    <button
+                      onClick={() => { setRefSubTab('np'); setExpandedRef(null); }}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${refSubTab === 'np' ? 'bg-[hsl(14,78%,62%)] text-white' : 'bg-secondary/30 text-muted-foreground hover:bg-secondary/50'}`}
+                      data-testid="ref-subtab-np"
+                    >
+                      <UserMinus size={14} className="inline mr-1.5 -mt-0.5" />NP
+                    </button>
+                    <div className="ml-auto">
+                      <Button variant="ghost" size="sm" className="text-xs" onClick={() => fetchRefReport()} data-testid="ref-refresh">
+                        Refresh
+                      </Button>
+                    </div>
                   </div>
-                  {referenceData.length > 0 && (
-                    <Table className="mt-4">
-                      <TableHeader>
-                        <TableRow className="border-border">
-                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Reference</TableHead>
-                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Customers</TableHead>
-                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Bills</TableHead>
-                          <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total Sales</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {[...referenceData].sort((a, b) => b.total - a.total).map((r, i) => (
-                          <TableRow key={i} className="border-border">
-                            <TableCell>{r.name}</TableCell>
-                            <TableCell className="mono text-right">{r.customers}</TableCell>
-                            <TableCell className="mono text-right text-muted-foreground">{r.bills}</TableCell>
-                            <TableCell className="mono text-right font-medium">{formatCurrency(r.total)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+
+                  {loadingRefReport ? (
+                    <p className="text-muted-foreground text-center py-8">Loading reference report...</p>
+                  ) : !refReport ? (
+                    <p className="text-muted-foreground text-center py-8">No data available</p>
+                  ) : (
+                    <>
+                      {/* TOTAL Sub-tab */}
+                      {refSubTab === 'total' && (
+                        <div className="space-y-3" data-testid="ref-total-view">
+                          {refReport.total.length === 0 ? (
+                            <p className="text-muted-foreground text-center py-8">No bills found</p>
+                          ) : (
+                            <>
+                              <div className="h-56">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart data={refReport.total} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(224, 30%, 30%)" />
+                                    <XAxis type="number" stroke="hsl(220, 15%, 75%)" fontSize={10} />
+                                    <YAxis dataKey="reference" type="category" stroke="hsl(220, 15%, 75%)" fontSize={11} width={90} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Bar dataKey="bills" fill={GOLD_COLOR} radius={[0, 4, 4, 0]} name="Bills" />
+                                    <Bar dataKey="customers" fill={TEAL_COLOR} radius={[0, 4, 4, 0]} name="Customers" />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </div>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="border-border">
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Reference</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Customers</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Bills</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right"></TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {refReport.total.map((r) => (
+                                    <>
+                                      <TableRow key={r.reference} className="border-border cursor-pointer hover:bg-secondary/20" onClick={() => setExpandedRef(expandedRef === `total-${r.reference}` ? null : `total-${r.reference}`)}>
+                                        <TableCell className="font-medium">{r.reference}</TableCell>
+                                        <TableCell className="mono text-right">{r.customers}</TableCell>
+                                        <TableCell className="mono text-right">{r.bills}</TableCell>
+                                        <TableCell className="mono text-right font-medium text-primary">{formatCurrency(r.total)}</TableCell>
+                                        <TableCell className="text-right">
+                                          {expandedRef === `total-${r.reference}` ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                        </TableCell>
+                                      </TableRow>
+                                      {expandedRef === `total-${r.reference}` && (
+                                        <TableRow key={`${r.reference}-expand`} className="border-border">
+                                          <TableCell colSpan={5} className="p-0">
+                                            <div className="bg-secondary/10 p-3 space-y-1 max-h-64 overflow-y-auto">
+                                              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Bills for {r.reference}</p>
+                                              {r.bill_list.map((b) => (
+                                                <div key={b.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-secondary/20 cursor-pointer" onClick={() => navigate(`/bill/${b.id}`)}>
+                                                  <div className="flex items-center gap-3">
+                                                    <span className="mono text-xs text-muted-foreground">{b.bill_number}</span>
+                                                    <span className="text-sm">{b.customer_name}</span>
+                                                    <Badge variant={b.status === 'approved' ? 'default' : b.status === 'sent' ? 'secondary' : 'outline'} className="text-[10px]">{b.status}</Badge>
+                                                  </div>
+                                                  <div className="flex items-center gap-3">
+                                                    <span className="mono text-sm font-medium text-primary">{formatCurrency(b.grand_total)}</span>
+                                                    <span className="text-xs text-muted-foreground">{b.created_at?.slice(0, 10)}</span>
+                                                    <ExternalLink size={12} className="text-muted-foreground" />
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </TableCell>
+                                        </TableRow>
+                                      )}
+                                    </>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {/* APPROVED Sub-tab */}
+                      {refSubTab === 'approved' && (
+                        <div className="space-y-3" data-testid="ref-approved-view">
+                          {refReport.approved.length === 0 ? (
+                            <p className="text-muted-foreground text-center py-8">No approved bills found</p>
+                          ) : (
+                            <>
+                              <div className="h-56">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart data={refReport.approved} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(224, 30%, 30%)" />
+                                    <XAxis type="number" stroke="hsl(220, 15%, 75%)" fontSize={10} tickFormatter={v => v >= 100000 ? `${(v/100000).toFixed(1)}L` : v >= 1000 ? `${(v/1000).toFixed(0)}K` : v} />
+                                    <YAxis dataKey="reference" type="category" stroke="hsl(220, 15%, 75%)" fontSize={11} width={90} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Legend />
+                                    <Bar dataKey="total" fill={GOLD_COLOR} radius={[0, 4, 4, 0]} name="Total Sales" />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </div>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="border-border">
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Reference</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Customers</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Bills</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Total Sales</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right"></TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {refReport.approved.map((r) => (
+                                    <>
+                                      <TableRow key={r.reference} className="border-border cursor-pointer hover:bg-secondary/20" onClick={() => setExpandedRef(expandedRef === `approved-${r.reference}` ? null : `approved-${r.reference}`)}>
+                                        <TableCell className="font-medium">{r.reference}</TableCell>
+                                        <TableCell className="mono text-right">{r.customers}</TableCell>
+                                        <TableCell className="mono text-right">{r.bills}</TableCell>
+                                        <TableCell className="mono text-right font-medium text-primary">{formatCurrency(r.total)}</TableCell>
+                                        <TableCell className="text-right">
+                                          {expandedRef === `approved-${r.reference}` ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                        </TableCell>
+                                      </TableRow>
+                                      {expandedRef === `approved-${r.reference}` && (
+                                        <TableRow key={`${r.reference}-expand`} className="border-border">
+                                          <TableCell colSpan={5} className="p-0">
+                                            <div className="bg-secondary/10 p-3 space-y-1 max-h-64 overflow-y-auto">
+                                              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Approved bills for {r.reference}</p>
+                                              {r.bill_list.map((b) => (
+                                                <div key={b.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-secondary/20 cursor-pointer" onClick={() => navigate(`/bill/${b.id}`)}>
+                                                  <div className="flex items-center gap-3">
+                                                    <span className="mono text-xs text-muted-foreground">{b.bill_number}</span>
+                                                    <span className="text-sm">{b.customer_name}</span>
+                                                    <Badge variant="default" className="text-[10px] bg-[hsl(160,52%,46%)]">{b.status}</Badge>
+                                                  </div>
+                                                  <div className="flex items-center gap-3">
+                                                    <span className="mono text-sm font-medium text-primary">{formatCurrency(b.grand_total)}</span>
+                                                    <span className="text-xs text-muted-foreground">{b.created_at?.slice(0, 10)}</span>
+                                                    <ExternalLink size={12} className="text-muted-foreground" />
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </TableCell>
+                                        </TableRow>
+                                      )}
+                                    </>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {/* NP (Non-Purchasers) Sub-tab */}
+                      {refSubTab === 'np' && (
+                        <div className="space-y-3" data-testid="ref-np-view">
+                          {refReport.np.length === 0 ? (
+                            <div className="text-center py-8">
+                              <UserCheck size={36} className="mx-auto mb-3 text-[hsl(160,52%,46%)] opacity-60" />
+                              <p className="text-muted-foreground">All visitors made a purchase</p>
+                              <p className="text-xs text-muted-foreground mt-1">No non-purchasers found for this period</p>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="h-56">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart data={refReport.np} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(224, 30%, 30%)" />
+                                    <XAxis type="number" stroke="hsl(220, 15%, 75%)" fontSize={10} />
+                                    <YAxis dataKey="reference" type="category" stroke="hsl(220, 15%, 75%)" fontSize={11} width={90} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Bar dataKey="customers" fill={CORAL_COLOR} radius={[0, 4, 4, 0]} name="Non-Purchasers" />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </div>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="border-border">
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground">Reference</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right">Non-Purchasers</TableHead>
+                                    <TableHead className="text-xs uppercase tracking-widest text-muted-foreground text-right"></TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {refReport.np.map((r) => (
+                                    <>
+                                      <TableRow key={r.reference} className="border-border cursor-pointer hover:bg-secondary/20" onClick={() => setExpandedRef(expandedRef === `np-${r.reference}` ? null : `np-${r.reference}`)}>
+                                        <TableCell className="font-medium">{r.reference}</TableCell>
+                                        <TableCell className="mono text-right font-medium text-[hsl(14,78%,62%)]">{r.customers}</TableCell>
+                                        <TableCell className="text-right">
+                                          {expandedRef === `np-${r.reference}` ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                        </TableCell>
+                                      </TableRow>
+                                      {expandedRef === `np-${r.reference}` && (
+                                        <TableRow key={`${r.reference}-expand`} className="border-border">
+                                          <TableCell colSpan={3} className="p-0">
+                                            <div className="bg-secondary/10 p-3 space-y-2 max-h-64 overflow-y-auto">
+                                              <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Non-purchasers from {r.reference}</p>
+                                              {r.customer_list.map((c, ci) => (
+                                                <div key={ci} className="flex items-center justify-between py-1.5 px-2 rounded bg-secondary/10 border border-border/50">
+                                                  <div className="flex items-center gap-3">
+                                                    <UserMinus size={14} className="text-[hsl(14,78%,62%)]" />
+                                                    <div>
+                                                      <span className="text-sm font-medium">{c.customer_name}</span>
+                                                      <span className="text-xs text-muted-foreground ml-2 mono">{c.customer_phone}</span>
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex items-center gap-3 text-right">
+                                                    <div>
+                                                      <span className="text-xs text-muted-foreground">{c.inquiry_count} inquir{c.inquiry_count > 1 ? 'ies' : 'y'}</span>
+                                                      <span className="text-xs text-muted-foreground ml-2">Last: {c.last_inquiry?.slice(0, 10)}</span>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </TableCell>
+                                        </TableRow>
+                                      )}
+                                    </>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </>
                   )}
                 </CardContent>
               </Card>
 
-              {/* Gold vs Diamond Breakdown by Reference */}
+              {/* Gold vs Diamond Breakdown by Reference (keep existing) */}
               <Card className="bg-card border-border" data-testid="ref-breakdown-card">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base">Gold vs Diamond Sales by Reference</CardTitle>
@@ -576,7 +858,6 @@ export default function Reports() {
                         <p className="text-muted-foreground text-center py-6">Loading...</p>
                       ) : refBreakdown ? (
                         <div className="space-y-4">
-                          {/* Combined Summary */}
                           {selectedRefs.length > 1 && (
                             <div className="p-4 rounded-lg bg-secondary/20 border border-border" data-testid="ref-combined-summary">
                               <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">Combined ({selectedRefs.join(' + ')})</p>
@@ -604,8 +885,6 @@ export default function Reports() {
                               </div>
                             </div>
                           )}
-
-                          {/* Per-Reference Breakdown */}
                           {refBreakdown.references.length > 0 && (
                             <>
                               <div className="h-64">

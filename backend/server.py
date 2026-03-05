@@ -1214,10 +1214,11 @@ async def get_dashboard_analytics(
     reference_analysis = {}
     
     for bill in all_bills:
-        # Reference tracking - count unique customers per reference
+        # Reference tracking - count unique customers per reference (only sent/approved/edited bills)
         ref = bill.get('customer_reference', 'unknown')
         phone = bill.get('customer_phone', '')
-        if ref:
+        bill_status = bill.get('status', '')
+        if ref and bill_status in ('sent', 'approved', 'edited'):
             if ref not in reference_analysis:
                 reference_analysis[ref] = {'count': 0, 'total': 0, '_phones': set()}
             reference_analysis[ref]['count'] += 1
@@ -1396,6 +1397,150 @@ async def get_reference_breakdown(
             "customers": len(combined_phones),
         }
     }
+
+@api_router.get("/analytics/reference-report")
+async def get_reference_report(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    user=Depends(get_current_user)
+):
+    """Get reference-wise report with Total, Approved, and NP (Non-Purchaser) views."""
+    await require_role(user, ["admin", "manager"])
+    
+    base_filter = {}
+    if user.get('role') == 'manager' and user.get('branch_id'):
+        base_filter["branch_id"] = user.get('branch_id')
+    
+    query = {**base_filter}
+    if date_from or date_to:
+        query.setdefault('created_at', {})
+        if date_from:
+            query['created_at']['$gte'] = date_from
+        if date_to:
+            query['created_at']['$lte'] = date_to + 'T23:59:59'
+    
+    all_bills = await db.bills.find(query, {"_id": 0}).to_list(10000)
+    
+    approved_statuses = ('sent', 'approved', 'edited')
+    
+    # Build per-reference data
+    ref_total = {}  # All bills by reference
+    ref_approved = {}  # Approved bills by reference
+    ref_customer_statuses = {}  # Track per-customer, per-reference: has approved? has draft?
+    
+    for bill in all_bills:
+        ref = bill.get('customer_reference', 'Unknown') or 'Unknown'
+        phone = bill.get('customer_phone', '')
+        status = bill.get('status', 'draft')
+        grand_total = bill.get('grand_total', 0)
+        
+        # TOTAL view
+        if ref not in ref_total:
+            ref_total[ref] = {'reference': ref, 'bills': 0, 'total': 0, '_phones': set(), 'bill_list': []}
+        ref_total[ref]['bills'] += 1
+        ref_total[ref]['total'] += grand_total
+        if phone:
+            ref_total[ref]['_phones'].add(phone)
+        ref_total[ref]['bill_list'].append({
+            'id': bill.get('id'),
+            'bill_number': bill.get('bill_number'),
+            'customer_name': bill.get('customer_name'),
+            'customer_phone': phone,
+            'grand_total': grand_total,
+            'status': status,
+            'created_at': bill.get('created_at', ''),
+            'salesperson_name': bill.get('salesperson_name', ''),
+        })
+        
+        # APPROVED view
+        if status in approved_statuses:
+            if ref not in ref_approved:
+                ref_approved[ref] = {'reference': ref, 'bills': 0, 'total': 0, '_phones': set(), 'bill_list': []}
+            ref_approved[ref]['bills'] += 1
+            ref_approved[ref]['total'] += grand_total
+            if phone:
+                ref_approved[ref]['_phones'].add(phone)
+            ref_approved[ref]['bill_list'].append({
+                'id': bill.get('id'),
+                'bill_number': bill.get('bill_number'),
+                'customer_name': bill.get('customer_name'),
+                'customer_phone': phone,
+                'grand_total': grand_total,
+                'status': status,
+                'created_at': bill.get('created_at', ''),
+                'salesperson_name': bill.get('salesperson_name', ''),
+            })
+        
+        # Track customer purchase status per reference
+        key = (ref, phone)
+        if key not in ref_customer_statuses:
+            ref_customer_statuses[key] = {'has_approved': False, 'drafts': []}
+        if status in approved_statuses:
+            ref_customer_statuses[key]['has_approved'] = True
+        else:
+            ref_customer_statuses[key]['drafts'].append({
+                'id': bill.get('id'),
+                'bill_number': bill.get('bill_number'),
+                'customer_name': bill.get('customer_name'),
+                'customer_phone': phone,
+                'grand_total': grand_total,
+                'status': status,
+                'created_at': bill.get('created_at', ''),
+                'salesperson_name': bill.get('salesperson_name', ''),
+            })
+    
+    # Build NP (Non-Purchaser) data: customers with drafts but no approved bills
+    ref_np = {}
+    for (ref, phone), data in ref_customer_statuses.items():
+        if not data['has_approved'] and data['drafts']:
+            if ref not in ref_np:
+                ref_np[ref] = {'reference': ref, 'customers': 0, '_phones': set(), 'customer_list': []}
+            if phone and phone not in ref_np[ref]['_phones']:
+                ref_np[ref]['_phones'].add(phone)
+                ref_np[ref]['customers'] += 1
+                # Get customer name from first draft
+                first_draft = data['drafts'][0]
+                ref_np[ref]['customer_list'].append({
+                    'customer_name': first_draft['customer_name'],
+                    'customer_phone': phone,
+                    'inquiry_count': len(data['drafts']),
+                    'last_inquiry': data['drafts'][-1]['created_at'],
+                    'bills': data['drafts'],
+                })
+    
+    def serialize_ref(d):
+        return {
+            'reference': d['reference'],
+            'bills': d.get('bills', 0),
+            'total': round(d.get('total', 0), 2),
+            'customers': len(d.get('_phones', set())),
+            'bill_list': d.get('bill_list', []),
+        }
+    
+    def serialize_np(d):
+        return {
+            'reference': d['reference'],
+            'customers': d['customers'],
+            'customer_list': d.get('customer_list', []),
+        }
+    
+    total_data = sorted([serialize_ref(v) for v in ref_total.values()], key=lambda x: x['total'], reverse=True)
+    approved_data = sorted([serialize_ref(v) for v in ref_approved.values()], key=lambda x: x['total'], reverse=True)
+    np_data = sorted([serialize_np(v) for v in ref_np.values()], key=lambda x: x['customers'], reverse=True)
+    
+    return {
+        "total": total_data,
+        "approved": approved_data,
+        "np": np_data,
+        "summary": {
+            "total_bills": sum(d['bills'] for d in total_data),
+            "total_customers": len(set(p for v in ref_total.values() for p in v['_phones'])),
+            "approved_bills": sum(d['bills'] for d in approved_data),
+            "approved_customers": len(set(p for v in ref_approved.values() for p in v['_phones'])),
+            "np_customers": sum(d['customers'] for d in np_data),
+        }
+    }
+
 
 @api_router.get("/analytics/customers")
 async def get_customer_analytics(user=Depends(get_current_user)):

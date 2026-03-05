@@ -1,0 +1,104 @@
+{
+  "summary": "Tested reference report bug fix and new References tab feature. All backend tests pass (8/8). Frontend UI tests pass for References tab with 3 sub-tabs (Total, Approved, NP), expandable rows, navigation to bill detail, summary cards, and date filters.",
+  
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "GET /api/analytics/reference-report returns 200 OK",
+    "Reference report response has correct structure: total, approved, np, summary",
+    "Total view data has required fields: reference, bills, total, customers, bill_list",
+    "Approved view only contains sent/approved/edited bills",
+    "NP view only contains customers with draft bills (no approved bills)",
+    "Date filters work correctly on reference-report endpoint",
+    "Dashboard reference_analysis consistent with reference-report (bug fix verified)",
+    "Summary math is correct (totals match calculated values)",
+    "References tab loads with 3 sub-tabs: Total, Approved, NP",
+    "Summary cards show: Total Bills, Total Visitors, Purchased, Non-Purchasers, Conversion %",
+    "Total sub-tab shows bar chart and table with reference data",
+    "Approved sub-tab shows only approved/sent/edited bills with totals",
+    "NP sub-tab shows non-purchaser customers with inquiry count",
+    "Expanding a reference row shows individual bills with bill number, customer name, status, amount, date",
+    "Clicking a bill in expanded row navigates to /bill/:billId correctly",
+    "Refresh button reloads reference report data",
+    "Date filters affect reference report when Apply is clicked",
+    "Clear button resets filters"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_reference_report.py",
+    "/app/test_reports/pytest/reference_report_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "Line 1221-1227 in server.py: reference_analysis now correctly filters by status in ('sent', 'approved', 'edited') - bug fix verified",
+    "Line 1424-1541 in server.py: New reference-report endpoint correctly separates Total (all bills), Approved (sent/approved/edited), and NP (customers with only drafts)",
+    "Line 1456-1472: Approved view bill_list only includes bills with status in approved_statuses tuple",
+    "Line 1494-1509: NP logic correctly identifies customers with drafts but no approved bills using ref_customer_statuses tracking"
+  ],
+
+  "updated_files": [
+    "/app/backend/tests/test_reference_report.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (8/8 tests passed)",
+    "frontend": "100% (all UI features verified)"
+  },
+
+  "test_credentials": {
+    "admin": {
+      "username": "admin",
+      "password": "admin1123",
+      "method": "Click 'Admin Login' link on login page, fill credentials, click 'Sign In as Admin'"
+    }
+  },
+
+  "seed_data_creation": "None - used existing bills",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Reference report feature fully tested. Backend endpoint /api/analytics/reference-report working correctly with date filters. References tab on Reports page (/admin/reports) has 3 sub-tabs. Bug fix verified: reference_analysis in dashboard now only counts sent/approved/edited bills. Test data: Total 15 bills, 7 visitors, 2 purchasers, 6 non-purchasers (29% conversion without filter).",
+
+  "feature_verification_details": {
+    "bug_fix_customer_count_consistency": {
+      "status": "PASS",
+      "description": "reference_analysis now only counts sent/approved/edited bills - both dashboard and reference-report endpoint use consistent counting"
+    },
+    "reference_report_endpoint": {
+      "status": "PASS",
+      "endpoint": "/api/analytics/reference-report",
+      "returns": {
+        "total": "All bills grouped by reference with bill_list",
+        "approved": "Only sent/approved/edited bills",
+        "np": "Non-purchaser customers (only draft bills)",
+        "summary": "total_bills, total_customers, approved_bills, approved_customers, np_customers"
+      }
+    },
+    "references_tab_ui": {
+      "status": "PASS",
+      "summary_cards": "Total Bills, Total Visitors, Purchased, Non-Purchasers, Conversion %",
+      "sub_tabs": ["Total", "Approved", "NP"],
+      "expandable_rows": "Shows bill_list with bill_number, customer_name, status, amount, date",
+      "bill_navigation": "Clicking bill row navigates to /bill/:billId",
+      "refresh_button": "Reloads reference report data",
+      "date_filter": "Applies to reference report when Apply clicked"
+    }
+  },
+
+  "mocked_apis": {
+    "OTP_delivery": "OTP codes shown on admin dashboard instead of actual delivery"
+  }
+}
