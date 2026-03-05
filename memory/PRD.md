@@ -42,6 +42,11 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 ### Reference Analytics
 - [x] Reference analysis shows unique customers vs bills count (Mar 2026)
 - [x] Gold vs Diamond breakdown by multi-select references with combined summary, chart, and table (Mar 2026)
+- [x] Bug fix: Reference analysis now consistently counts only sent/approved/edited bills (Mar 2026)
+- [x] References tab with 3 sub-tabs: Total (all bills), Approved (purchased), NP (Non-Purchasers) (Mar 2026)
+- [x] Summary cards: Total Bills, Total Visitors, Purchased, Non-Purchasers, Conversion % (Mar 2026)
+- [x] Expandable reference rows to drill into individual bills with navigation to bill detail (Mar 2026)
+- [x] New endpoint: /api/analytics/reference-report with date filtering (Mar 2026)
 
 ### Calculator Pages
 - [x] ErrorBoundary, loading states, Gold/Diamond/MRP flows
@@ -76,3 +81,6 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - Mar 2026: Print/PDF shows only making per gram
 - Mar 2026: Fixed navigation loop (Bill↔Edit Item) using replace:true
 - Mar 2026: Making charge type correctly preserved as percentage during save/edit
+- Mar 2026: Fixed customer count discrepancy - reference_analysis now filters by sent/approved/edited status
+- Mar 2026: New References tab with Total/Approved/NP sub-tabs and expandable bill drill-down
+- Mar 2026: New /api/analytics/reference-report endpoint with date filtering
