@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth, apiClient } from '@/App';
+
+const IMG_BASE = process.env.REACT_APP_BACKEND_URL || window.location.origin;
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -374,10 +376,10 @@ export default function BillPage() {
                                   {item.photos.map((p, pi) => (
                                     <div key={pi} className="relative group">
                                       <img
-                                        src={`${process.env.REACT_APP_BACKEND_URL}${p}`}
+                                        src={`${IMG_BASE}${p}`}
                                         alt=""
                                         className="w-14 h-14 rounded object-cover border border-border cursor-pointer hover:opacity-80"
-                                        onClick={() => setLightboxImg(`${process.env.REACT_APP_BACKEND_URL}${p}`)}
+                                        onClick={() => setLightboxImg(`${IMG_BASE}${p}`)}
                                         onError={(e) => { e.target.style.opacity = '0.4'; }}
                                         data-testid={`photo-thumb-${idx}-${pi}`}
                                       />

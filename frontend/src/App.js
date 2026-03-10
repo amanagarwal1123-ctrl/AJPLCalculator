@@ -28,7 +28,7 @@ import MrpCalculator from "@/pages/MrpCalculator";
 import SalespersonPerformance from "@/pages/SalespersonPerformance";
 import { Toaster } from "@/components/ui/sonner";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || window.location.origin;
 export const API = `${BACKEND_URL}/api`;
 
 // Auth Context
@@ -142,7 +142,7 @@ function App() {
             <Route path="/bill/:billId/add-item" element={<PrivateRoute><ErrorBoundary><ItemCalculator /></ErrorBoundary></PrivateRoute>} />
             <Route path="/bill/:billId/edit-item/:itemIndex" element={<PrivateRoute><ErrorBoundary><ItemCalculator /></ErrorBoundary></PrivateRoute>} />
             <Route path="/bill/:billId/print" element={<PrivateRoute><BillPrintView /></PrivateRoute>} />
-            <Route path="/bill/:billId/feedback" element={<FeedbackPage />} />
+            <Route path="/bill/:billId/feedback" element={<PrivateRoute><FeedbackPage /></PrivateRoute>} />
             <Route path="/bill/:billId/mrp" element={<PrivateRoute><ErrorBoundary><MrpCalculator /></ErrorBoundary></PrivateRoute>} />
             <Route path="/bill/:billId/edit-mrp/:itemIndex" element={<PrivateRoute><ErrorBoundary><MrpCalculator /></ErrorBoundary></PrivateRoute>} />
             <Route path="/customer/:customerId" element={<PrivateRoute><CustomerProfilePage /></PrivateRoute>} />

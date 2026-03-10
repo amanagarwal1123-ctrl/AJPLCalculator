@@ -67,7 +67,9 @@ export default function AppLayout({ children }) {
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {links.map(link => {
           const Icon = link.icon;
-          const isActive = location.pathname === link.to;
+          const isActive = link.to === '/admin' || link.to === '/manager'
+            ? location.pathname === link.to
+            : location.pathname.startsWith(link.to);
           return (
             <Link
               key={link.to}

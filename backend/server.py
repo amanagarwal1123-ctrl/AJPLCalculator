@@ -841,10 +841,14 @@ async def get_customer_bills(customer_id: str, user=Depends(get_current_user)):
         except Exception:
             c_data['days_since_last_visit'] = None
     
-    # Get all bills for this customer by primary phone AND secondary phones
+    # Get all bills for this customer by customer_id, primary phone AND secondary phones
+    cust_id = customer.get("id", "")
     all_phones = [customer["phone"]] + (customer.get("phones") or [])
     all_phones = list(set(p for p in all_phones if p))  # dedupe + remove empty
-    bills = await db.bills.find({"customer_phone": {"$in": all_phones}}).sort("created_at", -1).to_list(10000)
+    bill_query = {"$or": [{"customer_id": cust_id}]}
+    if all_phones:
+        bill_query["$or"].append({"customer_phone": {"$in": all_phones}})
+    bills = await db.bills.find(bill_query).sort("created_at", -1).to_list(10000)
     # Only count approved/sent/edited bills for total_spent
     approved_total = sum(b.get('grand_total', 0) for b in bills if b.get('status') in ('sent', 'approved', 'edited'))
     
@@ -957,6 +961,7 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
         "daily_serial": daily_serial,
         "created_date": datetime.now(IST).strftime("%Y-%m-%d"),
         "mmi_entered": False,
+        "customer_id": customer.get("id", ""),
         "customer_name": req.customer_name,
         "customer_phone": req.customer_phone,
         "customer_location": req.customer_location,
@@ -1087,7 +1092,9 @@ async def send_bill_to_manager(bill_id: str, user=Depends(get_current_user)):
     bill = await db.bills.find_one({"id": bill_id})
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
-    await check_bill_access(bill, user)
+    # Only the executive who created the bill can send it
+    if user.get('role') != 'executive' or bill.get('executive_id') != user.get('id'):
+        raise HTTPException(status_code=403, detail="Only the bill's creator can send it to manager")
     if bill["status"] != "draft":
         raise HTTPException(status_code=400, detail="Bill already sent")
     
@@ -1099,8 +1106,14 @@ async def send_bill_to_manager(bill_id: str, user=Depends(get_current_user)):
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }}
     )
-    # Update customer total spent - search by primary phone or phones array
-    if bill.get('customer_phone'):
+    # Update customer total spent - use customer_id if available, fallback to phone matching
+    cust_id = bill.get('customer_id')
+    if cust_id:
+        await db.customers.update_one(
+            {"id": cust_id},
+            {"$inc": {"total_spent": bill.get('grand_total', 0)}}
+        )
+    elif bill.get('customer_phone'):
         await db.customers.update_one(
             {"$or": [{"phone": bill['customer_phone']}, {"phones": bill['customer_phone']}]},
             {"$inc": {"total_spent": bill.get('grand_total', 0)}}
@@ -1646,29 +1659,43 @@ async def get_customer_analytics(user=Depends(get_current_user)):
     
     all_bills = await db.bills.find(bill_query).to_list(10000)
     
-    # Get unique customer phones from scoped bills
+    # Aggregate spending by customer_id (preferred) or phone
     scoped_phones = set()
-    customer_bill_spending = {}
+    customer_id_spending = {}  # customer_id -> total
+    phone_spending = {}  # phone -> total (fallback for bills without customer_id)
+    scoped_customer_ids = set()
     for bill in all_bills:
         phone = bill.get('customer_phone', '')
+        cust_id = bill.get('customer_id', '')
+        amount = bill.get('grand_total', 0)
         if phone:
             scoped_phones.add(phone)
-            if phone not in customer_bill_spending:
-                customer_bill_spending[phone] = 0
-            customer_bill_spending[phone] += bill.get('grand_total', 0)
+        if cust_id:
+            scoped_customer_ids.add(cust_id)
+            customer_id_spending[cust_id] = customer_id_spending.get(cust_id, 0) + amount
+        elif phone:
+            phone_spending[phone] = phone_spending.get(phone, 0) + amount
     
     # For managers, only show customers who have bills in their branch
     if user.get('role') == 'manager' and user.get('branch_id'):
-        customers = await db.customers.find({"$or": [{"phone": {"$in": list(scoped_phones)}}, {"phones": {"$in": list(scoped_phones)}}]}).to_list(5000)
+        cust_query_parts = []
+        if scoped_customer_ids:
+            cust_query_parts.append({"id": {"$in": list(scoped_customer_ids)}})
+        if scoped_phones:
+            cust_query_parts.append({"phone": {"$in": list(scoped_phones)}})
+            cust_query_parts.append({"phones": {"$in": list(scoped_phones)}})
+        customers = await db.customers.find({"$or": cust_query_parts} if cust_query_parts else {}).to_list(5000)
     else:
         customers = await db.customers.find({}).to_list(5000)
     
     result = []
     for c in customers:
         c_data = serialize_doc(c)
-        # Use actual bill-based spending instead of cached total_spent
+        # Use customer_id-based spending, fallback to phone-based
+        cid = c.get('id', '')
         phone = c.get('phone', '')
-        c_data['total_spent'] = round(customer_bill_spending.get(phone, 0), 2)
+        spent = customer_id_spending.get(cid, 0) + phone_spending.get(phone, 0)
+        c_data['total_spent'] = round(spent, 2)
         # Calculate days since last visit
         last_visit = c.get('last_visit', '')
         if last_visit:
@@ -1694,19 +1721,36 @@ async def get_customer_frequency(user=Depends(get_current_user)):
     all_bills = await db.bills.find(bill_query).to_list(10000)
     
     scoped_phones = set()
-    customer_bill_spending = {}
+    scoped_customer_ids = set()
+    customer_id_spending = {}
+    phone_spending = {}
     for bill in all_bills:
         phone = bill.get('customer_phone', '')
+        cust_id = bill.get('customer_id', '')
+        amount = bill.get('grand_total', 0)
         if phone:
             scoped_phones.add(phone)
-            if phone not in customer_bill_spending:
-                customer_bill_spending[phone] = 0
-            customer_bill_spending[phone] += bill.get('grand_total', 0)
+        if cust_id:
+            scoped_customer_ids.add(cust_id)
+            customer_id_spending[cust_id] = customer_id_spending.get(cust_id, 0) + amount
+        elif phone:
+            phone_spending[phone] = phone_spending.get(phone, 0) + amount
     
     if user.get('role') == 'manager' and user.get('branch_id'):
-        customers = await db.customers.find({"$or": [{"phone": {"$in": list(scoped_phones)}}, {"phones": {"$in": list(scoped_phones)}}]}).to_list(5000)
+        cust_query_parts = []
+        if scoped_customer_ids:
+            cust_query_parts.append({"id": {"$in": list(scoped_customer_ids)}})
+        if scoped_phones:
+            cust_query_parts.append({"phone": {"$in": list(scoped_phones)}})
+            cust_query_parts.append({"phones": {"$in": list(scoped_phones)}})
+        customers = await db.customers.find({"$or": cust_query_parts} if cust_query_parts else {}).to_list(5000)
     else:
         customers = await db.customers.find({}).to_list(5000)
+    
+    def get_customer_spent(c):
+        cid = c.get('id', '')
+        phone = c.get('phone', '')
+        return customer_id_spending.get(cid, 0) + phone_spending.get(phone, 0)
     
     # Define cohort buckets
     cohorts = {
@@ -1718,8 +1762,7 @@ async def get_customer_frequency(user=Depends(get_current_user)):
     
     for c in customers:
         visits = c.get('total_visits', 1)
-        phone = c.get('phone', '')
-        spent = customer_bill_spending.get(phone, 0)
+        spent = get_customer_spent(c)
         if visits <= 1:
             cohorts["1 visit"]["count"] += 1
             cohorts["1 visit"]["total_spent"] += spent
@@ -1733,19 +1776,7 @@ async def get_customer_frequency(user=Depends(get_current_user)):
             cohorts["6+ visits"]["count"] += 1
             cohorts["6+ visits"]["total_spent"] += spent
     
-    # Calculate actual spending from bills (not cached total_spent)
-    all_bills = await db.bills.find(
-        {"status": {"$in": ["sent", "approved", "edited"]}}
-    ).to_list(10000)
-    customer_bill_spending = {}
-    for bill in all_bills:
-        phone = bill.get('customer_phone', '')
-        if phone:
-            if phone not in customer_bill_spending:
-                customer_bill_spending[phone] = 0
-            customer_bill_spending[phone] += bill.get('grand_total', 0)
-
-    # Spending tiers (calculated from actual bills per customer)
+    # Spending tiers
     spending_tiers = {
         "Under 25K": {"count": 0, "total_spent": 0},
         "25K - 50K": {"count": 0, "total_spent": 0},
@@ -1755,8 +1786,7 @@ async def get_customer_frequency(user=Depends(get_current_user)):
     }
     
     for c in customers:
-        phone = c.get('phone', '')
-        spent = customer_bill_spending.get(phone, 0)
+        spent = get_customer_spent(c)
         if spent < 25000:
             spending_tiers["Under 25K"]["count"] += 1
             spending_tiers["Under 25K"]["total_spent"] += spent
@@ -1803,17 +1833,29 @@ async def get_inactive_customers(
     all_bills = await db.bills.find(bill_query).to_list(10000)
     
     scoped_phones = set()
-    customer_bill_spending = {}
+    scoped_customer_ids = set()
+    customer_id_spending = {}
+    phone_spending = {}
     for bill in all_bills:
         phone = bill.get('customer_phone', '')
+        cust_id = bill.get('customer_id', '')
+        amount = bill.get('grand_total', 0)
         if phone:
             scoped_phones.add(phone)
-            if phone not in customer_bill_spending:
-                customer_bill_spending[phone] = 0
-            customer_bill_spending[phone] += bill.get('grand_total', 0)
+        if cust_id:
+            scoped_customer_ids.add(cust_id)
+            customer_id_spending[cust_id] = customer_id_spending.get(cust_id, 0) + amount
+        elif phone:
+            phone_spending[phone] = phone_spending.get(phone, 0) + amount
     
     if user.get('role') == 'manager' and user.get('branch_id'):
-        customers = await db.customers.find({"$or": [{"phone": {"$in": list(scoped_phones)}}, {"phones": {"$in": list(scoped_phones)}}]}).to_list(5000)
+        cust_query_parts = []
+        if scoped_customer_ids:
+            cust_query_parts.append({"id": {"$in": list(scoped_customer_ids)}})
+        if scoped_phones:
+            cust_query_parts.append({"phone": {"$in": list(scoped_phones)}})
+            cust_query_parts.append({"phones": {"$in": list(scoped_phones)}})
+        customers = await db.customers.find({"$or": cust_query_parts} if cust_query_parts else {}).to_list(5000)
     else:
         customers = await db.customers.find({}).to_list(5000)
     
@@ -1828,9 +1870,9 @@ async def get_inactive_customers(
                 if lv < cutoff:
                     c_data = serialize_doc(c)
                     c_data['days_since_last_visit'] = (datetime.now(timezone.utc) - lv).days
-                    # Use actual bill-based spending instead of cached total_spent
+                    cid = c.get('id', '')
                     phone = c.get('phone', '')
-                    c_data['total_spent'] = round(customer_bill_spending.get(phone, 0), 2)
+                    c_data['total_spent'] = round(customer_id_spending.get(cid, 0) + phone_spending.get(phone, 0), 2)
                     inactive.append(c_data)
             except Exception:
                 pass
