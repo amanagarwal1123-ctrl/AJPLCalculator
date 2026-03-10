@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Plus, Trash2, Save, Gem, CircleDot } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Gem, CircleDot, Home } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ItemCalculator() {
@@ -320,6 +320,9 @@ export default function ItemCalculator() {
               else navigate(`/bill/${billId}`, { replace: true });
             }} data-testid="back-button">
               <ArrowLeft size={18} />
+            </Button>
+            <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate('/')} data-testid="home-button">
+              <Home size={18} />
             </Button>
             <div>
               <h1 className="heading text-lg font-bold text-primary">{isEditing ? 'Edit Item' : 'Add Item'}</h1>

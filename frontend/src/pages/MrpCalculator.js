@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, Trash2, Save, Home } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function MrpCalculator() {
@@ -132,6 +132,7 @@ export default function MrpCalculator() {
         <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="flex items-center gap-3 px-4 py-3 max-w-5xl mx-auto">
             <Button variant="ghost" size="sm" onClick={() => navigate(`/bill/${billId}`, { replace: true })} data-testid="mrp-back-btn"><ArrowLeft size={18} /></Button>
+            <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate('/')} data-testid="mrp-home-btn"><Home size={18} /></Button>
             <div>
               <h1 className="heading text-lg font-bold text-primary">{isEditing ? 'Edit MRP Item' : 'MRP Calculator'}</h1>
               <p className="text-xs text-muted-foreground">{isEditing ? 'Update MRP-based item' : 'Add MRP-based item'}</p>

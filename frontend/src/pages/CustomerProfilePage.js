@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Save, User, Phone, MapPin, Calendar, Heart, Mail, FileText, Star } from 'lucide-react';
+import { ArrowLeft, Save, User, Phone, MapPin, Calendar, Heart, Mail, FileText, Star, Home } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CustomerProfilePage() {
@@ -85,6 +85,7 @@ export default function CustomerProfilePage() {
           <div className="flex items-center justify-between px-3 sm:px-4 py-3 max-w-5xl mx-auto">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={() => navigate(-1)} data-testid="back-btn"><ArrowLeft size={18} /></Button>
+              <Button variant="ghost" size="sm" className="text-primary" onClick={() => { if (user?.role === 'admin') navigate('/admin'); else if (user?.role === 'manager') navigate('/manager'); else navigate('/sales'); }} data-testid="home-btn"><Home size={18} /></Button>
               <div>
                 <h1 className="heading text-base sm:text-lg font-bold text-primary">{customer?.name || 'Customer'}</h1>
                 <p className="text-xs text-muted-foreground">{customer?.phone}</p>

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
-import { Plus, Trash2, Send, Printer, Download, ArrowLeft, Edit, CheckCircle, Clock, History, Layers, ChevronRight, User, Camera, X, ZoomIn, Percent } from 'lucide-react';
+import { Plus, Trash2, Send, Printer, Download, ArrowLeft, Edit, CheckCircle, Clock, History, Layers, ChevronRight, User, Camera, X, ZoomIn, Percent, Home } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BillPage() {
@@ -218,6 +218,7 @@ export default function BillPage() {
           <div className="flex items-center justify-between px-3 sm:px-4 py-3 max-w-6xl mx-auto">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <Button variant="ghost" size="sm" className="shrink-0" onClick={goBack} data-testid="bill-back-button"><ArrowLeft size={18} /></Button>
+              <Button variant="ghost" size="sm" className="shrink-0 text-primary" onClick={goHome} data-testid="bill-home-button"><Home size={18} /></Button>
               <div className="min-w-0">
                 <h1 className="heading text-sm sm:text-lg font-bold text-primary truncate">{bill.bill_number}</h1>
                 <p className="text-xs text-muted-foreground truncate">{bill.customer_name} | {bill.customer_phone}</p>

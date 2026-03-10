@@ -1,0 +1,104 @@
+{
+  "summary": "Tested 3 features: 1) Diamond making charge calculation on gross weight - PASS, 2) Gold making charge calculation on net weight - PASS, 3) Home button visibility across all pages - PASS. All backend tests passed (6/6). All frontend tests passed.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Reports page", "issues": ["Recharts dimension warnings on page load (non-critical, existing issue)"]}
+    ]
+  },
+
+  "passed_tests": [
+    "Diamond item making charge calculated on GROSS weight (per_gram: 500/g * 10g gross = 5000)",
+    "Gold item making charge calculated on NET weight (per_gram: 500/g * 9.5g net = 4750)",
+    "Diamond percentage making uses GROSS weight (10% * 24KT rate * gross)",
+    "Gold percentage making uses NET weight (10% * 24KT rate * net)",
+    "Diamond with L-type studded deduction still uses GROSS weight for making",
+    "Calculate item endpoint accessible with authentication",
+    "Home button NOT visible on Admin Dashboard (/admin)",
+    "Desktop Home button visible on Reports page (data-testid='desktop-home-button')",
+    "Home button navigates to /admin dashboard when clicked",
+    "Mobile Home button visible on Reports page (data-testid='mobile-home-button')",
+    "Home button visible on BillPage (data-testid='bill-home-button')",
+    "Home button visible on ItemCalculator (data-testid='home-button')",
+    "Home button visible on MrpCalculator (data-testid='mrp-home-btn')",
+    "Home button visible on BillPrintView (data-testid='home-from-print')",
+    "Home button visible on CustomerProfilePage (data-testid='home-btn')"
+  ],
+
+  "skipped_tests": [],
+
+  "test_report_links": [
+    "/app/backend/tests/test_making_charges.py",
+    "/app/test_reports/pytest/iteration28_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_making_charges.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (6/6 passed)",
+    "frontend": "100% (all UI tests passed)"
+  },
+
+  "test_credentials": {
+    "admin": {
+      "username": "admin",
+      "password": "admin1123",
+      "method": "Click 'Admin Login' link, fill credentials, click 'Sign In as Admin'"
+    }
+  },
+
+  "seed_data_creation": "",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "All 3 features verified working: 1) Diamond making charges use gross_weight (calc_engine.py line 275), 2) Gold making charges use net_weight (calc_engine.py line 184), 3) Home button visible on all non-dashboard pages via AppLayout.js (desktop-home-button, mobile-home-button) and standalone pages (BillPage: bill-home-button, ItemCalculator: home-button, MrpCalculator: mrp-home-btn, BillPrintView: home-from-print, CustomerProfilePage: home-btn). OTP delivery is MOCKED.",
+
+  "feature_verification_details": {
+    "diamond_making_on_gross_weight": {
+      "status": "PASS",
+      "endpoint": "POST /api/calculate/item with item_type=diamond",
+      "calc_engine_location": "calculate_diamond_item uses gross_weight at line 275",
+      "formula": "per_gram making: 500/g * 10g gross = 5000 (NOT 4750 on net weight)"
+    },
+    "gold_making_on_net_weight": {
+      "status": "PASS",
+      "endpoint": "POST /api/calculate/item with item_type=gold",
+      "calc_engine_location": "calculate_gold_item uses net_weight at line 184",
+      "formula": "per_gram making: 500/g * 9.5g net = 4750"
+    },
+    "home_button_visibility": {
+      "status": "PASS",
+      "pages_with_home_button": [
+        {"page": "Reports", "testid": "desktop-home-button", "location": "AppLayout.js"},
+        {"page": "Reports (mobile)", "testid": "mobile-home-button", "location": "AppLayout.js"},
+        {"page": "BillPage", "testid": "bill-home-button", "location": "BillPage.js"},
+        {"page": "ItemCalculator", "testid": "home-button", "location": "ItemCalculator.js"},
+        {"page": "MrpCalculator", "testid": "mrp-home-btn", "location": "MrpCalculator.js"},
+        {"page": "BillPrintView", "testid": "home-from-print", "location": "BillPrintView.js"},
+        {"page": "CustomerProfilePage", "testid": "home-btn", "location": "CustomerProfilePage.js"}
+      ],
+      "pages_without_home_button": [
+        {"page": "Admin Dashboard (/admin)", "reason": "isOnDashboard = true hides button"}
+      ]
+    }
+  },
+
+  "mocked_apis": {
+    "OTP_delivery": "OTP codes visible via GET /api/admin/pending-otps instead of actual SMS delivery"
+  }
+}

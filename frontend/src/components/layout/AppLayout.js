@@ -1,7 +1,7 @@
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/App';
 import { Button } from '@/components/ui/button';
-import { LogOut, Menu, X, LayoutDashboard, Settings, Users, GitBranch, Tag, BarChart3, FileText, UserCheck, MessageSquare, Bell } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Settings, Users, GitBranch, Tag, BarChart3, FileText, UserCheck, MessageSquare, Bell, Home } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const adminLinks = [
@@ -42,6 +42,8 @@ export default function AppLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const links = user?.role === 'admin' ? adminLinks : user?.role === 'manager' ? managerLinks : [];
+  const dashboardPath = user?.role === 'admin' ? '/admin' : user?.role === 'manager' ? '/manager' : '/sales';
+  const isOnDashboard = location.pathname === dashboardPath;
 
   // Close sidebar on route change
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
@@ -140,14 +142,26 @@ export default function AppLayout({ children }) {
         {/* Mobile header */}
         <div className="lg:hidden border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="flex items-center justify-between px-3 py-2">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="h-11 w-11 flex items-center justify-center rounded-md hover:bg-secondary/80 active:bg-secondary transition-colors"
-              data-testid="mobile-menu-button"
-              aria-label="Open menu"
-            >
-              <Menu size={24} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="h-11 w-11 flex items-center justify-center rounded-md hover:bg-secondary/80 active:bg-secondary transition-colors"
+                data-testid="mobile-menu-button"
+                aria-label="Open menu"
+              >
+                <Menu size={24} />
+              </button>
+              {!isOnDashboard && (
+                <button
+                  onClick={() => navigate(dashboardPath)}
+                  className="h-11 w-11 flex items-center justify-center rounded-md hover:bg-secondary/80 active:bg-secondary transition-colors text-primary"
+                  data-testid="mobile-home-button"
+                  aria-label="Go to dashboard"
+                >
+                  <Home size={20} />
+                </button>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <img src="/ajpl-logo.png" alt="AJPL" className="h-10 w-auto object-contain" />
               <span className="heading text-base font-bold text-primary">AJPL Calculator</span>
@@ -192,6 +206,15 @@ export default function AppLayout({ children }) {
         )}
 
         <main className="px-4 sm:px-6 lg:px-8 py-6 overflow-auto">
+          {!isOnDashboard && (
+            <button
+              onClick={() => navigate(dashboardPath)}
+              className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+              data-testid="desktop-home-button"
+            >
+              <Home size={15} /> Dashboard
+            </button>
+          )}
           {children}
         </main>
       </div>

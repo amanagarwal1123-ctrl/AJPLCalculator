@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '@/App';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Printer, Download } from 'lucide-react';
+import { ArrowLeft, Printer, Download, Home } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BillPrintView() {
@@ -37,6 +37,7 @@ export default function BillPrintView() {
     <div>
       <div className="no-print bg-card border-b border-border p-3 sm:p-4 flex items-center justify-between sticky top-0 z-50">
         <Button variant="ghost" size="sm" onClick={() => navigate(`/bill/${billId}`)} data-testid="back-from-print"><ArrowLeft size={18} className="mr-1" /> Back</Button>
+        <Button variant="ghost" size="sm" className="text-primary" onClick={() => navigate('/')} data-testid="home-from-print"><Home size={18} className="mr-1" /> Home</Button>
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={handlePrint} data-testid="print-action-button"><Printer size={14} className="mr-1" /> Print</Button>
           <Button size="sm" onClick={downloadPdf} data-testid="pdf-download-button"><Download size={14} className="mr-1" /> PDF</Button>

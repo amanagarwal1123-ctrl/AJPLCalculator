@@ -44,7 +44,7 @@ def extrapolate_24kt_rate(rate: float, purity_percent: float) -> float:
     return float(round_currency(result))
 
 
-def calculate_making_charge(making_entry: Dict[str, Any], net_weight: float, rate_per_10g: float, purity_percent: float) -> float:
+def calculate_making_charge(making_entry: Dict[str, Any], weight: float, rate_per_10g: float, purity_percent: float) -> float:
     """
     Calculate a single making charge entry.
     
@@ -53,13 +53,15 @@ def calculate_making_charge(making_entry: Dict[str, Any], net_weight: float, rat
       - value: the percentage/rate/labour value
       - quantity: (for per_piece only) number of pieces
     
+    weight: the weight to apply making on (net_weight for gold, gross_weight for diamond)
+    
     For percentage type:
       First extrapolate 24KT rate from the given rate & purity
       Then making_per_gram = (percentage / 100) * (24KT_rate / 10)
-      Total making = making_per_gram * net_weight
+      Total making = making_per_gram * weight
     
     For per_gram type:
-      Total making = value * net_weight
+      Total making = value * weight
     
     For per_piece type:
       Total making = value * quantity
@@ -67,7 +69,7 @@ def calculate_making_charge(making_entry: Dict[str, Any], net_weight: float, rat
     m_type = making_entry.get('type', '')
     value = to_decimal(making_entry.get('value', 0))
     quantity = to_decimal(making_entry.get('quantity', 1))
-    nw = to_decimal(net_weight)
+    w = to_decimal(weight)
     rate = to_decimal(rate_per_10g)
     purity = to_decimal(purity_percent)
     
@@ -79,11 +81,11 @@ def calculate_making_charge(making_entry: Dict[str, Any], net_weight: float, rat
         rate_24kt_per_10g = rate / (purity / Decimal('100'))
         rate_24kt_per_gram = rate_24kt_per_10g / Decimal('10')
         making_per_gram = (value / Decimal('100')) * rate_24kt_per_gram
-        total = making_per_gram * nw
+        total = making_per_gram * w
         return float(round_currency(total))
     
     elif m_type == 'per_gram':
-        total = value * nw
+        total = value * w
         return float(round_currency(total))
     
     elif m_type == 'per_piece':
@@ -231,11 +233,12 @@ def calculate_diamond_item(item: Dict[str, Any]) -> Dict[str, Any]:
           - If 'L', the carat weight is converted to grams (1 carat = 0.2g)
             and subtracted from gross weight before net weight calculation.
     
+    Key difference from gold: making charges are calculated on GROSS weight.
+    
     Returns item with gold calculations PLUS:
       - studded_details
       - total_studded
       - studded_less_grams (total grams subtracted due to L-type entries)
-      - adjusted_net_weight (net weight after studded less deduction)
       - total_amount (gold_total + studded_total)
     """
     # Calculate studded less weight first (L-type entries)
@@ -252,13 +255,47 @@ def calculate_diamond_item(item: Dict[str, Any]) -> Dict[str, Any]:
     # Adjust the item's "less" to include studded less before calculating gold portion
     original_less = to_decimal(item.get('less', 0))
     adjusted_less = float(round_currency(original_less + studded_less_grams))
+    gross_weight = item.get('gross_weight', 0)
+    rate_per_10g = item.get('rate_per_10g', 0)
+    purity_percent = item.get('purity_percent', 100)
     
-    # Create a modified item with adjusted less for gold calculation
-    adjusted_item = {**item, 'less': adjusted_less}
+    # Net weight for gold value calculation (adjusted for studded less)
+    net_weight = calculate_net_weight(gross_weight, adjusted_less)
     
-    # Calculate the gold portion with adjusted net weight
-    gold_calc = calculate_gold_item(adjusted_item)
-    gold_total = to_decimal(gold_calc['total_amount'])
+    # Gold value = net_weight * rate / 10
+    nw = to_decimal(net_weight)
+    r = to_decimal(rate_per_10g)
+    gold_value = float(round_currency(nw * r / Decimal('10')))
+    
+    # Making charges - for diamond items, calculated on GROSS weight
+    making_charges = item.get('making_charges', [])
+    making_details = []
+    total_making = Decimal('0')
+    for mc in making_charges:
+        charge = calculate_making_charge(mc, gross_weight, rate_per_10g, purity_percent)
+        detail = {**mc, 'calculated_amount': charge}
+        if mc.get('type') == 'percentage':
+            p = to_decimal(purity_percent)
+            if p > 0:
+                rate_24kt = to_decimal(rate_per_10g) / (p / Decimal('100'))
+                mpg = (to_decimal(mc.get('value', 0)) / Decimal('100')) * (rate_24kt / Decimal('10'))
+                detail['making_per_gram'] = float(round_currency(mpg))
+        making_details.append(detail)
+        total_making += to_decimal(charge)
+    total_making = float(round_currency(total_making))
+    
+    # Stone charges
+    stone_charges = item.get('stone_charges', [])
+    stone_details = []
+    total_stone = Decimal('0')
+    for sc_entry in stone_charges:
+        charge = calculate_stone_charge(sc_entry, item.get('less', 0))
+        stone_details.append({**sc_entry, 'calculated_amount': charge})
+        total_stone += to_decimal(charge)
+    total_stone = float(round_currency(total_stone))
+    
+    # Gold portion total (gold_value + making + stone)
+    gold_total = round_currency(to_decimal(gold_value) + to_decimal(total_making) + to_decimal(total_stone))
     
     # Studded charges (monetary)
     studded_details = []
@@ -266,7 +303,6 @@ def calculate_diamond_item(item: Dict[str, Any]) -> Dict[str, Any]:
     for sc in studded_charges:
         charge = calculate_studded_charge(sc)
         detail = {**sc, 'calculated_amount': charge}
-        # Add gram equivalent for display
         carats = to_decimal(sc.get('carats', 0))
         detail['weight_grams'] = float((carats * CARAT_TO_GRAM).quantize(Decimal('0.001'), rounding=ROUND_HALF_UP))
         studded_details.append(detail)
@@ -277,9 +313,17 @@ def calculate_diamond_item(item: Dict[str, Any]) -> Dict[str, Any]:
     total_amount = float(round_currency(gold_total + to_decimal(total_studded)))
     
     return {
-        **gold_calc,
+        **item,
         'item_type': 'diamond',
+        'net_weight': net_weight,
+        'gross_weight': gross_weight,
+        'less': adjusted_less,
         'original_less': float(original_less),
+        'gold_value': gold_value,
+        'making_charges': making_details,
+        'total_making': total_making,
+        'stone_charges': stone_details,
+        'total_stone': total_stone,
         'studded_less_grams': studded_less_grams_float,
         'studded_charges': studded_details,
         'total_studded': total_studded,
