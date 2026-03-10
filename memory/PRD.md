@@ -14,67 +14,49 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 
 ### Authentication & Authorization
 - [x] OTP-based login, admin password login, JWT tokens, role-based access control
+- [x] Bill access control: check_bill_access helper enforces admin=all, manager=own branch, exec=own bills (Mar 2026)
+- [x] Send bill restricted to executive owner only (Mar 2026)
+- [x] Notification ownership: executives can only modify their own notifications (Mar 2026)
+- [x] Feedback page route protected with PrivateRoute (Option B - internal only) (Mar 2026)
+- [x] Manager creation requires branch_id (Mar 2026)
 
 ### Admin Features
 - [x] Dashboard with KPIs, OTP panel, active sessions
 - [x] Dashboard auto-refresh every 30s for real-time sales updates (Mar 2026)
 - [x] Bills with S.No column, Reference column, `0001-DDMMYYYY` format
-- [x] Bill cards show customer reference in all tabs (Pending, Approved, Drafts, All) (Mar 2026)
+- [x] Bill cards show customer reference in all tabs (Mar 2026)
 - [x] Rate Management with auto-heal for empty purities
 - [x] Branch/User/Item Name Management
-- [x] Salespeople Management with branch assignment & branch filter (Feb 2026)
-- [x] Salesperson Performance Page: total sales, day-wise breakdown, charts, trend analysis (Feb 2026)
+- [x] Salespeople Management with branch assignment & branch filter
 
 ### Customer Management
-- [x] Customer List with Total Spent (calculated from approved bills only) (Feb 2026)
-- [x] Customer History page with "Edit Details" button (Feb 2026)
-- [x] Customer Profile with all fields: Name, Phone, Email, Location, Reference, DOB, Anniversary, Address, Notes
-- [x] Phone-first customer entry: Salesman enters phone -> auto-lookup -> auto-fill for returning customers (Mar 2026)
-- [x] Returning customer reference locked to "Repeat Customer" (Mar 2026)
-- [x] Multi-phone support: customers can have multiple phone numbers, all mapped to same profile (Mar 2026)
-- [x] Add-phone feature for returning customers during bill creation (Mar 2026)
-- [x] Narration field on bills: optional note for actual buyer name/purpose (Mar 2026)
+- [x] Customer List with Total Spent (calculated from approved bills only)
+- [x] Customer History page with "Edit Details" button
+- [x] Customer Profile with all fields
+- [x] Phone-first customer entry with auto-lookup
+- [x] Multi-phone support: bills store customer_id for canonical linkage (Mar 2026)
+- [x] Customer lookup works by id, primary phone, or secondary phones array (Mar 2026)
+- [x] Bills query uses customer_id + phone fallback for complete history (Mar 2026)
+- [x] Analytics spending aggregation uses customer_id (Mar 2026)
+- [x] Narration field on bills
 
 ### Reports & Analytics
-- [x] 8 tabs: Overview, KT Analysis, Branches, Executives, References, Customers, Top Items, Feedbacks
-- [x] Tab state persisted via URL search params (?tab=xxx) - back button preserves active tab (Mar 2026)
-- [x] Customer analytics uses actual approved bill spending (not cached values) (Feb 2026)
-- [x] Dashboard date filters now correctly update all fields including Total Customers (Mar 2026)
-- [x] Reference analysis shows unique customers vs bills count (Mar 2026)
-- [x] Frequency cohorts & spending tiers based on approved/sent/edited bills only
-- [x] Feedbacks tab with date range filter + asc/desc sort
-- [x] Feedbacks: "Only with comments" checkbox filter (Mar 2026)
-- [x] Feedbacks: Comments styled in Georgia serif font with distinct background (Mar 2026)
-- [x] Inactive Customers with user-specified days threshold
-- [x] Inactive Customers total_spent calculated from approved bills (not cached) (Feb 2026)
-- [x] Inactive Customers shows "X out of Y customers" ratio (Mar 2026)
+- [x] 8 tabs with URL param persistence (?tab=xxx) (Mar 2026)
+- [x] Manager branch scoping on ALL analytics endpoints (Mar 2026)
+- [x] Reference breakdown refreshes when date filters change (Mar 2026)
+- [x] Feedbacks: "Only with comments" checkbox + Georgia serif font for comments (Mar 2026)
+- [x] Customer Profile Total Spent excludes drafts (uses API total_spent) (Mar 2026)
 
-### Reference Analytics
-- [x] Reference analysis shows unique customers vs bills count (Mar 2026)
-- [x] Gold vs Diamond breakdown by multi-select references with combined summary, chart, and table (Mar 2026)
-- [x] Bug fix: Reference analysis now consistently counts only sent/approved/edited bills (Mar 2026)
-- [x] References tab with 3 sub-tabs: Total (all bills), Approved (purchased), NP (Non-Purchasers) (Mar 2026)
-- [x] Summary cards: Total Bills, Total Visitors, Purchased, Non-Purchasers, Conversion % (Mar 2026)
-- [x] Expandable reference rows to drill into individual bills with navigation to bill detail (Mar 2026)
-- [x] New endpoint: /api/analytics/reference-report with date filtering (Mar 2026)
+### Navigation & UI
+- [x] Tab state persisted via URL search params - back button preserves active tab (Mar 2026)
+- [x] Sidebar active-state prefix matching for nested routes (Mar 2026)
+- [x] Frontend API base URL fallback to window.location.origin (Mar 2026)
 
-### Back Button / Navigation
-- [x] Smart back navigation: Back button returns to previous page instead of always going to dashboard (Mar 2026)
-- [x] Tab state preserved via URL params: AdminDashboard, ManagerDashboard, Reports all use ?tab=xxx (Mar 2026)
-- [x] Navigation loop fix: Edit Item/MRP Calculator use replace:true to prevent Bill<->Edit loop (Mar 2026)
-
-### Calculator Pages
-- [x] ErrorBoundary, loading states, Gold/Diamond/MRP flows
-
-### Bill Print View
-- [x] B&W printer friendly: white bg, black borders, grayscale logo, "TENTATIVE INVOICE"
-- [x] Print/PDF shows only making per gram (no percentage) for all making charge types (Mar 2026)
-
-### Bill Page Features
-- [x] Photo lightbox: Simple overlay for viewing item photos without Dialog crashes (Mar 2026)
-- [x] Admin-only making % display: Admin sees % and /g only for actual percentage-type charges; per_gram shows only /g (Mar 2026)
-- [x] Admin bill summary sidebar shows per-item making breakdown (Mar 2026)
-- [x] Making charge type preservation: Percentage charges saved correctly as percentage type going forward (Mar 2026)
+### Calculator, Print, Bill Page
+- [x] ErrorBoundary, Gold/Diamond/MRP flows
+- [x] B&W printer friendly, Print/PDF making per gram only
+- [x] Photo lightbox, admin-only making % display
+- [x] Smart back navigation, navigation loop fix
 
 ## Credentials
 - **Admin:** username=admin, password=admin1123
@@ -87,21 +69,22 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - P1: Refactor server.py into route modules
 - P2: Decompose large frontend components (ReportsPage.js, SalesExecDashboard.js)
 
-## Changelog
-- Mar 2026: Bill cards on AdminDashboard now show customer reference (Ref: xxx) in all tabs
-- Mar 2026: AdminDashboard auto-refreshes every 30 seconds
-- Mar 2026: Feedbacks: "Only with comments" checkbox filter + Georgia serif font for comments
-- Mar 2026: Tab state persisted via URL params across Admin, Manager, and Reports dashboards (fixes back button issues)
-- Mar 2026: Fixed React key warnings in References tab (Fragment keying)
-- Mar 2026: Fixed photo lightbox (replaced Dialog with simple overlay)
-- Mar 2026: Admin-only making % display in bill details and summary (percentage type only, not calculated for per_gram)
-- Mar 2026: Smart back navigation on bill page
-- Mar 2026: Print/PDF shows only making per gram
-- Mar 2026: Fixed navigation loop (Bill<->Edit Item) using replace:true
-- Mar 2026: Making charge type correctly preserved as percentage during save/edit
-- Mar 2026: Fixed customer count discrepancy - reference_analysis now filters by sent/approved/edited status
-- Mar 2026: New References tab with Total/Approved/NP sub-tabs and expandable bill drill-down
-- Mar 2026: New /api/analytics/reference-report endpoint with date filtering
-- Mar 2026: Phone-first customer entry flow with auto-lookup, auto-fill, reference lock for returning customers
-- Mar 2026: Multi-phone customer support (phones array, lookup-phone endpoint, add-phone endpoint)
-- Mar 2026: Narration field on bills for noting actual buyer name/purpose
+## Changelog (Mar 2026 - Latest)
+- Bill access control: check_bill_access helper on get/summary/pdf/photo-delete endpoints
+- Send bill restricted to executive owner only (not admin/manager)
+- Bills now store customer_id for canonical customer linkage
+- Customer detail/bills lookup supports secondary phones in phones array
+- Analytics spending aggregation uses customer_id with phone fallback
+- Manager branch scoping on all analytics endpoints (customers, frequency, inactive, reference-breakdown, salesperson performance, feedbacks)
+- Notification ownership checks for executives
+- Manager creation requires branch_id
+- Feedback page route protected with PrivateRoute
+- Frontend API URL fallback to window.location.origin
+- Sidebar prefix matching for nested route highlighting
+- Reference breakdown refreshes on date filter changes
+- Customer Profile Total Spent uses API total_spent (excludes drafts)
+- Bill cards show customer reference in all dashboard tabs
+- Dashboard auto-refresh every 30s
+- Feedbacks "Only with comments" checkbox + Georgia serif font
+- Tab state persisted via URL params across all dashboards
+- React key warnings fixed in References tab
