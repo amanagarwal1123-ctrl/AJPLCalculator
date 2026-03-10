@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiClient } from '@/App';
 import AppLayout from '@/components/layout/AppLayout';
@@ -634,8 +634,8 @@ export default function Reports() {
                                 </TableHeader>
                                 <TableBody>
                                   {refReport.total.map((r) => (
-                                    <>
-                                      <TableRow key={r.reference} className="border-border cursor-pointer hover:bg-secondary/20" onClick={() => setExpandedRef(expandedRef === `total-${r.reference}` ? null : `total-${r.reference}`)}>
+                                    <Fragment key={`total-${r.reference}`}>
+                                      <TableRow className="border-border cursor-pointer hover:bg-secondary/20" onClick={() => setExpandedRef(expandedRef === `total-${r.reference}` ? null : `total-${r.reference}`)}>
                                         <TableCell className="font-medium">{r.reference}</TableCell>
                                         <TableCell className="mono text-right">{r.customers}</TableCell>
                                         <TableCell className="mono text-right">{r.bills}</TableCell>
@@ -645,7 +645,7 @@ export default function Reports() {
                                         </TableCell>
                                       </TableRow>
                                       {expandedRef === `total-${r.reference}` && (
-                                        <TableRow key={`${r.reference}-expand`} className="border-border">
+                                        <TableRow className="border-border">
                                           <TableCell colSpan={5} className="p-0">
                                             <div className="bg-secondary/10 p-3 space-y-1 max-h-64 overflow-y-auto">
                                               <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Bills for {r.reference}</p>
@@ -667,7 +667,7 @@ export default function Reports() {
                                           </TableCell>
                                         </TableRow>
                                       )}
-                                    </>
+                                    </Fragment>
                                   ))}
                                 </TableBody>
                               </Table>
@@ -707,8 +707,8 @@ export default function Reports() {
                                 </TableHeader>
                                 <TableBody>
                                   {refReport.approved.map((r) => (
-                                    <>
-                                      <TableRow key={r.reference} className="border-border cursor-pointer hover:bg-secondary/20" onClick={() => setExpandedRef(expandedRef === `approved-${r.reference}` ? null : `approved-${r.reference}`)}>
+                                    <Fragment key={`approved-${r.reference}`}>
+                                      <TableRow className="border-border cursor-pointer hover:bg-secondary/20" onClick={() => setExpandedRef(expandedRef === `approved-${r.reference}` ? null : `approved-${r.reference}`)}>
                                         <TableCell className="font-medium">{r.reference}</TableCell>
                                         <TableCell className="mono text-right">{r.customers}</TableCell>
                                         <TableCell className="mono text-right">{r.bills}</TableCell>
@@ -718,7 +718,7 @@ export default function Reports() {
                                         </TableCell>
                                       </TableRow>
                                       {expandedRef === `approved-${r.reference}` && (
-                                        <TableRow key={`${r.reference}-expand`} className="border-border">
+                                        <TableRow className="border-border">
                                           <TableCell colSpan={5} className="p-0">
                                             <div className="bg-secondary/10 p-3 space-y-1 max-h-64 overflow-y-auto">
                                               <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Approved bills for {r.reference}</p>
@@ -740,7 +740,7 @@ export default function Reports() {
                                           </TableCell>
                                         </TableRow>
                                       )}
-                                    </>
+                                    </Fragment>
                                   ))}
                                 </TableBody>
                               </Table>
@@ -781,8 +781,8 @@ export default function Reports() {
                                 </TableHeader>
                                 <TableBody>
                                   {refReport.np.map((r) => (
-                                    <>
-                                      <TableRow key={r.reference} className="border-border cursor-pointer hover:bg-secondary/20" onClick={() => setExpandedRef(expandedRef === `np-${r.reference}` ? null : `np-${r.reference}`)}>
+                                    <Fragment key={`np-${r.reference}`}>
+                                      <TableRow className="border-border cursor-pointer hover:bg-secondary/20" onClick={() => setExpandedRef(expandedRef === `np-${r.reference}` ? null : `np-${r.reference}`)}>
                                         <TableCell className="font-medium">{r.reference}</TableCell>
                                         <TableCell className="mono text-right font-medium text-[hsl(14,78%,62%)]">{r.customers}</TableCell>
                                         <TableCell className="text-right">
@@ -790,7 +790,7 @@ export default function Reports() {
                                         </TableCell>
                                       </TableRow>
                                       {expandedRef === `np-${r.reference}` && (
-                                        <TableRow key={`${r.reference}-expand`} className="border-border">
+                                        <TableRow className="border-border">
                                           <TableCell colSpan={3} className="p-0">
                                             <div className="bg-secondary/10 p-3 space-y-2 max-h-64 overflow-y-auto">
                                               <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Non-purchasers from {r.reference}</p>
@@ -815,7 +815,7 @@ export default function Reports() {
                                           </TableCell>
                                         </TableRow>
                                       )}
-                                    </>
+                                    </Fragment>
                                   ))}
                                 </TableBody>
                               </Table>

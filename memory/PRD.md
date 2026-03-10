@@ -17,7 +17,9 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 
 ### Admin Features
 - [x] Dashboard with KPIs, OTP panel, active sessions
+- [x] Dashboard auto-refresh every 30s for real-time sales updates (Mar 2026)
 - [x] Bills with S.No column, Reference column, `0001-DDMMYYYY` format
+- [x] Bill cards show customer reference in all tabs (Pending, Approved, Drafts, All) (Mar 2026)
 - [x] Rate Management with auto-heal for empty purities
 - [x] Branch/User/Item Name Management
 - [x] Salespeople Management with branch assignment & branch filter (Feb 2026)
@@ -27,7 +29,7 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - [x] Customer List with Total Spent (calculated from approved bills only) (Feb 2026)
 - [x] Customer History page with "Edit Details" button (Feb 2026)
 - [x] Customer Profile with all fields: Name, Phone, Email, Location, Reference, DOB, Anniversary, Address, Notes
-- [x] Phone-first customer entry: Salesman enters phone → auto-lookup → auto-fill for returning customers (Mar 2026)
+- [x] Phone-first customer entry: Salesman enters phone -> auto-lookup -> auto-fill for returning customers (Mar 2026)
 - [x] Returning customer reference locked to "Repeat Customer" (Mar 2026)
 - [x] Multi-phone support: customers can have multiple phone numbers, all mapped to same profile (Mar 2026)
 - [x] Add-phone feature for returning customers during bill creation (Mar 2026)
@@ -35,11 +37,14 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 
 ### Reports & Analytics
 - [x] 8 tabs: Overview, KT Analysis, Branches, Executives, References, Customers, Top Items, Feedbacks
+- [x] Tab state persisted via URL search params (?tab=xxx) - back button preserves active tab (Mar 2026)
 - [x] Customer analytics uses actual approved bill spending (not cached values) (Feb 2026)
 - [x] Dashboard date filters now correctly update all fields including Total Customers (Mar 2026)
 - [x] Reference analysis shows unique customers vs bills count (Mar 2026)
 - [x] Frequency cohorts & spending tiers based on approved/sent/edited bills only
 - [x] Feedbacks tab with date range filter + asc/desc sort
+- [x] Feedbacks: "Only with comments" checkbox filter (Mar 2026)
+- [x] Feedbacks: Comments styled in Georgia serif font with distinct background (Mar 2026)
 - [x] Inactive Customers with user-specified days threshold
 - [x] Inactive Customers total_spent calculated from approved bills (not cached) (Feb 2026)
 - [x] Inactive Customers shows "X out of Y customers" ratio (Mar 2026)
@@ -53,6 +58,11 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - [x] Expandable reference rows to drill into individual bills with navigation to bill detail (Mar 2026)
 - [x] New endpoint: /api/analytics/reference-report with date filtering (Mar 2026)
 
+### Back Button / Navigation
+- [x] Smart back navigation: Back button returns to previous page instead of always going to dashboard (Mar 2026)
+- [x] Tab state preserved via URL params: AdminDashboard, ManagerDashboard, Reports all use ?tab=xxx (Mar 2026)
+- [x] Navigation loop fix: Edit Item/MRP Calculator use replace:true to prevent Bill<->Edit loop (Mar 2026)
+
 ### Calculator Pages
 - [x] ErrorBoundary, loading states, Gold/Diamond/MRP flows
 
@@ -62,10 +72,8 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 
 ### Bill Page Features
 - [x] Photo lightbox: Simple overlay for viewing item photos without Dialog crashes (Mar 2026)
-- [x] Admin-only making % display: Admin sees % and ₹/g only for actual percentage-type charges; per_gram shows only ₹/g (Mar 2026)
+- [x] Admin-only making % display: Admin sees % and /g only for actual percentage-type charges; per_gram shows only /g (Mar 2026)
 - [x] Admin bill summary sidebar shows per-item making breakdown (Mar 2026)
-- [x] Smart back navigation: Back button returns to previous page instead of always going to dashboard (Mar 2026)
-- [x] Navigation loop fix: Edit Item/MRP Calculator use replace:true to prevent Bill↔Edit loop (Mar 2026)
 - [x] Making charge type preservation: Percentage charges saved correctly as percentage type going forward (Mar 2026)
 
 ## Credentials
@@ -77,14 +85,19 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 
 ## Prioritized Backlog
 - P1: Refactor server.py into route modules
-- P2: Decompose large frontend components (ReportsPage.js)
+- P2: Decompose large frontend components (ReportsPage.js, SalesExecDashboard.js)
 
 ## Changelog
+- Mar 2026: Bill cards on AdminDashboard now show customer reference (Ref: xxx) in all tabs
+- Mar 2026: AdminDashboard auto-refreshes every 30 seconds
+- Mar 2026: Feedbacks: "Only with comments" checkbox filter + Georgia serif font for comments
+- Mar 2026: Tab state persisted via URL params across Admin, Manager, and Reports dashboards (fixes back button issues)
+- Mar 2026: Fixed React key warnings in References tab (Fragment keying)
 - Mar 2026: Fixed photo lightbox (replaced Dialog with simple overlay)
 - Mar 2026: Admin-only making % display in bill details and summary (percentage type only, not calculated for per_gram)
 - Mar 2026: Smart back navigation on bill page
 - Mar 2026: Print/PDF shows only making per gram
-- Mar 2026: Fixed navigation loop (Bill↔Edit Item) using replace:true
+- Mar 2026: Fixed navigation loop (Bill<->Edit Item) using replace:true
 - Mar 2026: Making charge type correctly preserved as percentage during save/edit
 - Mar 2026: Fixed customer count discrepancy - reference_analysis now filters by sent/approved/edited status
 - Mar 2026: New References tab with Total/Approved/NP sub-tabs and expandable bill drill-down
