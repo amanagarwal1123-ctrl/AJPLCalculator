@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiClient } from '@/App';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,12 +24,13 @@ const PIE_COLORS = [GOLD_COLOR, TEAL_COLOR, EMERALD_COLOR, CORAL_COLOR, AMETHYST
 
 export default function Reports() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [analytics, setAnalytics] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [branches, setBranches] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   
   // Feedback state
   const [feedbacks, setFeedbacks] = useState([]);
@@ -37,6 +38,7 @@ export default function Reports() {
   const [feedbackOrder, setFeedbackOrder] = useState('desc'); // 'asc' or 'desc'
   const [feedbackDateFrom, setFeedbackDateFrom] = useState('');
   const [feedbackDateTo, setFeedbackDateTo] = useState('');
+  const [showOnlyWithComments, setShowOnlyWithComments] = useState(false);
   
   // Customer analytics state
   const [customerFrequency, setCustomerFrequency] = useState(null);
@@ -318,7 +320,7 @@ export default function Reports() {
           </Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={(tab) => { setActiveTab(tab); setSearchParams({ tab }, { replace: true }); }}>
           <TabsList className="bg-secondary flex flex-wrap h-auto gap-1 p-1">
             <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
             <TabsTrigger value="kt" data-testid="tab-kt">KT Analysis</TabsTrigger>
@@ -1287,6 +1289,16 @@ export default function Reports() {
                       <Button variant={feedbackOrder === 'desc' ? 'default' : 'secondary'} size="sm" className="h-7 text-xs" onClick={() => setFeedbackOrder('desc')} data-testid="sort-feedback-desc">High to Low</Button>
                       <Button variant={feedbackOrder === 'asc' ? 'default' : 'secondary'} size="sm" className="h-7 text-xs" onClick={() => setFeedbackOrder('asc')} data-testid="sort-feedback-asc">Low to High</Button>
                     </div>
+                    <label className="flex items-center gap-2 cursor-pointer select-none" data-testid="show-only-comments-label">
+                      <input
+                        type="checkbox"
+                        checked={showOnlyWithComments}
+                        onChange={e => setShowOnlyWithComments(e.target.checked)}
+                        className="w-4 h-4 rounded border-border accent-primary"
+                        data-testid="show-only-comments-checkbox"
+                      />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">Only with comments</span>
+                    </label>
                     {(feedbackDateFrom || feedbackDateTo) && (
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => { setFeedbackDateFrom(''); setFeedbackDateTo(''); }} data-testid="clear-feedback-filters">Clear Dates</Button>
                     )}
@@ -1302,8 +1314,9 @@ export default function Reports() {
                       let filtered = [...feedbacks];
                       if (feedbackDateFrom) filtered = filtered.filter(f => (f.bill_date || f.submitted_at?.slice(0, 10) || '') >= feedbackDateFrom);
                       if (feedbackDateTo) filtered = filtered.filter(f => (f.bill_date || f.submitted_at?.slice(0, 10) || '') <= feedbackDateTo);
+                      if (showOnlyWithComments) filtered = filtered.filter(f => f.additional_comments && f.additional_comments.trim());
                       filtered.sort((a, b) => feedbackOrder === 'asc' ? (a.grand_total || 0) - (b.grand_total || 0) : (b.grand_total || 0) - (a.grand_total || 0));
-                      if (filtered.length === 0) return <p className="text-muted-foreground text-center py-8">No feedbacks found for the selected date range</p>;
+                      if (filtered.length === 0) return <p className="text-muted-foreground text-center py-8">{showOnlyWithComments ? 'No feedbacks with comments found' : 'No feedbacks found for the selected date range'}</p>;
                       return filtered.map((f, i) => (
                       <div key={f.id || i} className="p-3 sm:p-4 rounded-lg bg-secondary/20 border border-border" data-testid={`feedback-item-${i}`}>
                         <div className="flex items-start justify-between gap-3">
@@ -1334,7 +1347,9 @@ export default function Reports() {
                           </div>
                         )}
                         {f.additional_comments && (
-                          <p className="mt-2 text-xs text-muted-foreground italic border-l-2 border-primary/30 pl-2">"{f.additional_comments}"</p>
+                          <div className="mt-2 border-l-2 border-primary/30 pl-3 py-1.5 bg-primary/5 rounded-r" data-testid={`feedback-comment-${i}`}>
+                            <p className="text-sm text-foreground/90" style={{ fontFamily: "'Georgia', 'Times New Roman', serif", lineHeight: '1.5' }}>"{f.additional_comments}"</p>
+                          </div>
                         )}
                       </div>
                     ));

@@ -8,18 +8,24 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Eye, CheckCircle, FileText, DollarSign, Clock, AlertTriangle, ClipboardList } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export default function ManagerDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [bills, setBills] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'pending');
   const [summaryData, setSummaryData] = useState(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab }, { replace: true });
+  };
 
   useEffect(() => { loadData(); }, []);
 
@@ -265,7 +271,7 @@ export default function ManagerDashboard() {
           <Card className="bg-card border-border overflow-hidden"><CardContent className="p-3 sm:p-5"><p className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">Total</p><p className="mono text-lg sm:text-2xl font-bold text-[hsl(196,70%,52%)] mt-1">{bills.length}</p></CardContent></Card>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="bg-secondary overflow-x-auto w-full justify-start sm:justify-center">
             <TabsTrigger value="pending" data-testid="tab-pending">Pending {pendingBills.length > 0 && <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-[hsl(38,85%,55%)]/20 text-[hsl(38,85%,55%)]">{pendingBills.length}</span>}</TabsTrigger>
             <TabsTrigger value="approved" data-testid="tab-approved">Approved</TabsTrigger>

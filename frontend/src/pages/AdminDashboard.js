@@ -1,30 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth, apiClient } from '@/App';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { DollarSign, FileText, TrendingUp, Receipt, Eye, Trash2, Settings, Users, GitBranch, Tag, BarChart3, KeyRound, RefreshCw, Copy, CheckCircle, Clock, Shield, LogOut, Check, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [analytics, setAnalytics] = useState(null);
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pendingOtps, setPendingOtps] = useState([]);
   const [copiedOtp, setCopiedOtp] = useState(null);
-  const [billTab, setBillTab] = useState('pending');
+  const [billTab, setBillTab] = useState(searchParams.get('tab') || 'pending');
   const [sessions, setSessions] = useState([]);
   const [showSessions, setShowSessions] = useState(false);
+
+  const handleSetBillTab = useCallback((tab) => {
+    setBillTab(tab);
+    setSearchParams({ tab }, { replace: true });
+  }, [setSearchParams]);
 
   useEffect(() => {
     loadData();
     loadOtps();
-    const interval = setInterval(loadOtps, 10000);
-    return () => clearInterval(interval);
+    const otpInterval = setInterval(loadOtps, 10000);
+    const dataInterval = setInterval(loadData, 30000);
+    return () => { clearInterval(otpInterval); clearInterval(dataInterval); };
   }, []);
 
   const loadData = async () => {
@@ -237,7 +244,7 @@ export default function AdminDashboard() {
                 { key: 'draft', label: 'Drafts', count: draftBills.length },
                 { key: 'all', label: 'All', count: bills.length },
               ].map(t => (
-                <button key={t.key} onClick={() => setBillTab(t.key)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${billTab === t.key ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-secondary/50 text-muted-foreground border border-transparent hover:bg-secondary'}`} data-testid={`admin-tab-${t.key}`}>{t.label} ({t.count})</button>
+                <button key={t.key} onClick={() => handleSetBillTab(t.key)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${billTab === t.key ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-secondary/50 text-muted-foreground border border-transparent hover:bg-secondary'}`} data-testid={`admin-tab-${t.key}`}>{t.label} ({t.count})</button>
               ))}
             </div>
 
@@ -274,6 +281,7 @@ export default function AdminDashboard() {
                                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-muted-foreground">
                                   <span>Exec: <span className="text-foreground">{bill.executive_name}</span></span>
                                   {bill.salesperson_name && <span>SP: <span className="text-foreground">{bill.salesperson_name}</span></span>}
+                                  {bill.customer_reference && <span>Ref: <span className="text-foreground">{bill.customer_reference}</span></span>}
                                   <span>Items: <span className="text-foreground">{bill.items?.length || 0}</span></span>
                                   <span>Wt: <span className="mono text-foreground">{getBillWeight(bill)}g</span></span>
                                   <span>Phone: <span className="mono text-foreground">{bill.customer_phone}</span></span>
