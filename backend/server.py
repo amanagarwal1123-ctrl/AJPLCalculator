@@ -1290,8 +1290,8 @@ async def get_dashboard_analytics(
     if executive_id:
         base_filter["executive_id"] = executive_id
     
-    # Today's bills (always unfiltered by date range for KPIs)
-    today_query = {**base_filter, "created_at": {"$gte": today}}
+    # Today's bills (always unfiltered by date range for KPIs) - only approved bills count as sales
+    today_query = {**base_filter, "created_at": {"$gte": today}, "status": "approved"}
     today_bills = await db.bills.find(today_query).to_list(5000)
     today_sales = sum(b.get('grand_total', 0) for b in today_bills)
     today_count = len(today_bills)
