@@ -129,6 +129,21 @@ async def require_role(user: dict, roles: list):
     if user.get('role') not in roles:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
+async def check_bill_access(bill: dict, user: dict):
+    """Verify user has access to this bill based on role/ownership."""
+    role = user.get('role', '')
+    if role == 'admin':
+        return  # Admin sees all
+    if role == 'manager':
+        if user.get('branch_id') and bill.get('branch_id') and user['branch_id'] != bill['branch_id']:
+            raise HTTPException(status_code=403, detail="Bill belongs to a different branch")
+        return
+    if role == 'executive':
+        if bill.get('executive_id') != user.get('id'):
+            raise HTTPException(status_code=403, detail="You can only access your own bills")
+        return
+    raise HTTPException(status_code=403, detail="Insufficient permissions")
+
 # ============ MODELS ============
 class LoginRequest(BaseModel):
     username: str
@@ -484,6 +499,8 @@ async def get_pending_otps(user=Depends(get_current_user)):
 @api_router.post("/users")
 async def create_user(req: UserCreate, user=Depends(get_current_user)):
     await require_role(user, ["admin"])
+    if req.role == "manager" and not req.branch_id:
+        raise HTTPException(status_code=400, detail="Branch is required for manager role")
     existing = await db.users.find_one({"username": req.username})
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
@@ -512,6 +529,11 @@ async def update_user(user_id: str, updates: dict, user=Depends(get_current_user
     await require_role(user, ["admin"])
     allowed = {"full_name", "role", "branch_id", "is_active", "username"}
     update_data = {k: v for k, v in updates.items() if k in allowed}
+    if update_data.get("role") == "manager" and not update_data.get("branch_id"):
+        # Check if existing user already has branch_id when switching to manager
+        existing = await db.users.find_one({"id": user_id})
+        if existing and not existing.get("branch_id") and not updates.get("branch_id"):
+            raise HTTPException(status_code=400, detail="Branch is required for manager role")
     if "password" in updates and updates["password"]:
         update_data["password"] = pwd_context.hash(updates["password"])
     if not update_data:
@@ -801,10 +823,11 @@ async def add_phone_to_customer(customer_id: str, body: dict, user=Depends(get_c
 @api_router.get("/customers/{customer_id}/bills")
 async def get_customer_bills(customer_id: str, user=Depends(get_current_user)):
     """Get all bills for a specific customer (by customer id or phone)."""
-    # Try finding by id first, then by phone
     customer = await db.customers.find_one({"id": customer_id})
     if not customer:
         customer = await db.customers.find_one({"phone": customer_id})
+    if not customer:
+        customer = await db.customers.find_one({"phones": customer_id})
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     
@@ -818,8 +841,10 @@ async def get_customer_bills(customer_id: str, user=Depends(get_current_user)):
         except Exception:
             c_data['days_since_last_visit'] = None
     
-    # Get all bills for this customer by phone
-    bills = await db.bills.find({"customer_phone": customer["phone"]}).sort("created_at", -1).to_list(10000)
+    # Get all bills for this customer by primary phone AND secondary phones
+    all_phones = [customer["phone"]] + (customer.get("phones") or [])
+    all_phones = list(set(p for p in all_phones if p))  # dedupe + remove empty
+    bills = await db.bills.find({"customer_phone": {"$in": all_phones}}).sort("created_at", -1).to_list(10000)
     # Only count approved/sent/edited bills for total_spent
     approved_total = sum(b.get('grand_total', 0) for b in bills if b.get('status') in ('sent', 'approved', 'edited'))
     
@@ -832,10 +857,12 @@ async def get_customer_bills(customer_id: str, user=Depends(get_current_user)):
 
 @api_router.get("/customers/{customer_id}")
 async def get_customer_detail(customer_id: str, user=Depends(get_current_user)):
-    """Get customer details by ID or phone."""
+    """Get customer details by ID or phone (including secondary phones)."""
     customer = await db.customers.find_one({"id": customer_id})
     if not customer:
         customer = await db.customers.find_one({"phone": customer_id})
+    if not customer:
+        customer = await db.customers.find_one({"phones": customer_id})
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     return serialize_doc(customer)
@@ -1060,6 +1087,7 @@ async def send_bill_to_manager(bill_id: str, user=Depends(get_current_user)):
     bill = await db.bills.find_one({"id": bill_id})
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
+    await check_bill_access(bill, user)
     if bill["status"] != "draft":
         raise HTTPException(status_code=400, detail="Bill already sent")
     
@@ -1071,10 +1099,10 @@ async def send_bill_to_manager(bill_id: str, user=Depends(get_current_user)):
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }}
     )
-    # Update customer total spent
+    # Update customer total spent - search by primary phone or phones array
     if bill.get('customer_phone'):
         await db.customers.update_one(
-            {"phone": bill['customer_phone']},
+            {"$or": [{"phone": bill['customer_phone']}, {"phones": bill['customer_phone']}]},
             {"$inc": {"total_spent": bill.get('grand_total', 0)}}
         )
     return {"status": "sent"}
@@ -1123,6 +1151,7 @@ async def get_bill_summary(bill_id: str, user=Depends(get_current_user)):
     bill = await db.bills.find_one({"id": bill_id})
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
+    await check_bill_access(bill, user)
     
     bill_data = serialize_doc(bill)
     
@@ -1186,6 +1215,7 @@ async def get_bill(bill_id: str, user=Depends(get_current_user)):
     bill = await db.bills.find_one({"id": bill_id})
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
+    await check_bill_access(bill, user)
     return serialize_doc(bill)
 
 @api_router.delete("/bills/{bill_id}")
@@ -1397,6 +1427,8 @@ async def get_reference_breakdown(
         return {"references": [], "combined": {"gold_total": 0, "diamond_total": 0, "total": 0, "bills": 0, "customers": 0}}
     
     query = {"customer_reference": {"$in": ref_list}, "status": {"$in": ["sent", "approved", "edited"]}}
+    if user.get('role') == 'manager' and user.get('branch_id'):
+        query["branch_id"] = user['branch_id']
     if date_from or date_to:
         query.setdefault('created_at', {})
         if date_from:
@@ -1606,19 +1638,30 @@ async def get_reference_report(
 @api_router.get("/analytics/customers")
 async def get_customer_analytics(user=Depends(get_current_user)):
     await require_role(user, ["admin", "manager"])
-    customers = await db.customers.find({}).to_list(5000)
     
-    # Calculate actual spending from approved/sent bills per customer
-    all_bills = await db.bills.find(
-        {"status": {"$in": ["sent", "approved", "edited"]}}
-    ).to_list(10000)
+    # Branch-scoped bill query for managers
+    bill_query = {"status": {"$in": ["sent", "approved", "edited"]}}
+    if user.get('role') == 'manager' and user.get('branch_id'):
+        bill_query["branch_id"] = user['branch_id']
+    
+    all_bills = await db.bills.find(bill_query).to_list(10000)
+    
+    # Get unique customer phones from scoped bills
+    scoped_phones = set()
     customer_bill_spending = {}
     for bill in all_bills:
         phone = bill.get('customer_phone', '')
         if phone:
+            scoped_phones.add(phone)
             if phone not in customer_bill_spending:
                 customer_bill_spending[phone] = 0
             customer_bill_spending[phone] += bill.get('grand_total', 0)
+    
+    # For managers, only show customers who have bills in their branch
+    if user.get('role') == 'manager' and user.get('branch_id'):
+        customers = await db.customers.find({"$or": [{"phone": {"$in": list(scoped_phones)}}, {"phones": {"$in": list(scoped_phones)}}]}).to_list(5000)
+    else:
+        customers = await db.customers.find({}).to_list(5000)
     
     result = []
     for c in customers:
@@ -1642,19 +1685,28 @@ async def get_customer_analytics(user=Depends(get_current_user)):
 async def get_customer_frequency(user=Depends(get_current_user)):
     """Get customer visit frequency cohorts."""
     await require_role(user, ["admin", "manager"])
-    customers = await db.customers.find({}).to_list(5000)
     
-    # Calculate actual spending from approved/sent bills per customer
-    all_bills = await db.bills.find(
-        {"status": {"$in": ["sent", "approved", "edited"]}}
-    ).to_list(10000)
+    # Branch-scoped bill query for managers
+    bill_query = {"status": {"$in": ["sent", "approved", "edited"]}}
+    if user.get('role') == 'manager' and user.get('branch_id'):
+        bill_query["branch_id"] = user['branch_id']
+    
+    all_bills = await db.bills.find(bill_query).to_list(10000)
+    
+    scoped_phones = set()
     customer_bill_spending = {}
     for bill in all_bills:
         phone = bill.get('customer_phone', '')
         if phone:
+            scoped_phones.add(phone)
             if phone not in customer_bill_spending:
                 customer_bill_spending[phone] = 0
             customer_bill_spending[phone] += bill.get('grand_total', 0)
+    
+    if user.get('role') == 'manager' and user.get('branch_id'):
+        customers = await db.customers.find({"$or": [{"phone": {"$in": list(scoped_phones)}}, {"phones": {"$in": list(scoped_phones)}}]}).to_list(5000)
+    else:
+        customers = await db.customers.find({}).to_list(5000)
     
     # Define cohort buckets
     cohorts = {
@@ -1742,19 +1794,28 @@ async def get_inactive_customers(
 ):
     """Get customers who haven't visited in X days."""
     await require_role(user, ["admin", "manager"])
-    customers = await db.customers.find({}).to_list(5000)
     
-    # Calculate actual spending from approved/sent/edited bills per customer
-    all_bills = await db.bills.find(
-        {"status": {"$in": ["sent", "approved", "edited"]}}
-    ).to_list(10000)
+    # Branch-scoped bill query for managers
+    bill_query = {"status": {"$in": ["sent", "approved", "edited"]}}
+    if user.get('role') == 'manager' and user.get('branch_id'):
+        bill_query["branch_id"] = user['branch_id']
+    
+    all_bills = await db.bills.find(bill_query).to_list(10000)
+    
+    scoped_phones = set()
     customer_bill_spending = {}
     for bill in all_bills:
         phone = bill.get('customer_phone', '')
         if phone:
+            scoped_phones.add(phone)
             if phone not in customer_bill_spending:
                 customer_bill_spending[phone] = 0
             customer_bill_spending[phone] += bill.get('grand_total', 0)
+    
+    if user.get('role') == 'manager' and user.get('branch_id'):
+        customers = await db.customers.find({"$or": [{"phone": {"$in": list(scoped_phones)}}, {"phones": {"$in": list(scoped_phones)}}]}).to_list(5000)
+    else:
+        customers = await db.customers.find({}).to_list(5000)
     
     inactive = []
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
@@ -1791,6 +1852,7 @@ async def generate_bill_pdf(bill_id: str, user=Depends(get_current_user)):
     bill = await db.bills.find_one({"id": bill_id})
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
+    await check_bill_access(bill, user)
     
     bill_data = serialize_doc(bill)
     
@@ -2122,15 +2184,24 @@ async def get_salesperson_performance(sp_name: str, user=Depends(get_current_use
     await require_role(user, ["admin", "manager"])
     
     sp = await db.salespeople.find_one({"name": sp_name})
+    # Manager branch check: only allow viewing salespeople in own branch
+    if user.get('role') == 'manager' and user.get('branch_id'):
+        if sp and sp.get('branch_id') and sp['branch_id'] != user['branch_id']:
+            raise HTTPException(status_code=403, detail="Salesperson belongs to a different branch")
+    
     branch_name = ""
     if sp and sp.get("branch_id"):
         branch = await db.branches.find_one({"id": sp["branch_id"]})
         branch_name = branch.get("name", "") if branch else ""
     
-    bills = await db.bills.find({
+    bill_query = {
         "salesperson_name": sp_name,
         "status": {"$in": ["sent", "approved", "edited"]}
-    }).to_list(10000)
+    }
+    if user.get('role') == 'manager' and user.get('branch_id'):
+        bill_query["branch_id"] = user['branch_id']
+    
+    bills = await db.bills.find(bill_query).to_list(10000)
     
     total_sales = sum(b.get("grand_total", 0) for b in bills)
     total_bills = len(bills)
@@ -2256,6 +2327,10 @@ async def list_all_feedbacks(user=Depends(get_current_user)):
         f_data = serialize_doc(f)
         bill = await db.bills.find_one({"id": f.get("bill_id")})
         if bill:
+            # Manager branch scoping: skip feedbacks for bills outside their branch
+            if user.get('role') == 'manager' and user.get('branch_id'):
+                if bill.get('branch_id') and bill['branch_id'] != user['branch_id']:
+                    continue
             f_data["bill_number"] = bill.get("bill_number", "")
             f_data["bill_date"] = bill.get("created_date", bill.get("created_at", "")[:10])
             f_data["grand_total"] = bill.get("grand_total", 0)
@@ -2366,6 +2441,12 @@ async def get_notifications(user=Depends(get_current_user)):
 
 @api_router.put("/notifications/{notif_id}/done")
 async def mark_notification_done(notif_id: str, user=Depends(get_current_user)):
+    notif = await db.notifications.find_one({"id": notif_id})
+    if not notif:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    # Executives can only mark their own notifications
+    if user.get('role') == 'executive' and notif.get('target_user_id') != user.get('id'):
+        raise HTTPException(status_code=403, detail="Cannot modify this notification")
     await db.notifications.update_one(
         {"id": notif_id},
         {"$set": {"status": "done", "completed_by": user.get("full_name", ""), "completed_at": datetime.now(timezone.utc).isoformat()}}
@@ -2374,6 +2455,12 @@ async def mark_notification_done(notif_id: str, user=Depends(get_current_user)):
 
 @api_router.put("/notifications/{notif_id}/pending")
 async def mark_notification_pending(notif_id: str, user=Depends(get_current_user)):
+    notif = await db.notifications.find_one({"id": notif_id})
+    if not notif:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    # Executives can only mark their own notifications
+    if user.get('role') == 'executive' and notif.get('target_user_id') != user.get('id'):
+        raise HTTPException(status_code=403, detail="Cannot modify this notification")
     await db.notifications.update_one({"id": notif_id}, {"$set": {"status": "pending"}})
     return {"status": "pending"}
 
@@ -2402,6 +2489,7 @@ async def remove_item_photo(bill_id: str, item_index: int, photo_index: int, use
     bill = await db.bills.find_one({"id": bill_id})
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
+    await check_bill_access(bill, user)
     items = bill.get('items', [])
     if item_index >= len(items):
         raise HTTPException(status_code=404, detail="Item not found")

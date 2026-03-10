@@ -20,6 +20,7 @@ export default function CustomerProfilePage() {
   const [form, setForm] = useState({});
   const [tier, setTier] = useState('');
   const [saving, setSaving] = useState(false);
+  const [totalSpent, setTotalSpent] = useState(0);
 
   useEffect(() => { loadData(); }, [customerId]);
 
@@ -32,6 +33,7 @@ export default function CustomerProfilePage() {
       ]);
       setCustomer(custRes.data);
       setBills(billsRes.data.bills || []);
+      setTotalSpent(billsRes.data.total_spent || 0);
       setForm(custRes.data);
       // Determine tier
       const spent = billsRes.data.total_spent || 0;
@@ -97,7 +99,7 @@ export default function CustomerProfilePage() {
           <div className="grid grid-cols-3 gap-3">
             <Card className="bg-card border-border"><CardContent className="p-3 text-center">
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Total Spent</p>
-              <p className="mono text-lg font-bold text-primary">{formatCurrency(bills.reduce((s, b) => s + (b.grand_total || 0), 0))}</p>
+              <p className="mono text-lg font-bold text-primary">{formatCurrency(totalSpent)}</p>
             </CardContent></Card>
             <Card className="bg-card border-border"><CardContent className="p-3 text-center">
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Total Bills</p>

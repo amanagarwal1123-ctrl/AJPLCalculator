@@ -163,7 +163,7 @@ export default function Reports() {
     finally { setLoadingRefBreakdown(false); }
   };
 
-  useEffect(() => { fetchRefBreakdown(); }, [selectedRefs]);
+  useEffect(() => { fetchRefBreakdown(); }, [selectedRefs, dateFrom, dateTo]);
 
   const fetchRefReport = async () => {
     try {
