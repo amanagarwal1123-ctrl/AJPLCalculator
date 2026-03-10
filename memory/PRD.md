@@ -51,9 +51,12 @@ AJPL Calculator is a gold jewellery billing and sales management application for
 - [x] Tab state persisted via URL search params - back button preserves active tab (Mar 2026)
 - [x] Sidebar active-state prefix matching for nested routes (Mar 2026)
 - [x] Frontend API base URL fallback to window.location.origin (Mar 2026)
+- [x] Home button on every page except dashboards - navigates to role-appropriate dashboard (Mar 2026)
 
 ### Calculator, Print, Bill Page
 - [x] ErrorBoundary, Gold/Diamond/MRP flows
+- [x] Diamond making charges calculated on GROSS weight (Mar 2026)
+- [x] Gold making charges calculated on NET weight (unchanged)
 - [x] B&W printer friendly, Print/PDF making per gram only
 - [x] Photo lightbox, admin-only making % display
 - [x] Smart back navigation, navigation loop fix
