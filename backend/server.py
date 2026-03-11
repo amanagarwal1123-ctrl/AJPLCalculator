@@ -138,6 +138,52 @@ async def check_bill_access(bill: dict, user: dict):
         if user.get('branch_id') and bill.get('branch_id') and user['branch_id'] != bill['branch_id']:
             raise HTTPException(status_code=403, detail="Bill belongs to a different branch")
         return
+
+async def enrich_bills_with_customer_data(bills_serialized: list) -> list:
+    """Enrich bill list with current customer names from the customers collection."""
+    if not bills_serialized:
+        return bills_serialized
+    # Collect unique customer_ids and phones
+    cust_ids = set()
+    phones = set()
+    for b in bills_serialized:
+        if b.get("customer_id"):
+            cust_ids.add(b["customer_id"])
+        if b.get("customer_phone"):
+            phones.add(b["customer_phone"])
+    # Batch lookup customers by id and phone
+    customer_map = {}  # phone -> customer data
+    if cust_ids:
+        async for c in db.customers.find({"id": {"$in": list(cust_ids)}}):
+            phone = c.get("phone", "")
+            if phone:
+                customer_map[phone] = c
+            cid = c.get("id", "")
+            if cid:
+                customer_map[f"_id_{cid}"] = c
+    if phones:
+        remaining = [p for p in phones if p not in customer_map]
+        if remaining:
+            async for c in db.customers.find({"$or": [{"phone": {"$in": remaining}}, {"phones": {"$in": remaining}}]}):
+                phone = c.get("phone", "")
+                if phone:
+                    customer_map[phone] = c
+                for p in (c.get("phones") or []):
+                    if p:
+                        customer_map[p] = c
+    # Enrich bills
+    for b in bills_serialized:
+        cust = customer_map.get(f"_id_{b.get('customer_id')}") or customer_map.get(b.get("customer_phone", ""))
+        if cust:
+            if cust.get("name"):
+                b["customer_name"] = cust["name"]
+            if cust.get("phone"):
+                b["customer_phone"] = cust["phone"]
+            if cust.get("location"):
+                b["customer_location"] = cust["location"]
+            if cust.get("reference"):
+                b["customer_reference"] = cust["reference"]
+    return bills_serialized
     if role == 'executive':
         if bill.get('executive_id') != user.get('id'):
             raise HTTPException(status_code=403, detail="You can only access your own bills")
@@ -859,12 +905,31 @@ async def get_customer_bills(customer_id: str, user=Depends(get_current_user)):
     if all_phones:
         bill_query["$or"].append({"customer_phone": {"$in": all_phones}})
     bills = await db.bills.find(bill_query).sort("created_at", -1).to_list(10000)
+
+    # Enrich bills with current customer data (guaranteed fresh names)
+    current_name = customer.get("name", "")
+    current_phone = customer.get("phone", "")
+    current_location = customer.get("location", "")
+    current_reference = customer.get("reference", "")
+    serialized_bills = []
+    for b in bills:
+        sb = serialize_doc(b)
+        if current_name:
+            sb["customer_name"] = current_name
+        if current_phone:
+            sb["customer_phone"] = current_phone
+        if current_location:
+            sb["customer_location"] = current_location
+        if current_reference:
+            sb["customer_reference"] = current_reference
+        serialized_bills.append(sb)
+
     # Only count approved/sent/edited bills for total_spent
     approved_total = sum(b.get('grand_total', 0) for b in bills if b.get('status') in ('sent', 'approved', 'edited'))
     
     return {
         "customer": c_data,
-        "bills": [serialize_doc(b) for b in bills],
+        "bills": serialized_bills,
         "total_bills": len(bills),
         "total_spent": approved_total,
     }
@@ -1166,7 +1231,8 @@ async def list_bills(
         query['created_at']['$lte'] = date_to
     
     bills = await db.bills.find(query).sort("created_at", -1).to_list(5000)
-    return [serialize_doc(b) for b in bills]
+    serialized = [serialize_doc(b) for b in bills]
+    return await enrich_bills_with_customer_data(serialized)
 
 @api_router.get("/bills/{bill_id}/summary")
 async def get_bill_summary(bill_id: str, user=Depends(get_current_user)):
@@ -1212,6 +1278,10 @@ async def get_bill_summary(bill_id: str, user=Depends(get_current_user)):
         }
         item_summaries.append(summary)
     
+    # Enrich with current customer data
+    enriched = await enrich_bills_with_customer_data([bill_data])
+    bill_data = enriched[0]
+
     return {
         "bill_id": bill_data.get('id'),
         "bill_number": bill_data.get('bill_number'),
@@ -1239,7 +1309,9 @@ async def get_bill(bill_id: str, user=Depends(get_current_user)):
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
     await check_bill_access(bill, user)
-    return serialize_doc(bill)
+    serialized = serialize_doc(bill)
+    enriched = await enrich_bills_with_customer_data([serialized])
+    return enriched[0]
 
 @api_router.delete("/bills/{bill_id}")
 async def delete_bill(bill_id: str, user=Depends(get_current_user)):
@@ -2312,12 +2384,34 @@ async def update_customer(customer_id: str, req: CustomerUpdate, user=Depends(ge
     if req.reference is not None:
         bill_update["customer_reference"] = req.reference
     if bill_update:
-        all_phones = [p for p in [old_phone] + old_phones if p]
-        bill_query = {"$or": [{"customer_id": cust_id}]}
-        if all_phones:
-            bill_query["$or"].append({"customer_phone": {"$in": all_phones}})
-        result = await db.bills.update_many(bill_query, {"$set": bill_update})
-        logger.info(f"Customer {cust_id} profile update propagated to {result.modified_count} bill(s). Query: {bill_query}, Update: {bill_update}")
+        # Collect all possible phone identifiers for this customer
+        all_phones = set()
+        if old_phone:
+            all_phones.add(old_phone)
+        for p in old_phones:
+            if p:
+                all_phones.add(p)
+        # Also include the URL parameter if it looks like a phone (not a UUID)
+        if customer_id != cust_id and customer_id:
+            all_phones.add(customer_id)
+        all_phones = list(all_phones)
+
+        total_modified = 0
+        try:
+            # Strategy 1: Update by customer_id
+            if cust_id:
+                r1 = await db.bills.update_many({"customer_id": cust_id}, {"$set": bill_update})
+                total_modified += r1.modified_count
+            # Strategy 2: Update by customer_phone (catches bills without customer_id)
+            if all_phones:
+                r2 = await db.bills.update_many(
+                    {"customer_phone": {"$in": all_phones}},
+                    {"$set": bill_update}
+                )
+                total_modified += r2.modified_count
+            logger.info(f"Customer {cust_id} update propagated to {total_modified} bill(s). Phones: {all_phones}")
+        except Exception as e:
+            logger.error(f"Bill propagation failed for customer {cust_id}: {e}")
 
     updated = await db.customers.find_one({"id": cust_id})
     return serialize_doc(updated)
