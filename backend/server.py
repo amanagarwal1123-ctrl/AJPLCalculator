@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, Response, UploadFile, File, Form
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, Response, UploadFile, File, Form, Request
 from fastapi.responses import StreamingResponse, FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -407,7 +407,7 @@ async def request_otp(req: OTPRequest):
     return {"message": "OTP sent", "username": req.username}
 
 @api_router.post("/auth/verify-otp")
-async def verify_otp(req: OTPVerify):
+async def verify_otp(req: OTPVerify, request: Request):
     """Verify OTP and return JWT token."""
     user = await db.users.find_one({"username": req.username})
     if not user:
@@ -432,25 +432,30 @@ async def verify_otp(req: OTPVerify):
 
     # Generate JWT token
     token = create_token({"sub": user["id"], "role": user["role"]})
-    # Single-device session: deactivate old sessions for non-admin
+    # Single-device session: deactivate old sessions for non-admin only
     if user.get("role") != "admin":
         await db.sessions.update_many({"user_id": user["id"]}, {"$set": {"is_active": False}})
-        await db.sessions.insert_one({
-            "id": str(uuid.uuid4()),
-            "user_id": user["id"],
-            "username": user.get("username", ""),
-            "full_name": user.get("full_name", ""),
-            "role": user.get("role", ""),
-            "token": token,
-            "is_active": True,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        })
+    # Store session for ALL roles including admin
+    ip_address = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+    user_agent = request.headers.get("user-agent", "unknown")
+    await db.sessions.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "username": user.get("username", ""),
+        "full_name": user.get("full_name", ""),
+        "role": user.get("role", ""),
+        "token": token,
+        "is_active": True,
+        "ip_address": ip_address.split(",")[0].strip() if ip_address else "unknown",
+        "user_agent": user_agent,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
     user_data = serialize_doc(user)
     user_data.pop('password', None)
     return {"token": token, "user": user_data}
 
 @api_router.post("/auth/login")
-async def login(req: LoginRequest):
+async def login(req: LoginRequest, request: Request):
     """Legacy password login (kept for backward compatibility)."""
     user = await db.users.find_one({"username": req.username})
     if not user or not user.get("password") or not pwd_context.verify(req.password, user["password"]):
@@ -458,19 +463,24 @@ async def login(req: LoginRequest):
     if not user.get("is_active", True):
         raise HTTPException(status_code=403, detail="Account disabled")
     token = create_token({"sub": user["id"], "role": user["role"]})
-    # Single-device session for non-admin
+    # Single-device session: deactivate old sessions for non-admin only
     if user.get("role") != "admin":
         await db.sessions.update_many({"user_id": user["id"]}, {"$set": {"is_active": False}})
-        await db.sessions.insert_one({
-            "id": str(uuid.uuid4()),
-            "user_id": user["id"],
-            "username": user.get("username", ""),
-            "full_name": user.get("full_name", ""),
-            "role": user.get("role", ""),
-            "token": token,
-            "is_active": True,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        })
+    # Store session for ALL roles including admin
+    ip_address = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+    user_agent = request.headers.get("user-agent", "unknown")
+    await db.sessions.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "username": user.get("username", ""),
+        "full_name": user.get("full_name", ""),
+        "role": user.get("role", ""),
+        "token": token,
+        "is_active": True,
+        "ip_address": ip_address.split(",")[0].strip() if ip_address else "unknown",
+        "user_agent": user_agent,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
     user_data = serialize_doc(user)
     user_data.pop('password', None)
     return {"token": token, "user": user_data}
@@ -2591,10 +2601,26 @@ async def calculate_mrp_item(item: dict, user=Depends(get_current_user)):
 # ============ SESSION MANAGEMENT ============
 @api_router.get("/admin/sessions")
 async def get_active_sessions(user=Depends(get_current_user)):
-    """Admin: list all active sessions."""
+    """Admin: list all active sessions, grouped by user."""
     await require_role(user, ["admin"])
     sessions = await db.sessions.find({"is_active": True}).sort("created_at", -1).to_list(500)
-    return [serialize_doc(s) for s in sessions]
+    serialized = [serialize_doc(s) for s in sessions]
+    # Group sessions by user_id
+    grouped = {}
+    for s in serialized:
+        uid = s.get("user_id", "unknown")
+        if uid not in grouped:
+            grouped[uid] = {
+                "user_id": uid,
+                "username": s.get("username", ""),
+                "full_name": s.get("full_name", ""),
+                "role": s.get("role", ""),
+                "session_count": 0,
+                "sessions": [],
+            }
+        grouped[uid]["session_count"] += 1
+        grouped[uid]["sessions"].append(s)
+    return list(grouped.values())
 
 @api_router.delete("/admin/sessions/{session_id}")
 async def terminate_session(session_id: str, user=Depends(get_current_user)):

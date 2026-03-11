@@ -4,7 +4,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { DollarSign, FileText, TrendingUp, Receipt, Eye, Trash2, Settings, Users, GitBranch, Tag, BarChart3, KeyRound, RefreshCw, Copy, CheckCircle, Clock, Shield, LogOut, Check, X } from 'lucide-react';
+import { DollarSign, FileText, TrendingUp, Receipt, Eye, Trash2, Settings, Users, GitBranch, Tag, BarChart3, KeyRound, RefreshCw, Copy, CheckCircle, Clock, Shield, LogOut, Check, X, ChevronDown, Monitor, Smartphone, Globe } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -20,6 +20,7 @@ export default function AdminDashboard() {
   const [billTab, setBillTab] = useState(searchParams.get('tab') || 'pending');
   const [sessions, setSessions] = useState([]);
   const [showSessions, setShowSessions] = useState(false);
+  const [expandedUsers, setExpandedUsers] = useState({});
 
   const handleSetBillTab = useCallback((tab) => {
     setBillTab(tab);
@@ -60,6 +61,30 @@ export default function AdminDashboard() {
       toast.success('Session terminated');
       loadSessions();
     } catch (err) { toast.error('Failed to terminate session'); }
+  };
+
+  const toggleUserExpand = (userId) => {
+    setExpandedUsers(prev => ({ ...prev, [userId]: !prev[userId] }));
+  };
+
+  const parseDevice = (ua) => {
+    if (!ua || ua === 'unknown') return 'Unknown Device';
+    if (/iPhone/i.test(ua)) return 'iPhone';
+    if (/iPad/i.test(ua)) return 'iPad';
+    if (/Android/i.test(ua)) return 'Android';
+    if (/Macintosh|Mac OS/i.test(ua)) return 'Mac';
+    if (/Windows/i.test(ua)) return 'Windows PC';
+    if (/Linux/i.test(ua)) return 'Linux';
+    return 'Browser';
+  };
+
+  const parseBrowser = (ua) => {
+    if (!ua || ua === 'unknown') return '';
+    if (/Edg\//i.test(ua)) return 'Edge';
+    if (/Chrome/i.test(ua)) return 'Chrome';
+    if (/Safari/i.test(ua)) return 'Safari';
+    if (/Firefox/i.test(ua)) return 'Firefox';
+    return '';
   };
 
   const copyOtp = (otp) => {
@@ -146,7 +171,10 @@ export default function AdminDashboard() {
           <Card className="bg-card border-border shadow-[var(--shadow-elev-1)]" data-testid="sessions-panel">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="heading text-lg flex items-center gap-2"><Shield size={16} className="text-primary" /> Active Sessions</CardTitle>
+                <CardTitle className="heading text-lg flex items-center gap-2">
+                  <Shield size={16} className="text-primary" /> Active Sessions
+                  <span className="ml-1 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-semibold">{sessions.reduce((sum, g) => sum + g.session_count, 0)}</span>
+                </CardTitle>
                 <Button variant="ghost" size="sm" onClick={loadSessions}><RefreshCw size={14} /></Button>
               </div>
             </CardHeader>
@@ -155,15 +183,54 @@ export default function AdminDashboard() {
                 <p className="text-muted-foreground text-center py-4 text-sm">No active sessions</p>
               ) : (
                 <div className="space-y-2">
-                  {sessions.map(s => (
-                    <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/20 border border-border" data-testid={`session-${s.id}`}>
-                      <div>
-                        <p className="font-medium text-sm">{s.full_name || s.username}</p>
-                        <p className="text-xs text-muted-foreground">@{s.username} &middot; <span className="capitalize">{s.role}</span> &middot; Since {s.created_at?.slice(0, 16).replace('T', ' ')}</p>
-                      </div>
-                      <Button variant="ghost" size="sm" className="text-destructive h-8" onClick={() => terminateSession(s.id)} data-testid={`terminate-session-${s.id}`}>
-                        <LogOut size={14} className="mr-1" /> End
-                      </Button>
+                  {sessions.map(group => (
+                    <div key={group.user_id} className="rounded-lg border border-border overflow-hidden" data-testid={`session-group-${group.user_id}`}>
+                      {/* User header row */}
+                      <button
+                        className="w-full flex items-center justify-between p-3 bg-secondary/20 hover:bg-secondary/30 transition-colors text-left"
+                        onClick={() => toggleUserExpand(group.user_id)}
+                        data-testid={`session-group-toggle-${group.user_id}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-xs">
+                            {(group.full_name || group.username || '?')[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{group.full_name || group.username}</p>
+                            <p className="text-xs text-muted-foreground">@{group.username} &middot; <span className="capitalize">{group.role}</span></p>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[11px] font-semibold">{group.session_count} {group.session_count === 1 ? 'session' : 'sessions'}</span>
+                        </div>
+                        <ChevronDown size={16} className={`text-muted-foreground transition-transform duration-200 ${expandedUsers[group.user_id] ? 'rotate-180' : ''}`} />
+                      </button>
+                      {/* Expanded session details */}
+                      {expandedUsers[group.user_id] && (
+                        <div className="divide-y divide-border">
+                          {group.sessions.map(s => {
+                            const device = parseDevice(s.user_agent);
+                            const browser = parseBrowser(s.user_agent);
+                            const DeviceIcon = /iPhone|iPad|Android/i.test(device) ? Smartphone : Monitor;
+                            return (
+                              <div key={s.id} className="flex items-center justify-between px-4 py-2.5 bg-card hover:bg-secondary/10" data-testid={`session-${s.id}`}>
+                                <div className="flex items-center gap-3">
+                                  <DeviceIcon size={14} className="text-muted-foreground flex-shrink-0" />
+                                  <div>
+                                    <p className="text-sm font-medium">{device}{browser ? ` · ${browser}` : ''}</p>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <span className="flex items-center gap-1"><Globe size={10} /> {s.ip_address || 'N/A'}</span>
+                                      <span>&middot;</span>
+                                      <span className="flex items-center gap-1"><Clock size={10} /> {s.created_at?.slice(0, 16).replace('T', ' ')}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button variant="ghost" size="sm" className="text-destructive h-7 text-xs" onClick={() => terminateSession(s.id)} data-testid={`terminate-session-${s.id}`}>
+                                  <LogOut size={12} className="mr-1" /> End
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
