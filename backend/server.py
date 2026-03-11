@@ -2600,9 +2600,27 @@ async def calculate_mrp_item(item: dict, user=Depends(get_current_user)):
 
 # ============ SESSION MANAGEMENT ============
 @api_router.get("/admin/sessions")
-async def get_active_sessions(user=Depends(get_current_user)):
+async def get_active_sessions(request: Request, user=Depends(get_current_user), credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Admin: list all active sessions, grouped by user."""
     await require_role(user, ["admin"])
+    # Ensure the current admin has a session record (backfill for old logins)
+    current_token = credentials.credentials
+    existing = await db.sessions.find_one({"token": current_token, "is_active": True})
+    if not existing:
+        ip_address = request.headers.get("x-forwarded-for", request.client.host if request.client else "unknown")
+        user_agent = request.headers.get("user-agent", "unknown")
+        await db.sessions.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "username": user.get("username", ""),
+            "full_name": user.get("full_name", ""),
+            "role": user.get("role", ""),
+            "token": current_token,
+            "is_active": True,
+            "ip_address": ip_address.split(",")[0].strip() if ip_address else "unknown",
+            "user_agent": user_agent,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
     sessions = await db.sessions.find({"is_active": True}).sort("created_at", -1).to_list(500)
     serialized = [serialize_doc(s) for s in sessions]
     # Group sessions by user_id
@@ -2621,6 +2639,17 @@ async def get_active_sessions(user=Depends(get_current_user)):
         grouped[uid]["session_count"] += 1
         grouped[uid]["sessions"].append(s)
     return list(grouped.values())
+
+@api_router.delete("/admin/sessions/end-all")
+async def end_all_sessions_except_current(user=Depends(get_current_user), credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Admin: terminate all sessions except the current one."""
+    await require_role(user, ["admin"])
+    current_token = credentials.credentials
+    result = await db.sessions.update_many(
+        {"is_active": True, "token": {"$ne": current_token}},
+        {"$set": {"is_active": False}}
+    )
+    return {"terminated": result.modified_count}
 
 @api_router.delete("/admin/sessions/{session_id}")
 async def terminate_session(session_id: str, user=Depends(get_current_user)):

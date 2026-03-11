@@ -63,6 +63,15 @@ export default function AdminDashboard() {
     } catch (err) { toast.error('Failed to terminate session'); }
   };
 
+  const endAllSessions = async () => {
+    if (!window.confirm('End all sessions except your current one?')) return;
+    try {
+      const res = await apiClient.delete('/admin/sessions/end-all');
+      toast.success(`${res.data.terminated} session(s) terminated`);
+      loadSessions();
+    } catch (err) { toast.error('Failed to end sessions'); }
+  };
+
   const toggleUserExpand = (userId) => {
     setExpandedUsers(prev => ({ ...prev, [userId]: !prev[userId] }));
   };
@@ -175,7 +184,12 @@ export default function AdminDashboard() {
                   <Shield size={16} className="text-primary" /> Active Sessions
                   <span className="ml-1 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-semibold">{sessions.reduce((sum, g) => sum + g.session_count, 0)}</span>
                 </CardTitle>
-                <Button variant="ghost" size="sm" onClick={loadSessions}><RefreshCw size={14} /></Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={loadSessions}><RefreshCw size={14} /></Button>
+                  <Button variant="destructive" size="sm" onClick={endAllSessions} data-testid="end-all-sessions-btn">
+                    <LogOut size={14} className="mr-1" /> End All
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
