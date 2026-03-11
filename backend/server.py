@@ -2294,10 +2294,32 @@ async def update_customer(customer_id: str, req: CustomerUpdate, user=Depends(ge
         customer = await db.customers.find_one({"phone": customer_id})
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
+    cust_id = customer.get("id", customer_id)
+    old_phone = customer.get("phone", "")
+    old_phones = customer.get("phones", [])
     update_data = {k: v for k, v in req.dict(exclude_none=True).items()}
     if update_data:
-        await db.customers.update_one({"id": customer.get("id", customer_id)}, {"$set": update_data})
-    updated = await db.customers.find_one({"id": customer.get("id", customer_id)})
+        await db.customers.update_one({"id": cust_id}, {"$set": update_data})
+
+    # Propagate changes to all associated bills
+    bill_update = {}
+    if req.name is not None:
+        bill_update["customer_name"] = req.name
+    if req.phone is not None:
+        bill_update["customer_phone"] = req.phone
+    if req.location is not None:
+        bill_update["customer_location"] = req.location
+    if req.reference is not None:
+        bill_update["customer_reference"] = req.reference
+    if bill_update:
+        # Match bills by customer_id OR any of the customer's phone numbers
+        all_phones = [old_phone] + old_phones
+        bill_query = {"$or": [{"customer_id": cust_id}]}
+        if all_phones:
+            bill_query["$or"].append({"customer_phone": {"$in": all_phones}})
+        await db.bills.update_many(bill_query, {"$set": bill_update})
+
+    updated = await db.customers.find_one({"id": cust_id})
     return serialize_doc(updated)
 
 # ============ CUSTOMER TIER SETTINGS ============
