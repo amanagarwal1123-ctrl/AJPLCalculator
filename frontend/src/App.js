@@ -26,6 +26,7 @@ import CustomerProfilePage from "@/pages/CustomerProfilePage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import MrpCalculator from "@/pages/MrpCalculator";
 import SalespersonPerformance from "@/pages/SalespersonPerformance";
+import DataSafetyPage from "@/pages/DataSafetyPage";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || window.location.origin;
@@ -136,6 +137,7 @@ function App() {
             <Route path="/admin/salespeople/:spName" element={<PrivateRoute roles={['admin', 'manager']}><SalespersonPerformance /></PrivateRoute>} />
             <Route path="/admin/feedback" element={<PrivateRoute roles={['admin']}><FeedbackQuestionsManagement /></PrivateRoute>} />
             <Route path="/admin/notifications" element={<PrivateRoute roles={['admin', 'manager']}><NotificationsPage /></PrivateRoute>} />
+            <Route path="/admin/data-safety" element={<PrivateRoute roles={['admin']}><DataSafetyPage /></PrivateRoute>} />
             <Route path="/manager" element={<PrivateRoute roles={['manager']}><ManagerDashboard /></PrivateRoute>} />
             <Route path="/sales" element={<PrivateRoute roles={['executive']}><SalesExecDashboard /></PrivateRoute>} />
             <Route path="/bill/:billId" element={<PrivateRoute><BillPage /></PrivateRoute>} />

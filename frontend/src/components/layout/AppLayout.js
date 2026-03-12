@@ -1,7 +1,7 @@
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/App';
 import { Button } from '@/components/ui/button';
-import { LogOut, Menu, X, LayoutDashboard, Settings, Users, GitBranch, Tag, BarChart3, FileText, UserCheck, MessageSquare, Bell, Home } from 'lucide-react';
+import { LogOut, Menu, X, LayoutDashboard, Settings, Users, GitBranch, Tag, BarChart3, FileText, UserCheck, MessageSquare, Bell, Home, Shield } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const adminLinks = [
@@ -16,6 +16,7 @@ const adminLinks = [
   { to: '/admin/feedback', label: 'Feedback Qs', icon: MessageSquare },
   { to: '/admin/reports', label: 'Reports', icon: BarChart3 },
   { to: '/admin/notifications', label: 'Notifications', icon: Bell },
+  { to: '/admin/data-safety', label: 'Data Safety', icon: Shield },
 ];
 
 const managerLinks = [

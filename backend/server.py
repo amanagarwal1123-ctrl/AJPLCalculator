@@ -2809,6 +2809,194 @@ async def root():
 # Include router
 app.include_router(api_router)
 
+# ============ DATA SAFETY BACKUP ============
+from backup_engine import (
+    build_package, build_excel_only, encrypt_bytes, decrypt_bytes,
+    validate_package, import_preview, import_apply, get_decode_instructions,
+    now_ist, ist_label, year_start_ist, backup_filename, excel_filename,
+    BUSINESS_COLLECTIONS,
+)
+
+class BackupExportRequest(BaseModel):
+    password: str
+
+class BackupImportRequest(BaseModel):
+    mode: str = "merge"  # merge | replace_current_year_data
+
+backup_router = APIRouter(prefix="/api/admin/backup")
+
+@backup_router.get("/status")
+async def backup_status(user=Depends(get_current_user)):
+    await require_role(user, ["admin"])
+    latest = await db.backup_audit_logs.find_one(
+        {"action": "export", "status": "success"},
+        sort=[("generated_at_ist", -1)],
+    )
+    ts = now_ist()
+    return {
+        "last_export": serialize_doc(latest) if latest else None,
+        "period_start_ist": year_start_ist(ts.year).isoformat(),
+        "period_end_ist": ts.isoformat(),
+        "current_year": ts.year,
+    }
+
+@backup_router.post("/export")
+async def export_backup(req: BackupExportRequest, user=Depends(get_current_user)):
+    await require_role(user, ["admin"])
+    if len(req.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    ts = now_ist()
+    fname = backup_filename(ts.year, ts)
+    try:
+        manifest, zip_bytes = await build_package(db, user["id"], user.get("username", ""))
+        dat_bytes = encrypt_bytes(zip_bytes, req.password)
+        # audit log
+        await db.backup_audit_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "export",
+            "status": "success",
+            "filename": fname,
+            "generated_at_ist": ist_label(ts),
+            "period_start_ist": year_start_ist(ts.year).isoformat(),
+            "period_end_ist": ts.isoformat(),
+            "user_id": user["id"],
+            "username": user.get("username", ""),
+            "collection_counts": manifest.get("collection_counts", {}),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        return Response(
+            content=dat_bytes,
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f'attachment; filename="{fname}"'},
+        )
+    except Exception as e:
+        await db.backup_audit_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "export",
+            "status": "failed",
+            "error_message": str(e),
+            "generated_at_ist": ist_label(ts),
+            "user_id": user["id"],
+            "username": user.get("username", ""),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        raise HTTPException(status_code=500, detail=f"Export failed: {e}")
+
+@backup_router.post("/export-excel")
+async def export_excel(user=Depends(get_current_user)):
+    await require_role(user, ["admin"])
+    ts = now_ist()
+    fname = excel_filename(ts.year, ts)
+    try:
+        xl_bytes = await build_excel_only(db)
+        await db.backup_audit_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "export",
+            "status": "success",
+            "filename": fname,
+            "generated_at_ist": ist_label(ts),
+            "user_id": user["id"],
+            "username": user.get("username", ""),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        return Response(
+            content=xl_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f'attachment; filename="{fname}"'},
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Excel export failed: {e}")
+
+@backup_router.post("/import/preview")
+async def backup_import_preview(
+    file: UploadFile = File(...),
+    password: str = Form(...),
+    mode: str = Form("merge"),
+    user=Depends(get_current_user),
+):
+    await require_role(user, ["admin"])
+    ts = now_ist()
+    try:
+        raw = await file.read()
+        zip_bytes = decrypt_bytes(raw, password)
+        preview = await import_preview(db, zip_bytes, mode)
+        await db.backup_audit_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "import_preview",
+            "status": "success",
+            "mode": mode,
+            "filename": file.filename or "unknown",
+            "generated_at_ist": ist_label(ts),
+            "user_id": user["id"],
+            "username": user.get("username", ""),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        return preview
+    except ValueError as e:
+        await db.backup_audit_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "import_preview",
+            "status": "failed",
+            "error_message": str(e),
+            "filename": file.filename or "unknown",
+            "generated_at_ist": ist_label(ts),
+            "user_id": user["id"],
+            "username": user.get("username", ""),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        raise HTTPException(status_code=400, detail=str(e))
+
+@backup_router.post("/import/apply")
+async def backup_import_apply(
+    file: UploadFile = File(...),
+    password: str = Form(...),
+    mode: str = Form("merge"),
+    user=Depends(get_current_user),
+):
+    await require_role(user, ["admin"])
+    ts = now_ist()
+    try:
+        raw = await file.read()
+        zip_bytes = decrypt_bytes(raw, password)
+        result = await import_apply(db, zip_bytes, mode)
+        await db.backup_audit_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "import_apply",
+            "status": "success",
+            "mode": mode,
+            "filename": file.filename or "unknown",
+            "generated_at_ist": ist_label(ts),
+            "user_id": user["id"],
+            "username": user.get("username", ""),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        return result
+    except ValueError as e:
+        await db.backup_audit_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "import_apply",
+            "status": "failed",
+            "error_message": str(e),
+            "filename": file.filename or "unknown",
+            "generated_at_ist": ist_label(ts),
+            "user_id": user["id"],
+            "username": user.get("username", ""),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        raise HTTPException(status_code=400, detail=str(e))
+
+@backup_router.get("/decode-instructions")
+async def download_decode_instructions(user=Depends(get_current_user)):
+    await require_role(user, ["admin"])
+    txt = get_decode_instructions()
+    return Response(
+        content=txt.encode("utf-8"),
+        media_type="text/plain",
+        headers={"Content-Disposition": 'attachment; filename="DECODE_INSTRUCTIONS.txt"'},
+    )
+
+app.include_router(backup_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

@@ -155,6 +155,7 @@ export default function AdminDashboard() {
     { label: 'Item Names', icon: Tag, to: '/admin/items' },
     { label: 'Feedback Qs', icon: FileText, to: '/admin/feedback' },
     { label: 'Reports', icon: BarChart3, to: '/admin/reports' },
+    { label: 'Data Safety', icon: Shield, to: '/admin/data-safety' },
   ];
 
   // Total weight helper
