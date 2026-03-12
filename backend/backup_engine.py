@@ -28,7 +28,9 @@ BUSINESS_COLLECTIONS = [
     "salespeople", "settings", "customers", "bills",
     "feedback_questions", "feedbacks", "notifications",
 ]
-# Ephemeral – excluded from restore by default
+# Export-only: included in snapshot for audit trail but NOT restored on import
+EXPORT_ONLY_COLLECTIONS = ["backup_audit_logs"]
+# Ephemeral – excluded from both export and restore
 EPHEMERAL_COLLECTIONS = ["otps", "sessions"]
 # Transactional collections affected by replace_current_year_data
 TRANSACTIONAL_COLLECTIONS = ["bills", "feedbacks", "notifications"]
@@ -119,8 +121,9 @@ async def build_package(db, user_id: str, username: str) -> tuple[dict, bytes]:
     collection_counts: dict[str, int] = {}
 
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        # --- dump every business collection ---
-        for col_name in BUSINESS_COLLECTIONS:
+        # --- dump every business collection + export-only collections ---
+        all_export_collections = BUSINESS_COLLECTIONS + EXPORT_ONLY_COLLECTIONS
+        for col_name in all_export_collections:
             col = db[col_name]
             docs = await col.find({}).to_list(100_000)
             collection_counts[col_name] = len(docs)
@@ -158,7 +161,7 @@ async def build_package(db, user_id: str, username: str) -> tuple[dict, bytes]:
         from openpyxl import Workbook
         wb = Workbook()
         wb.remove(wb.active)
-        for col_name in BUSINESS_COLLECTIONS:
+        for col_name in all_export_collections:
             docs = await db[col_name].find({}).to_list(100_000)
             ws = wb.create_sheet(title=col_name[:31])
             if docs:
@@ -212,7 +215,7 @@ async def build_excel_only(db) -> bytes:
     from openpyxl import Workbook
     wb = Workbook()
     wb.remove(wb.active)
-    for col_name in BUSINESS_COLLECTIONS:
+    for col_name in BUSINESS_COLLECTIONS + EXPORT_ONLY_COLLECTIONS:
         docs = await db[col_name].find({}).to_list(100_000)
         ws = wb.create_sheet(title=col_name[:31])
         if docs:
@@ -240,17 +243,18 @@ def validate_package(zip_bytes: bytes) -> tuple[dict, zipfile.ZipFile]:
     if manifest.get("schema_version") != SCHEMA_VERSION:
         raise ValueError(f"Schema mismatch: expected {SCHEMA_VERSION}, got {manifest.get('schema_version')}")
 
-    # Validate checksums
-    if "SHA256SUMS.txt" in zf.namelist():
-        sums_text = zf.read("SHA256SUMS.txt").decode()
-        for line in sums_text.strip().split("\n"):
-            if not line.strip():
-                continue
-            expected_hash, fname = line.strip().split("  ", 1)
-            if fname in zf.namelist():
-                actual = _sha256(zf.read(fname))
-                if actual != expected_hash:
-                    raise ValueError(f"Checksum mismatch for {fname}")
+    # Validate checksums (mandatory)
+    if "SHA256SUMS.txt" not in zf.namelist():
+        raise ValueError("SHA256SUMS.txt missing – backup integrity cannot be verified")
+    sums_text = zf.read("SHA256SUMS.txt").decode()
+    for line in sums_text.strip().split("\n"):
+        if not line.strip():
+            continue
+        expected_hash, fname = line.strip().split("  ", 1)
+        if fname in zf.namelist():
+            actual = _sha256(zf.read(fname))
+            if actual != expected_hash:
+                raise ValueError(f"Checksum mismatch for {fname}")
     return manifest, zf
 
 
@@ -270,9 +274,10 @@ async def import_preview(db, zip_bytes: bytes, mode: str) -> dict:
     """Dry-run preview of import. Returns per-collection action counts."""
     manifest, zf = validate_package(zip_bytes)
     preview = {}
-    now = now_ist()
-    year = now.year
-    yr_start = year_start_ist(year).isoformat()
+
+    # Use the backup manifest's period for replace mode (not import-time)
+    m_period_start = manifest.get("period_start_ist", "")
+    m_period_end = manifest.get("period_end_ist", "")
 
     for col_name in BUSINESS_COLLECTIONS:
         docs = _load_jsonl(zf, col_name)
@@ -287,10 +292,21 @@ async def import_preview(db, zip_bytes: bytes, mode: str) -> dict:
         delete_count = 0
 
         if mode == "replace_current_year_data" and col_name in TRANSACTIONAL_COLLECTIONS:
-            # Count current-year records that would be deleted
-            yr_query = {"created_at": {"$gte": yr_start}}
+            # Delete DB rows within the backup's period window
+            yr_query = {"created_at": {"$gte": m_period_start, "$lte": m_period_end}}
             delete_count = await db[col_name].count_documents(yr_query)
-            insert_count = len(docs)
+            # Only backup docs within the period window will be inserted;
+            # docs outside the window are upserted (merge)
+            for d in docs:
+                ca = d.get("created_at", "")
+                if m_period_start <= ca <= m_period_end:
+                    insert_count += 1
+                else:
+                    did = d.get("id")
+                    if did and did in existing_ids:
+                        update_count += 1
+                    else:
+                        insert_count += 1
         else:
             # merge mode
             for d in docs:
@@ -317,9 +333,10 @@ async def import_apply(db, zip_bytes: bytes, mode: str) -> dict:
     """Apply import to the database."""
     manifest, zf = validate_package(zip_bytes)
     results = {}
-    now = now_ist()
-    year = now.year
-    yr_start = year_start_ist(year).isoformat()
+
+    # Use the backup manifest's period for replace mode
+    m_period_start = manifest.get("period_start_ist", "")
+    m_period_end = manifest.get("period_end_ist", "")
 
     for col_name in BUSINESS_COLLECTIONS:
         docs = _load_jsonl(zf, col_name)
@@ -329,14 +346,37 @@ async def import_apply(db, zip_bytes: bytes, mode: str) -> dict:
         deleted = 0
 
         if mode == "replace_current_year_data" and col_name in TRANSACTIONAL_COLLECTIONS:
-            yr_query = {"created_at": {"$gte": yr_start}}
+            # Delete only rows within the backup's period window
+            yr_query = {"created_at": {"$gte": m_period_start, "$lte": m_period_end}}
             del_result = await col.delete_many(yr_query)
             deleted = del_result.deleted_count
-            if docs:
-                for d in docs:
-                    d.pop("_id", None)
-                await col.insert_many(docs)
-                inserted = len(docs)
+            # Split docs: those in-window are bulk-inserted, out-of-window are upserted
+            in_window = []
+            out_window = []
+            for d in docs:
+                d.pop("_id", None)
+                ca = d.get("created_at", "")
+                if m_period_start <= ca <= m_period_end:
+                    in_window.append(d)
+                else:
+                    out_window.append(d)
+            if in_window:
+                await col.insert_many(in_window)
+                inserted += len(in_window)
+            # Upsert out-of-window docs (e.g. prior-year data) to avoid duplicates
+            for d in out_window:
+                did = d.get("id")
+                if did:
+                    existing = await col.find_one({"id": did})
+                    if existing:
+                        await col.replace_one({"id": did}, d)
+                        updated += 1
+                    else:
+                        await col.insert_one(d)
+                        inserted += 1
+                else:
+                    await col.insert_one(d)
+                    inserted += 1
         else:
             # merge / upsert
             for d in docs:

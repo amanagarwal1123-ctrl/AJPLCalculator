@@ -2833,10 +2833,17 @@ async def backup_status(user=Depends(get_current_user)):
         sort=[("generated_at_ist", -1)],
     )
     ts = now_ist()
+    # Show the last export's actual period if available, otherwise current window
+    if latest:
+        p_start = latest.get("period_start_ist", year_start_ist(ts.year).isoformat())
+        p_end = latest.get("period_end_ist", ts.isoformat())
+    else:
+        p_start = year_start_ist(ts.year).isoformat()
+        p_end = ts.isoformat()
     return {
         "last_export": serialize_doc(latest) if latest else None,
-        "period_start_ist": year_start_ist(ts.year).isoformat(),
-        "period_end_ist": ts.isoformat(),
+        "period_start_ist": p_start,
+        "period_end_ist": p_end,
         "current_year": ts.year,
     }
 
