@@ -14,7 +14,7 @@ from datetime import datetime
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://jewelry-mgmt-qa.preview.emergentagent.com"
+    BASE_URL = "https://secure-export-check.preview.emergentagent.com"
 
 class TestAuthAndSetup:
     """Auth setup tests"""
