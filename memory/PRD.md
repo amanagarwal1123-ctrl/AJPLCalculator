@@ -11,6 +11,14 @@ Jewelry business management application with sales tracking, billing, customer m
 
 ## What's Been Implemented
 
+### Reference Normalization & Edit (March 2026)
+- normalize_reference() helper: title-case + trim for all reference strings
+- Applied at write-time (customer create, bill create, customer update, bill reference update)
+- Applied at read-time (analytics dashboard, reference-breakdown, reference-report)
+- POST /api/admin/normalize-references: one-time data cleanup endpoint
+- PUT /api/bills/{bill_id}/reference: admin-only bill reference update (no status change)
+- Frontend inline edit UI on BillPage with dropdown + save/cancel
+
 ### Data Safety Backup (March 2026)
 - AES-256-CBC encrypted .dat backup with AJPLDAT1 container format
 - Excel .xlsx snapshot with one sheet per collection
@@ -39,13 +47,15 @@ Jewelry business management application with sales tracking, billing, customer m
 - Reference on bill cards, auto-refresh, URL tab state
 - Home button on non-dashboard pages, feedback filter
 
-## New Endpoints (Data Safety)
-- `GET /api/admin/backup/status` - Backup status with last export info
+## Key Endpoints
+- `GET /api/admin/backup/status` - Backup status
 - `POST /api/admin/backup/export` - Export encrypted .dat
-- `POST /api/admin/backup/export-excel` - Export Excel snapshot
-- `POST /api/admin/backup/import/preview` - Dry-run import preview
+- `POST /api/admin/backup/export-excel` - Export Excel
+- `POST /api/admin/backup/import/preview` - Dry-run import
 - `POST /api/admin/backup/import/apply` - Apply import
 - `GET /api/admin/backup/decode-instructions` - Download instructions
+- `PUT /api/bills/{bill_id}/reference` - Admin edit bill reference
+- `POST /api/admin/normalize-references` - Normalize all references
 
 ## Prioritized Backlog
 ### P1 - Refactoring
