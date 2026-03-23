@@ -25,6 +25,10 @@ export default function BillPage() {
   const [lightboxImg, setLightboxImg] = useState(null);
   const [execBills, setExecBills] = useState([]);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [editingRef, setEditingRef] = useState(false);
+  const [newRef, setNewRef] = useState('');
+
+  const REFERENCE_OPTIONS = ['Instagram', 'Facebook', 'Friends', 'Family', 'Repeat Customer', 'Walk-in', 'Google', 'Newspaper', 'TV', 'Other'];
 
   useEffect(() => { loadBill(); }, [billId]);
 
@@ -114,6 +118,15 @@ export default function BillPage() {
     if (bill.status === 'draft') return true;
     if (bill.status !== 'draft' && (user?.role === 'admin' || user?.role === 'manager')) return true;
     return false;
+  };
+
+  const saveReference = async (ref) => {
+    try {
+      const res = await apiClient.put(`/bills/${billId}/reference`, { customer_reference: ref });
+      setBill(res.data);
+      setEditingRef(false);
+      toast.success('Reference updated');
+    } catch (err) { toast.error('Failed to update reference'); }
   };
 
   const removeItem = async (index) => {
@@ -279,7 +292,36 @@ export default function BillPage() {
                     <div><span className="text-muted-foreground text-xs">Customer:</span> <span className="font-medium block sm:inline">{bill.customer_name}</span></div>
                     <div><span className="text-muted-foreground text-xs">Phone:</span> <span className="mono block sm:inline">{bill.customer_phone}</span></div>
                     <div><span className="text-muted-foreground text-xs">Location:</span> <span className="block sm:inline">{bill.customer_location || '-'}</span></div>
-                    <div><span className="text-muted-foreground text-xs">Reference:</span> <span className="block sm:inline">{bill.customer_reference || '-'}</span></div>
+                    <div><span className="text-muted-foreground text-xs">Reference:</span>{' '}
+                      {editingRef ? (
+                        <span className="inline-flex items-center gap-1 flex-wrap">
+                          <select
+                            className="h-7 px-2 text-sm rounded bg-secondary border border-border"
+                            value={newRef}
+                            onChange={e => setNewRef(e.target.value)}
+                            data-testid="edit-reference-select"
+                          >
+                            <option value="">-- Select --</option>
+                            {REFERENCE_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                          </select>
+                          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => saveReference(newRef)} data-testid="save-reference-btn">
+                            <CheckCircle size={14} className="text-green-400" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setEditingRef(false)} data-testid="cancel-reference-btn">
+                            <X size={14} className="text-red-400" />
+                          </Button>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="block sm:inline">{bill.customer_reference || '-'}</span>
+                          {isAdmin && (
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 ml-1" onClick={() => { setNewRef(bill.customer_reference || ''); setEditingRef(true); }} data-testid="edit-reference-btn">
+                              <Edit size={12} className="text-muted-foreground hover:text-foreground" />
+                            </Button>
+                          )}
+                        </span>
+                      )}
+                    </div>
                     {bill.salesperson_name && <div><span className="text-muted-foreground text-xs">Salesperson:</span> <span className="block sm:inline">{bill.salesperson_name}</span></div>}
                     {bill.narration && <div className="col-span-2"><span className="text-muted-foreground text-xs">Narration:</span> <span className="block sm:inline italic text-muted-foreground">{bill.narration}</span></div>}
                   </div>

@@ -31,6 +31,19 @@ import pytz
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# Canonical reference mapping for case-insensitive grouping
+_CANONICAL_REFS = {}
+
+def normalize_reference(ref: str) -> str:
+    """Normalize a reference string to title-case with trimmed whitespace.
+    Uses a cache so all variants of the same word map to one canonical form."""
+    if not ref or not ref.strip():
+        return ""
+    key = ref.strip().lower()
+    if key not in _CANONICAL_REFS:
+        _CANONICAL_REFS[key] = ref.strip().title()
+    return _CANONICAL_REFS[key]
+
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -956,7 +969,7 @@ async def create_or_get_customer(req: CustomerCreate, user=Depends(get_current_u
             {"$set": {
                 "name": req.name,
                 "location": req.location,
-                "reference": req.reference,
+                "reference": normalize_reference(req.reference or ""),
                 "last_visit": datetime.now(timezone.utc).isoformat(),
             }}
         )
@@ -967,7 +980,7 @@ async def create_or_get_customer(req: CustomerCreate, user=Depends(get_current_u
         "name": req.name,
         "phone": req.phone,
         "location": req.location,
-        "reference": req.reference,
+        "reference": normalize_reference(req.reference or ""),
         "first_visit": datetime.now(timezone.utc).isoformat(),
         "last_visit": datetime.now(timezone.utc).isoformat(),
         "total_visits": 1,
@@ -995,7 +1008,7 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
             "name": req.customer_name,
             "phone": req.customer_phone,
             "location": req.customer_location,
-            "reference": req.customer_reference,
+            "reference": normalize_reference(req.customer_reference or ""),
             "phones": [],
             "first_visit": datetime.now(timezone.utc).isoformat(),
             "last_visit": datetime.now(timezone.utc).isoformat(),
@@ -1040,7 +1053,7 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
         "customer_name": req.customer_name,
         "customer_phone": req.customer_phone,
         "customer_location": req.customer_location,
-        "customer_reference": req.customer_reference,
+        "customer_reference": normalize_reference(req.customer_reference or ""),
         "salesperson_name": req.salesperson_name,
         "narration": req.narration or "",
         "bill_mode": req.bill_mode,
@@ -1132,6 +1145,62 @@ async def update_bill(bill_id: str, updates: dict, user=Depends(get_current_user
     )
     updated = await db.bills.find_one({"id": bill_id})
     return serialize_doc(updated)
+
+
+class BillReferenceUpdate(BaseModel):
+    customer_reference: str
+
+@api_router.put("/bills/{bill_id}/reference")
+async def update_bill_reference(bill_id: str, req: BillReferenceUpdate, user=Depends(get_current_user)):
+    """Admin-only: update the reference on any bill without changing status."""
+    await require_role(user, ["admin"])
+    bill = await db.bills.find_one({"id": bill_id})
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+    
+    new_ref = normalize_reference(req.customer_reference)
+    old_ref = bill.get('customer_reference', '')
+    
+    change_entry = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "user": user.get('full_name', ''),
+        "role": user.get('role', ''),
+        "action": "reference_update",
+        "old_reference": old_ref,
+        "new_reference": new_ref,
+    }
+    
+    await db.bills.update_one(
+        {"id": bill_id},
+        {"$set": {"customer_reference": new_ref, "updated_at": datetime.now(timezone.utc).isoformat()},
+         "$push": {"change_log": change_entry}}
+    )
+    updated = await db.bills.find_one({"id": bill_id})
+    return serialize_doc(updated)
+
+@api_router.post("/admin/normalize-references")
+async def normalize_all_references(user=Depends(get_current_user)):
+    """Admin-only: one-time fix to normalize all reference strings in bills and customers."""
+    await require_role(user, ["admin"])
+    
+    bills_fixed = 0
+    async for bill in db.bills.find({"customer_reference": {"$exists": True, "$ne": None}}):
+        old = bill.get("customer_reference", "")
+        new = normalize_reference(old)
+        if old != new:
+            await db.bills.update_one({"_id": bill["_id"]}, {"$set": {"customer_reference": new}})
+            bills_fixed += 1
+    
+    custs_fixed = 0
+    async for cust in db.customers.find({"reference": {"$exists": True, "$ne": None}}):
+        old = cust.get("reference", "")
+        new = normalize_reference(old)
+        if old != new:
+            await db.customers.update_one({"_id": cust["_id"]}, {"$set": {"reference": new}})
+            custs_fixed += 1
+    
+    return {"bills_normalized": bills_fixed, "customers_normalized": custs_fixed}
+
 
 @api_router.put("/bills/{bill_id}/approve")
 async def approve_bill(bill_id: str, user=Depends(get_current_user)):
@@ -1401,7 +1470,7 @@ async def get_dashboard_analytics(
     
     for bill in all_bills:
         # Reference tracking - count unique customers per reference (only sent/approved/edited bills)
-        ref = bill.get('customer_reference', 'unknown')
+        ref = normalize_reference(bill.get('customer_reference', '') or '') or 'Unknown'
         phone = bill.get('customer_phone', '')
         bill_status = bill.get('status', '')
         if ref and bill_status in ('sent', 'approved', 'edited'):
@@ -1521,7 +1590,10 @@ async def get_reference_breakdown(
     if not ref_list:
         return {"references": [], "combined": {"gold_total": 0, "diamond_total": 0, "total": 0, "bills": 0, "customers": 0}}
     
-    query = {"customer_reference": {"$in": ref_list}, "status": {"$in": ["sent", "approved", "edited"]}}
+    # Build case-insensitive regex query for references
+    import re as _re
+    ref_patterns = [_re.compile(f"^{_re.escape(r)}$", _re.IGNORECASE) for r in ref_list]
+    query = {"$or": [{"customer_reference": {"$regex": p}} for p in ref_patterns], "status": {"$in": ["sent", "approved", "edited"]}}
     if user.get('role') == 'manager' and user.get('branch_id'):
         query["branch_id"] = user['branch_id']
     if date_from or date_to:
@@ -1536,7 +1608,7 @@ async def get_reference_breakdown(
     per_ref = {}
     combined_phones = set()
     for bill in bills:
-        ref = bill.get('customer_reference', '')
+        ref = normalize_reference(bill.get('customer_reference', '') or '') or 'Unknown'
         phone = bill.get('customer_phone', '')
         if phone:
             combined_phones.add(phone)
@@ -1617,7 +1689,7 @@ async def get_reference_report(
     ref_customer_statuses = {}  # Track per-customer, per-reference: has approved? has draft?
     
     for bill in all_bills:
-        ref = bill.get('customer_reference', 'Unknown') or 'Unknown'
+        ref = normalize_reference(bill.get('customer_reference', '') or '') or 'Unknown'
         phone = bill.get('customer_phone', '')
         status = bill.get('status', 'draft')
         grand_total = bill.get('grand_total', 0)
@@ -2370,6 +2442,9 @@ async def update_customer(customer_id: str, req: CustomerUpdate, user=Depends(ge
     old_phone = customer.get("phone") or ""
     old_phones = customer.get("phones") or []
     update_data = {k: v for k, v in req.dict(exclude_none=True).items()}
+    # Normalize reference at write time
+    if "reference" in update_data:
+        update_data["reference"] = normalize_reference(update_data["reference"])
     if update_data:
         await db.customers.update_one({"id": cust_id}, {"$set": update_data})
 
@@ -2382,7 +2457,7 @@ async def update_customer(customer_id: str, req: CustomerUpdate, user=Depends(ge
     if req.location is not None:
         bill_update["customer_location"] = req.location
     if req.reference is not None:
-        bill_update["customer_reference"] = req.reference
+        bill_update["customer_reference"] = normalize_reference(req.reference)
     if bill_update:
         # Collect all possible phone identifiers for this customer
         all_phones = set()
