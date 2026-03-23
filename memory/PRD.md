@@ -12,10 +12,12 @@ Jewelry business management application with sales tracking, billing, customer m
 ## What's Been Implemented
 
 ### Reference Normalization & Edit (March 2026)
-- normalize_reference() helper: title-case + trim for all reference strings
+- Robust normalize_reference() that strips ALL invisible Unicode chars (zero-width spaces, BOM, NBSP, control chars, etc.)
+- Known reference lookup table for canonical forms (Instagram, Facebook, Walk-in, etc.)
 - Applied at write-time (customer create, bill create, customer update, bill reference update)
 - Applied at read-time (analytics dashboard, reference-breakdown, reference-report)
-- POST /api/admin/normalize-references: one-time data cleanup endpoint
+- POST /api/admin/normalize-references: one-time data cleanup with hex diagnostics
+- GET /api/admin/reference-diagnostics: shows raw hex/char codes for debugging
 - PUT /api/bills/{bill_id}/reference: admin-only bill reference update (no status change)
 - Frontend inline edit UI on BillPage with dropdown + save/cancel
 
@@ -48,14 +50,9 @@ Jewelry business management application with sales tracking, billing, customer m
 - Home button on non-dashboard pages, feedback filter
 
 ## Key Endpoints
-- `GET /api/admin/backup/status` - Backup status
-- `POST /api/admin/backup/export` - Export encrypted .dat
-- `POST /api/admin/backup/export-excel` - Export Excel
-- `POST /api/admin/backup/import/preview` - Dry-run import
-- `POST /api/admin/backup/import/apply` - Apply import
-- `GET /api/admin/backup/decode-instructions` - Download instructions
 - `PUT /api/bills/{bill_id}/reference` - Admin edit bill reference
-- `POST /api/admin/normalize-references` - Normalize all references
+- `POST /api/admin/normalize-references` - Normalize all references (with hex diagnostics)
+- `GET /api/admin/reference-diagnostics` - Raw hex/char codes for debugging
 
 ## Prioritized Backlog
 ### P1 - Refactoring

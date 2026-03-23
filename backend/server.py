@@ -32,17 +32,76 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 # Canonical reference mapping for case-insensitive grouping
-_CANONICAL_REFS = {}
+import re as _re
+import unicodedata as _ud
+
+# Matches zero-width / truly invisible chars → remove entirely
+_ZERO_WIDTH_RE = _re.compile(
+    r'[\u0000-\u001f'   # C0 control chars
+    r'\u007f-\u009f'     # C1 control chars
+    r'\u00ad'            # soft hyphen
+    r'\u034f'            # combining grapheme joiner
+    r'\u061c'            # arabic letter mark
+    r'\u115f\u1160'      # hangul fillers
+    r'\u17b4\u17b5'      # khmer vowel inherent
+    r'\u180e'            # mongolian vowel separator
+    r'\u200b-\u200f'     # zero-width spaces, LTR/RTL marks
+    r'\u2028\u2029'      # line/paragraph separators
+    r'\u202a-\u202e'     # embedding marks
+    r'\u2060-\u2064'     # word joiner, invisible chars
+    r'\u2066-\u2069'     # bidi isolates
+    r'\u206a-\u206f'     # deprecated formatting
+    r'\u3164'            # hangul filler
+    r'\ufeff'            # BOM / zero-width no-break space
+    r'\uffa0'            # halfwidth hangul filler
+    r'\ufff0-\uffff'     # specials
+    r']+'
+)
+
+# Matches space-like invisible chars → replace with regular space
+_SPACE_LIKE_RE = _re.compile(
+    r'[\u00a0'           # non-breaking space
+    r'\u2000-\u200a'     # en/em/thin/hair spaces etc.
+    r'\u202f'            # narrow no-break space
+    r'\u205f'            # medium mathematical space
+    r'\u3000'            # ideographic space
+    r']+'
+)
+
+_KNOWN_REFS = {
+    'instagram': 'Instagram',
+    'facebook': 'Facebook',
+    'friends': 'Friends',
+    'family': 'Family',
+    'repeat customer': 'Repeat Customer',
+    'walk-in': 'Walk-in',
+    'walkin': 'Walk-in',
+    'walk in': 'Walk-in',
+    'google': 'Google',
+    'newspaper': 'Newspaper',
+    'tv': 'TV',
+    'other': 'Other',
+}
 
 def normalize_reference(ref: str) -> str:
-    """Normalize a reference string to title-case with trimmed whitespace.
-    Uses a cache so all variants of the same word map to one canonical form."""
-    if not ref or not ref.strip():
+    """Aggressively normalize a reference string.
+    Removes zero-width chars, replaces space-like chars with regular space,
+    and maps to a known canonical form."""
+    if not ref:
         return ""
-    key = ref.strip().lower()
-    if key not in _CANONICAL_REFS:
-        _CANONICAL_REFS[key] = ref.strip().title()
-    return _CANONICAL_REFS[key]
+    # Remove zero-width/invisible chars entirely
+    cleaned = _ZERO_WIDTH_RE.sub('', ref)
+    # Replace space-like chars with regular space
+    cleaned = _SPACE_LIKE_RE.sub(' ', cleaned)
+    # Collapse any remaining whitespace
+    cleaned = ' '.join(cleaned.split())
+    if not cleaned:
+        return ""
+    # Look up canonical form
+    key = cleaned.lower()
+    if key in _KNOWN_REFS:
+        return _KNOWN_REFS[key]
+    return cleaned.title()
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -1184,12 +1243,15 @@ async def normalize_all_references(user=Depends(get_current_user)):
     await require_role(user, ["admin"])
     
     bills_fixed = 0
+    changes = []
     async for bill in db.bills.find({"customer_reference": {"$exists": True, "$ne": None}}):
         old = bill.get("customer_reference", "")
         new = normalize_reference(old)
         if old != new:
             await db.bills.update_one({"_id": bill["_id"]}, {"$set": {"customer_reference": new}})
             bills_fixed += 1
+            hex_repr = old.encode('utf-8').hex()
+            changes.append({"type": "bill", "old": old, "new": new, "old_hex": hex_repr, "bill_id": bill.get("id", "")})
     
     custs_fixed = 0
     async for cust in db.customers.find({"reference": {"$exists": True, "$ne": None}}):
@@ -1198,8 +1260,35 @@ async def normalize_all_references(user=Depends(get_current_user)):
         if old != new:
             await db.customers.update_one({"_id": cust["_id"]}, {"$set": {"reference": new}})
             custs_fixed += 1
+            hex_repr = old.encode('utf-8').hex()
+            changes.append({"type": "customer", "old": old, "new": new, "old_hex": hex_repr})
     
-    return {"bills_normalized": bills_fixed, "customers_normalized": custs_fixed}
+    return {"bills_normalized": bills_fixed, "customers_normalized": custs_fixed, "changes": changes}
+
+@api_router.get("/admin/reference-diagnostics")
+async def reference_diagnostics(user=Depends(get_current_user)):
+    """Admin-only: show all distinct reference values with their hex encoding for debugging."""
+    await require_role(user, ["admin"])
+    
+    bill_refs = await db.bills.distinct("customer_reference")
+    cust_refs = await db.customers.distinct("reference")
+    
+    def to_diag(val):
+        if val is None:
+            return {"value": None, "hex": "", "length": 0, "normalized": ""}
+        s = str(val)
+        return {
+            "value": s,
+            "hex": s.encode('utf-8').hex(),
+            "length": len(s),
+            "char_codes": [f"U+{ord(c):04X}" for c in s],
+            "normalized": normalize_reference(s),
+        }
+    
+    return {
+        "bill_references": [to_diag(r) for r in bill_refs],
+        "customer_references": [to_diag(r) for r in cust_refs],
+    }
 
 
 @api_router.put("/bills/{bill_id}/approve")
