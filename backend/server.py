@@ -1684,7 +1684,8 @@ async def get_reference_breakdown(
     
     # Fetch all matching bills and filter by normalized reference in Python
     # (MongoDB regex can't match invisible Unicode chars)
-    query = {"status": {"$in": ["sent", "approved", "edited"]}}
+    # No status filter — matches reference-report "Total" view which includes all bills
+    query = {}
     if user.get('role') == 'manager' and user.get('branch_id'):
         query["branch_id"] = user['branch_id']
     if date_from or date_to:
