@@ -1679,10 +1679,12 @@ async def get_reference_breakdown(
     if not ref_list:
         return {"references": [], "combined": {"gold_total": 0, "diamond_total": 0, "total": 0, "bills": 0, "customers": 0}}
     
-    # Build case-insensitive regex query for references
-    import re as _re
-    ref_patterns = [_re.compile(f"^{_re.escape(r)}$", _re.IGNORECASE) for r in ref_list]
-    query = {"$or": [{"customer_reference": {"$regex": p}} for p in ref_patterns], "status": {"$in": ["sent", "approved", "edited"]}}
+    # Normalize requested references for matching
+    ref_set = {normalize_reference(r) for r in ref_list}
+    
+    # Fetch all matching bills and filter by normalized reference in Python
+    # (MongoDB regex can't match invisible Unicode chars)
+    query = {"status": {"$in": ["sent", "approved", "edited"]}}
     if user.get('role') == 'manager' and user.get('branch_id'):
         query["branch_id"] = user['branch_id']
     if date_from or date_to:
@@ -1692,7 +1694,14 @@ async def get_reference_breakdown(
         if date_to:
             query['created_at']['$lte'] = date_to + 'T23:59:59'
     
-    bills = await db.bills.find(query).to_list(10000)
+    all_bills = await db.bills.find(query).to_list(10000)
+    
+    # Filter bills whose normalized reference matches the requested set
+    bills = []
+    for bill in all_bills:
+        norm_ref = normalize_reference(bill.get('customer_reference', '') or '')
+        if norm_ref in ref_set:
+            bills.append(bill)
     
     per_ref = {}
     combined_phones = set()
