@@ -11,48 +11,39 @@ Jewelry business management application with sales tracking, billing, customer m
 
 ## What's Been Implemented
 
+### Buyback Rates (March 2026)
+- New "buyback" rate card alongside "normal" and "ajpl"
+- Buyback Rates tab in Rate Management page (admin)
+- Buyback rates display on Admin, Manager, and Sales Exec dashboards
+- Only purities with rate > 0 shown; auto-synced with purity additions/deletions
+
 ### Reference Normalization & Edit (March 2026)
-- Robust normalize_reference() that strips ALL invisible Unicode chars (zero-width spaces, BOM, NBSP, control chars, etc.)
-- Known reference lookup table for canonical forms (Instagram, Facebook, Walk-in, etc.)
-- Applied at write-time (customer create, bill create, customer update, bill reference update)
-- Applied at read-time (analytics dashboard, reference-breakdown, reference-report)
-- POST /api/admin/normalize-references: one-time data cleanup with hex diagnostics
-- GET /api/admin/reference-diagnostics: shows raw hex/char codes for debugging
-- PUT /api/bills/{bill_id}/reference: admin-only bill reference update (no status change)
-- Frontend inline edit UI on BillPage with dropdown + save/cancel
+- Aggressive Unicode normalization (zero-width chars, NBSP, BOM etc.)
+- Known reference lookup table for canonical forms
+- PUT /api/bills/{bill_id}/reference: admin-only bill reference update
+- POST /api/admin/normalize-references: one-time data cleanup
+- GET /api/admin/reference-diagnostics: raw hex debugging
 
 ### Data Safety Backup (March 2026)
 - AES-256-CBC encrypted .dat backup with AJPLDAT1 container format
-- Excel .xlsx snapshot with one sheet per collection
-- Import with merge or replace_current_year_data modes
-- Dry-run preview before applying import
-- Decode instructions .txt for disaster recovery
-- Audit logging to `backup_audit_logs` collection
-- Frontend page at `/admin/data-safety` with modals
+- Excel .xlsx snapshot, import with merge/replace modes
+- Audit logging, decode instructions for disaster recovery
 
 ### Session Management
-- Admin sessions stored with IP/user-agent
-- Grouped sessions UI with expand/collapse
-- End All Sessions button
+- Admin sessions with IP/user-agent, End All Sessions button
 
 ### Security & Authorization
-- Bill access control, notification ownership checks
-- Manager branch scoping, mandatory branch for managers
-- Customer profile changes propagate to bills (write + read enrichment)
+- Bill access control, manager branch scoping
+- Customer profile → bills sync (write + read enrichment)
 
 ### Business Logic
-- Diamond calculation on gross_weight
+- Diamond calculation on gross_weight, multi-phone customers
 - Today's Sales only counts approved bills
-- Multi-phone customer with customer_id on bills
-
-### UI/UX
-- Reference on bill cards, auto-refresh, URL tab state
-- Home button on non-dashboard pages, feedback filter
 
 ## Key Endpoints
+- `GET/PUT /api/rates/buyback` - Buyback rate card CRUD
 - `PUT /api/bills/{bill_id}/reference` - Admin edit bill reference
-- `POST /api/admin/normalize-references` - Normalize all references (with hex diagnostics)
-- `GET /api/admin/reference-diagnostics` - Raw hex/char codes for debugging
+- `POST /api/admin/normalize-references` - Normalize all references
 
 ## Prioritized Backlog
 ### P1 - Refactoring
