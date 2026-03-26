@@ -392,7 +392,7 @@ async def startup_event():
         logger.info("Default purities created")
 
     # Create default rate cards if not exists
-    for rate_type in ['normal', 'ajpl']:
+    for rate_type in ['normal', 'ajpl', 'buyback']:
         rc = await db.rate_cards.find_one({"rate_type": rate_type})
         if not rc:
             purities = await db.purities.find({}).to_list(100)
@@ -727,7 +727,7 @@ async def add_purity(req: PurityCreate, user=Depends(get_current_user)):
     }
     await db.purities.insert_one(purity_doc)
     # Add this purity to all rate cards
-    for rate_type in ['normal', 'ajpl']:
+    for rate_type in ['normal', 'ajpl', 'buyback']:
         await db.rate_cards.update_one(
             {"rate_type": rate_type},
             {"$push": {"purities": {
@@ -743,7 +743,7 @@ async def add_purity(req: PurityCreate, user=Depends(get_current_user)):
 async def delete_purity(purity_id: str, user=Depends(get_current_user)):
     await require_role(user, ["admin"])
     await db.purities.delete_one({"id": purity_id})
-    for rate_type in ['normal', 'ajpl']:
+    for rate_type in ['normal', 'ajpl', 'buyback']:
         await db.rate_cards.update_one(
             {"rate_type": rate_type},
             {"$pull": {"purities": {"purity_id": purity_id}}}

@@ -1,0 +1,97 @@
+{
+  "summary": "Tested Buyback Rates feature for AJPL Calculator. All 8 backend tests passed. Frontend verified: Buyback Rates tab in Rate Management page works correctly with all purities and Save button. Buyback rates display (data-testid='buyback-rates-display') shows correctly on Admin Dashboard, Manager Dashboard, and Sales Exec Dashboard - displaying only purities with rate_per_10g > 0 (24KT ₹58,000, 22KT ₹52,000, 18KT ₹43,000).",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "GET /api/rates/buyback - returns buyback rate card with all purities",
+    "GET /api/rates - returns all 3 rate types (normal, ajpl, buyback)",
+    "PUT /api/rates/buyback - admin can update buyback rates",
+    "PUT /api/rates/buyback - non-admin users rejected with 403",
+    "GET /api/rates/buyback - exec users can read buyback rates",
+    "Buyback rate card has same purities as normal rate card",
+    "Buyback rate card has updated_at and updated_by fields after update",
+    "Adding a new purity adds it to buyback rate card",
+    "Frontend: RateManagement page has 'Buyback Rates' tab alongside Normal and AJPL",
+    "Frontend: Buyback tab shows rate inputs for all purities (24KT, 22KT, 20KT, 18KT, 14KT)",
+    "Frontend: Buyback tab has Save Rates button (data-testid='save-buyback-rates')",
+    "Frontend: Admin Dashboard shows buyback rates display (data-testid='buyback-rates-display')",
+    "Frontend: Manager Dashboard shows buyback rates display above bills tabs",
+    "Frontend: Sales Exec Dashboard shows buyback rates display above New Bill section"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_buyback_rates.py",
+    "/app/test_reports/pytest/iteration31_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_buyback_rates.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (8/8 tests passed)",
+    "frontend": "100% (all UI components verified)"
+  },
+
+  "test_credentials": {
+    "admin": {
+      "username": "admin",
+      "password": "admin1123"
+    },
+    "exec": {
+      "username": "test_exec",
+      "login_method": "OTP via GET /api/admin/pending-otps"
+    },
+    "manager": {
+      "username": "manager_145306",
+      "login_method": "OTP via GET /api/admin/pending-otps"
+    }
+  },
+
+  "seed_data_creation": "Buyback rates set via API: 24KT=58000, 22KT=52000, 18KT=43000. Other purities (20KT, 14KT) are 0.",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Buyback Rates feature fully tested. Key endpoints: GET /api/rates/buyback (returns buyback rate card), PUT /api/rates/buyback (admin-only, updates buyback rates). Buyback rate card is auto-created on startup with all purities from the purities collection. Adding/deleting purities also updates the buyback rate card. Frontend displays buyback rates on all 3 dashboards using data-testid='buyback-rates-display' - only shows purities with rate_per_10g > 0. Rate Management page has 3 tabs: Normal Rates, AJPL Rates, Buyback Rates. OTP delivery is MOCKED - visible via GET /api/admin/pending-otps.",
+
+  "feature_verification_details": {
+    "endpoints_tested": [
+      {"endpoint": "GET /api/rates/buyback", "status": "PASS", "notes": "Returns buyback rate card with all purities"},
+      {"endpoint": "PUT /api/rates/buyback", "status": "PASS", "notes": "Admin-only, updates rates, sets updated_at/updated_by"},
+      {"endpoint": "GET /api/rates", "status": "PASS", "notes": "Returns all 3 rate types including buyback"},
+      {"endpoint": "POST /api/purities", "status": "PASS", "notes": "Adding purity also adds to buyback rate card"}
+    ],
+    "frontend_components": [
+      {"component": "Buyback Rates Tab", "testid": "buyback-rates-tab", "status": "PASS", "location": "RateManagement.js"},
+      {"component": "Buyback Rate Inputs", "testid": "rate-buyback-{purity}", "status": "PASS", "notes": "Shows all purities"},
+      {"component": "Save Buyback Rates Button", "testid": "save-buyback-rates", "status": "PASS"},
+      {"component": "Buyback Rates Display (Admin)", "testid": "buyback-rates-display", "status": "PASS", "location": "AdminDashboard.js"},
+      {"component": "Buyback Rates Display (Manager)", "testid": "buyback-rates-display", "status": "PASS", "location": "ManagerDashboard.js"},
+      {"component": "Buyback Rates Display (Sales Exec)", "testid": "buyback-rates-display", "status": "PASS", "location": "SalesExecDashboard.js"}
+    ],
+    "security_tested": [
+      "Admin-only access for PUT /api/rates/buyback (non-admin gets 403)",
+      "All authenticated users can read buyback rates via GET /api/rates/buyback"
+    ]
+  },
+
+  "mocked_apis": {
+    "OTP_delivery": "OTP codes visible via GET /api/admin/pending-otps instead of actual SMS delivery"
+  }
+}

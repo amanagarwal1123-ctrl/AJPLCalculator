@@ -39,12 +39,21 @@ export default function SalesExecDashboard() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [salespeople, setSalespeople] = useState([]);
   const [salesperson, setSalesperson] = useState('');
+  const [buybackRates, setBuybackRates] = useState(null);
 
   useEffect(() => {
     loadBills();
     loadBranches();
     loadSalespeople();
+    loadBuybackRates();
   }, []);
+
+  const loadBuybackRates = async () => {
+    try {
+      const res = await apiClient.get('/rates/buyback');
+      setBuybackRates(res.data);
+    } catch (err) { /* buyback rates may not exist yet */ }
+  };
 
   const loadBills = async () => {
     try {
@@ -285,6 +294,21 @@ export default function SalesExecDashboard() {
                       </Button>
                     </CardContent>
                   </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Buyback Rates Display */}
+          {buybackRates?.purities?.some(p => p.rate_per_10g > 0) && (
+            <div className="rounded-xl border border-border bg-card/60 backdrop-blur-sm p-3 sm:p-4" data-testid="buyback-rates-display">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-medium">Buyback Rates <span className="text-[9px] opacity-60">(per 10g)</span></p>
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                {buybackRates.purities.filter(p => p.rate_per_10g > 0).map(p => (
+                  <div key={p.purity_id} className="flex items-baseline gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/40 border border-border/50">
+                    <span className="text-xs font-semibold text-primary">{p.purity_name}</span>
+                    <span className="mono text-sm font-bold text-foreground">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(p.rate_per_10g)}</span>
+                  </div>
                 ))}
               </div>
             </div>

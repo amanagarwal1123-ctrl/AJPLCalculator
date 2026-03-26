@@ -11,7 +11,7 @@ import { Save, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function RateManagement() {
-  const [rates, setRates] = useState({ normal: null, ajpl: null });
+  const [rates, setRates] = useState({ normal: null, ajpl: null, buyback: null });
   const [purities, setPurities] = useState([]);
   const [newPurityName, setNewPurityName] = useState('');
   const [newPurityPercent, setNewPurityPercent] = useState('');
@@ -130,7 +130,7 @@ export default function RateManagement() {
       <div className="space-y-6">
         <div>
           <h1 className="heading text-3xl font-bold">Rate Management</h1>
-          <p className="text-muted-foreground mt-1">Set gold rates for Normal and AJPL categories</p>
+          <p className="text-muted-foreground mt-1">Set gold rates for Normal, AJPL, and Buyback categories</p>
         </div>
 
         {/* Purity Management */}
@@ -171,13 +171,14 @@ export default function RateManagement() {
           <TabsList className="bg-secondary">
             <TabsTrigger value="normal" data-testid="normal-rates-tab">Normal Rates</TabsTrigger>
             <TabsTrigger value="ajpl" data-testid="ajpl-rates-tab">AJPL Rates</TabsTrigger>
+            <TabsTrigger value="buyback" data-testid="buyback-rates-tab">Buyback Rates</TabsTrigger>
           </TabsList>
 
-          {['normal', 'ajpl'].map(rateType => (
+          {['normal', 'ajpl', 'buyback'].map(rateType => (
             <TabsContent key={rateType} value={rateType}>
               <Card className="bg-card border-border">
                 <CardHeader className="pb-3 flex flex-row items-center justify-between">
-                  <CardTitle className="heading text-xl capitalize">{rateType === 'ajpl' ? 'AJPL' : 'Normal'} Rates</CardTitle>
+                  <CardTitle className="heading text-xl capitalize">{rateType === 'ajpl' ? 'AJPL' : rateType === 'buyback' ? 'Buyback' : 'Normal'} Rates</CardTitle>
                   <Button onClick={() => saveRates(rateType)} disabled={saving} data-testid={`save-${rateType}-rates`}>
                     <Save size={16} className="mr-2" /> {saving ? 'Saving...' : 'Save Rates'}
                   </Button>

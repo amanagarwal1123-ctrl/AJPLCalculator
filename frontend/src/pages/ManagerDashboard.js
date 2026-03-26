@@ -21,13 +21,21 @@ export default function ManagerDashboard() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'pending');
   const [summaryData, setSummaryData] = useState(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [buybackRates, setBuybackRates] = useState(null);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setSearchParams({ tab }, { replace: true });
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); loadBuybackRates(); }, []);
+
+  const loadBuybackRates = async () => {
+    try {
+      const res = await apiClient.get('/rates/buyback');
+      setBuybackRates(res.data);
+    } catch (err) { /* buyback rates may not exist yet */ }
+  };
 
   const loadData = async () => {
     try {
@@ -270,6 +278,21 @@ export default function ManagerDashboard() {
           <Card className="bg-card border-border overflow-hidden"><CardContent className="p-3 sm:p-5"><p className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">Approved</p><p className="mono text-lg sm:text-2xl font-bold text-[hsl(160,52%,46%)] mt-1">{approvedBills.length}</p></CardContent></Card>
           <Card className="bg-card border-border overflow-hidden"><CardContent className="p-3 sm:p-5"><p className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">Total</p><p className="mono text-lg sm:text-2xl font-bold text-[hsl(196,70%,52%)] mt-1">{bills.length}</p></CardContent></Card>
         </div>
+
+        {/* Buyback Rates Display */}
+        {buybackRates?.purities?.some(p => p.rate_per_10g > 0) && (
+          <div className="rounded-xl border border-border bg-card/60 backdrop-blur-sm p-3 sm:p-4" data-testid="buyback-rates-display">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2 font-medium">Buyback Rates <span className="text-[9px] opacity-60">(per 10g)</span></p>
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              {buybackRates.purities.filter(p => p.rate_per_10g > 0).map(p => (
+                <div key={p.purity_id} className="flex items-baseline gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/40 border border-border/50">
+                  <span className="text-xs font-semibold text-primary">{p.purity_name}</span>
+                  <span className="mono text-sm font-bold text-foreground">{formatCurrency(p.rate_per_10g)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="bg-secondary overflow-x-auto w-full justify-start sm:justify-center">
