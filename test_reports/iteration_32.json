@@ -1,0 +1,94 @@
+{
+  "summary": "Tested Old Gold (OG) feature for bills. All 9 backend tests passed. Frontend verified: OG section visible on BillPage after Grand Total with checkbox toggle, brown/amber color scheme (hsl 30 range), photo upload and value input when expanded, OG badge on Admin Dashboard bill cards showing 'OG ₹X' in brown color.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "PUT /api/bills/{bill_id}/old-gold - sets old_gold data with enabled=true, value, photo",
+    "PUT /api/bills/{bill_id}/old-gold - old_gold.value does NOT affect grand_total",
+    "PUT /api/bills/{bill_id}/old-gold - can set photo URL",
+    "PUT /api/bills/{bill_id}/old-gold - can disable old_gold (enabled=false)",
+    "GET /api/bills/{bill_id} - includes old_gold field",
+    "GET /api/bills/{bill_id}/summary - includes old_gold field",
+    "PUT /api/bills/{bill_id}/old-gold - handles value=0",
+    "PUT /api/bills/{bill_id}/old-gold - handles value=null (defaults to 0)",
+    "PUT /api/bills/{bill_id}/old-gold - returns 404 for non-existent bill",
+    "Frontend BillPage: OG section visible after Grand Total (data-testid='og-section')",
+    "Frontend BillPage: OG toggle expands/collapses section (data-testid='og-toggle')",
+    "Frontend BillPage: OG value input present when expanded (data-testid='og-value-input')",
+    "Frontend BillPage: OG save button present (data-testid='og-save-btn')",
+    "Frontend BillPage: OG photo upload present (data-testid='og-photo-upload')",
+    "Frontend BillPage: Collapsed OG shows brown badge with value when enabled",
+    "Frontend AdminDashboard: Bills with OG show brown 'OG ₹X' badge (data-testid='og-badge-{bill.id}')"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_old_gold.py",
+    "/app/test_reports/pytest/iteration32_results.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_old_gold.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (9/9 tests passed)",
+    "frontend": "100% (all UI components verified)"
+  },
+
+  "test_credentials": {
+    "admin": {
+      "username": "admin",
+      "password": "admin1123"
+    }
+  },
+
+  "seed_data_creation": "Test bill created with old_gold values (15000, 25000, 22000) during testing. One bill visible on Admin Dashboard with OG ₹15,000 badge.",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Old Gold (OG) feature fully tested. Key endpoint: PUT /api/bills/{bill_id}/old-gold (sets old_gold data with enabled, photo, value fields). OG value is display-only and does NOT affect grand_total. OG section on BillPage uses brown/amber color scheme (hsl 30 range). When OG is enabled and collapsed, shows brown badge with value. Admin Dashboard shows 'OG ₹X' badge on bill cards. Manager Dashboard also has OG badges on bill cards and in summary dialog (data-testid='summary-og-badge'). OTP delivery is MOCKED - visible via GET /api/admin/pending-otps.",
+
+  "feature_verification_details": {
+    "endpoints_tested": [
+      {"endpoint": "PUT /api/bills/{bill_id}/old-gold", "status": "PASS", "notes": "Sets old_gold with enabled, photo, value fields"},
+      {"endpoint": "GET /api/bills/{bill_id}", "status": "PASS", "notes": "Returns old_gold field"},
+      {"endpoint": "GET /api/bills/{bill_id}/summary", "status": "PASS", "notes": "Returns old_gold field"}
+    ],
+    "frontend_components": [
+      {"component": "OG Section", "testid": "og-section", "status": "PASS", "location": "BillPage.js", "notes": "Brown/amber color scheme after Grand Total"},
+      {"component": "OG Toggle", "testid": "og-toggle", "status": "PASS", "notes": "Expands/collapses OG section"},
+      {"component": "OG Value Input", "testid": "og-value-input", "status": "PASS", "notes": "Visible when expanded"},
+      {"component": "OG Save Button", "testid": "og-save-btn", "status": "PASS", "notes": "Saves OG value"},
+      {"component": "OG Photo Upload", "testid": "og-photo-upload", "status": "PASS", "notes": "Upload OG product photo"},
+      {"component": "OG Badge (Admin)", "testid": "og-badge-{bill.id}", "status": "PASS", "location": "AdminDashboard.js", "notes": "Brown 'OG ₹X' badge on bill cards"},
+      {"component": "OG Badge (Manager)", "testid": "N/A", "status": "PASS", "location": "ManagerDashboard.js", "notes": "OG badge on bill cards"},
+      {"component": "OG Badge (Summary)", "testid": "summary-og-badge", "status": "PASS", "location": "ManagerDashboard.js", "notes": "OG badge in summary dialog"}
+    ],
+    "business_logic_verified": [
+      "OG value does NOT affect grand_total calculation",
+      "OG can be enabled/disabled via toggle",
+      "OG photo can be uploaded and removed",
+      "OG value persists after save"
+    ]
+  },
+
+  "mocked_apis": {
+    "OTP_delivery": "OTP codes visible via GET /api/admin/pending-otps instead of actual SMS delivery"
+  }
+}

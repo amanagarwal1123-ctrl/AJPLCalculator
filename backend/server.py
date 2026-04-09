@@ -1237,6 +1237,27 @@ async def update_bill_reference(bill_id: str, req: BillReferenceUpdate, user=Dep
     updated = await db.bills.find_one({"id": bill_id})
     return serialize_doc(updated)
 
+class OldGoldUpdate(BaseModel):
+    enabled: bool = False
+    photo: Optional[str] = None
+    value: Optional[float] = 0
+
+@api_router.put("/bills/{bill_id}/old-gold")
+async def update_bill_old_gold(bill_id: str, req: OldGoldUpdate, user=Depends(get_current_user)):
+    """Update old gold (OG) info on a bill. Not used in calculations."""
+    bill = await db.bills.find_one({"id": bill_id})
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+    
+    og_data = {"enabled": req.enabled, "photo": req.photo, "value": req.value or 0}
+    await db.bills.update_one(
+        {"id": bill_id},
+        {"$set": {"old_gold": og_data, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    updated = await db.bills.find_one({"id": bill_id})
+    return serialize_doc(updated)
+
+
 @api_router.post("/admin/normalize-references")
 async def normalize_all_references(user=Depends(get_current_user)):
     """Admin-only: one-time fix to normalize all reference strings in bills and customers."""
@@ -1459,6 +1480,7 @@ async def get_bill_summary(bill_id: str, user=Depends(get_current_user)):
         "gst_percent": bill_data.get('gst_percent', 3),
         "gst_amount": bill_data.get('gst_amount', 0),
         "grand_total": bill_data.get('grand_total', 0),
+        "old_gold": bill_data.get('old_gold'),
     }
 
 @api_router.get("/bills/{bill_id}")

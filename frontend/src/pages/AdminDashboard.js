@@ -388,6 +388,7 @@ export default function AdminDashboard() {
                                   <span>Items: <span className="text-foreground">{bill.items?.length || 0}</span></span>
                                   <span>Wt: <span className="mono text-foreground">{getBillWeight(bill)}g</span></span>
                                   <span>Phone: <span className="mono text-foreground">{bill.customer_phone}</span></span>
+                                  {bill.old_gold?.enabled && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[hsl(30,50%,25%)] text-[hsl(30,70%,55%)] border border-[hsl(30,60%,35%)]/40" data-testid={`og-badge-${bill.id}`}>OG {formatCurrency(bill.old_gold.value)}</span>}
                                 </div>
                               </div>
                             </div>

@@ -85,6 +85,7 @@ export default function ManagerDashboard() {
           <p className="font-medium text-sm truncate text-primary cursor-pointer hover:underline" onClick={() => navigate(`/customer/${b.customer_phone}`)}>{b.customer_name}</p>
           <p className="text-[10px] text-muted-foreground mono mt-0.5 truncate">{b.bill_number}</p>
           <p className="text-xs text-muted-foreground mt-0.5 truncate">by {b.executive_name}{b.salesperson_name ? ` / ${b.salesperson_name}` : ''}</p>
+          {b.old_gold?.enabled && <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[hsl(30,50%,25%)] text-[hsl(30,70%,55%)] border border-[hsl(30,60%,35%)]/40">OG {formatCurrency(b.old_gold.value)}</span>}
         </div>
         <div className="text-right shrink-0 min-w-0">
           {statusBadge(b.status)}
@@ -126,7 +127,10 @@ export default function ManagerDashboard() {
               <TableCell className="text-muted-foreground text-sm truncate max-w-[120px]">{b.executive_name}</TableCell>
               <TableCell>{statusBadge(b.status)}</TableCell>
               <TableCell className="mono text-sm">{b.items?.length || 0}</TableCell>
-              <TableCell className="mono text-right font-medium text-primary text-sm whitespace-nowrap">{formatCurrency(b.grand_total)}</TableCell>
+              <TableCell className="mono text-right font-medium text-primary text-sm whitespace-nowrap">
+                {formatCurrency(b.grand_total)}
+                {b.old_gold?.enabled && <span className="ml-1.5 px-1 py-0.5 rounded text-[9px] font-semibold bg-[hsl(30,50%,25%)] text-[hsl(30,70%,55%)] border border-[hsl(30,60%,35%)]/40">OG</span>}
+              </TableCell>
               <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{b.created_at?.slice(0, 10)}</TableCell>
               <TableCell>
                 <div className="flex gap-1 flex-nowrap">
@@ -338,6 +342,12 @@ export default function ManagerDashboard() {
                     <div className="flex justify-between gap-2 text-sm"><span className="text-muted-foreground shrink-0">GST ({summaryData.gst_percent || 3}%)</span><span className="mono truncate">{formatCurrency(summaryData.gst_amount)}</span></div>
                     <Separator className="bg-primary/30" />
                     <div className="flex justify-between gap-2 text-base sm:text-lg font-bold"><span className="heading shrink-0">Grand Total</span><span className="mono text-primary truncate">{formatCurrency(summaryData.grand_total)}</span></div>
+                    {summaryData.old_gold?.enabled && (
+                      <div className="flex items-center gap-2 mt-1 px-2 py-1.5 rounded-lg bg-[hsl(30,50%,25%)]/40 border border-[hsl(30,60%,35%)]/40" data-testid="summary-og-badge">
+                        <span className="text-xs font-semibold text-[hsl(30,70%,55%)]">OG</span>
+                        <span className="mono text-sm font-bold text-[hsl(30,70%,55%)]">{formatCurrency(summaryData.old_gold.value)}</span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>

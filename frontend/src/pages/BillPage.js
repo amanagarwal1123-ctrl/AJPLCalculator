@@ -27,6 +27,9 @@ export default function BillPage() {
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [editingRef, setEditingRef] = useState(false);
   const [newRef, setNewRef] = useState('');
+  const [ogExpanded, setOgExpanded] = useState(false);
+  const [ogValue, setOgValue] = useState('');
+  const [ogUploading, setOgUploading] = useState(false);
 
   const REFERENCE_OPTIONS = ['Instagram', 'Facebook', 'Friends', 'Family', 'Repeat Customer', 'Walk-in', 'Google', 'Newspaper', 'TV', 'Other'];
 
@@ -40,6 +43,8 @@ export default function BillPage() {
     try {
       const res = await apiClient.get(`/bills/${billId}`);
       setBill(res.data);
+      if (res.data?.old_gold?.value) setOgValue(String(res.data.old_gold.value));
+      if (res.data?.old_gold?.enabled) setOgExpanded(true);
     } catch (err) { toast.error('Failed to load bill'); }
     finally { setLoading(false); }
   };
@@ -127,6 +132,28 @@ export default function BillPage() {
       setEditingRef(false);
       toast.success('Reference updated');
     } catch (err) { toast.error('Failed to update reference'); }
+  };
+
+  const saveOldGold = async (enabled, photo, value) => {
+    try {
+      const res = await apiClient.put(`/bills/${billId}/old-gold`, { enabled, photo: photo || null, value: parseFloat(value) || 0 });
+      setBill(res.data);
+      toast.success(enabled ? 'Old Gold saved' : 'Old Gold removed');
+    } catch (err) { toast.error('Failed to update Old Gold'); }
+  };
+
+  const handleOgPhotoUpload = async (file) => {
+    if (!file) return;
+    setOgUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadRes = await apiClient.post('/upload/photo', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const photoUrl = uploadRes.data.url;
+      const val = ogValue || bill?.old_gold?.value || 0;
+      await saveOldGold(true, photoUrl, val);
+    } catch (err) { toast.error('Failed to upload OG photo'); }
+    finally { setOgUploading(false); }
   };
 
   const removeItem = async (index) => {
@@ -515,6 +542,96 @@ export default function BillPage() {
                   <div className="flex justify-between text-sm"><span className="text-muted-foreground">GST (3%)</span><span className="mono">{formatCurrency(bill.gst_amount)}</span></div>
                   <Separator className="bg-primary/30" />
                   <div className="flex justify-between text-lg font-bold"><span className="heading">Grand Total</span><span className="mono text-primary">{formatCurrency(bill.grand_total)}</span></div>
+
+                  {/* Old Gold (OG) Section */}
+                  <div className="rounded-lg border border-[hsl(30,60%,35%)]/40 bg-[hsl(30,40%,15%)]/30" data-testid="og-section">
+                    <button
+                      className="w-full flex items-center justify-between px-3 py-2"
+                      onClick={() => {
+                        if (!ogExpanded && !bill.old_gold?.enabled) {
+                          setOgExpanded(true);
+                        } else if (ogExpanded && !bill.old_gold?.enabled) {
+                          setOgExpanded(false);
+                        } else {
+                          setOgExpanded(!ogExpanded);
+                        }
+                      }}
+                      data-testid="og-toggle"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${bill.old_gold?.enabled ? 'bg-[hsl(30,70%,40%)] border-[hsl(30,70%,40%)]' : 'border-[hsl(30,50%,45%)]/50'}`}>
+                          {bill.old_gold?.enabled && <CheckCircle size={12} className="text-white" />}
+                        </div>
+                        <span className="text-sm font-semibold text-[hsl(30,70%,55%)]">OG</span>
+                        <span className="text-xs text-[hsl(30,50%,50%)]">(Old Gold)</span>
+                      </div>
+                      {bill.old_gold?.enabled && (
+                        <span className="mono text-sm font-bold text-[hsl(30,70%,55%)]">{formatCurrency(bill.old_gold.value)}</span>
+                      )}
+                    </button>
+                    {ogExpanded && (
+                      <div className="px-3 pb-3 space-y-2.5 border-t border-[hsl(30,60%,35%)]/20">
+                        {/* OG Photo */}
+                        <div className="pt-2">
+                          {bill.old_gold?.photo ? (
+                            <div className="relative inline-block">
+                              <img
+                                src={`${IMG_BASE}${bill.old_gold.photo}`}
+                                alt="Old Gold"
+                                className="w-20 h-20 rounded-lg object-cover border border-[hsl(30,60%,35%)]/40 cursor-pointer"
+                                onClick={() => setLightboxImg(`${IMG_BASE}${bill.old_gold.photo}`)}
+                                data-testid="og-photo-preview"
+                              />
+                              {canEdit() && (
+                                <button
+                                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center"
+                                  onClick={() => saveOldGold(bill.old_gold?.value ? true : false, null, ogValue)}
+                                  data-testid="og-photo-remove"
+                                ><X size={10} /></button>
+                              )}
+                            </div>
+                          ) : canEdit() ? (
+                            <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[hsl(30,60%,35%)]/40 cursor-pointer hover:bg-[hsl(30,40%,15%)]/30 text-[hsl(30,50%,50%)] text-xs">
+                              <Camera size={14} />
+                              {ogUploading ? 'Uploading...' : 'Upload OG Photo'}
+                              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleOgPhotoUpload(e.target.files?.[0])} data-testid="og-photo-upload" />
+                            </label>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">No photo</p>
+                          )}
+                        </div>
+                        {/* OG Value */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-[hsl(30,50%,50%)]">Value:</span>
+                          {canEdit() ? (
+                            <>
+                              <Input
+                                type="number"
+                                placeholder="Enter OG value"
+                                value={ogValue}
+                                onChange={e => setOgValue(e.target.value)}
+                                className="h-8 text-sm mono bg-secondary/50 flex-1"
+                                data-testid="og-value-input"
+                              />
+                              <Button
+                                size="sm"
+                                className="h-8 px-3 bg-[hsl(30,70%,40%)] hover:bg-[hsl(30,70%,35%)] text-white text-xs"
+                                onClick={() => saveOldGold(true, bill.old_gold?.photo || null, ogValue)}
+                                data-testid="og-save-btn"
+                              >Save</Button>
+                            </>
+                          ) : (
+                            <span className="mono text-sm font-bold text-[hsl(30,70%,55%)]">{formatCurrency(bill.old_gold?.value || 0)}</span>
+                          )}
+                        </div>
+                        {/* Remove OG */}
+                        {canEdit() && bill.old_gold?.enabled && (
+                          <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive w-full" onClick={() => { saveOldGold(false, null, 0); setOgValue(''); setOgExpanded(false); }} data-testid="og-remove-btn">Remove Old Gold</Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   <Separator className="bg-border" />
 
                   <div className="space-y-2 pt-2">
