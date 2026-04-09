@@ -484,25 +484,25 @@ export default function ItemCalculator() {
                 {/* Weight */}
                 <Card className="bg-card border-border">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-base">Weight Details</CardTitle>
+                    <CardTitle className="text-base md:text-lg">Weight Details</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-3 gap-3 md:gap-5">
                       <div className="space-y-2">
-                        <Label>Gross Weight (g)</Label>
-                        <NumericInput value={grossWeight} onChange={e => setGrossWeight(e.target.value)} label="Gross Weight (g)" className="h-11 mono bg-secondary/50" data-testid="gross-weight-input" />
+                        <Label className="text-sm md:text-base font-medium">Gross Weight (g)</Label>
+                        <NumericInput value={grossWeight} onChange={e => setGrossWeight(e.target.value)} label="Gross Weight (g)" className="h-12 md:h-14 text-base md:text-lg mono bg-secondary/50" data-testid="gross-weight-input" />
                       </div>
                       <div className="space-y-2">
-                        <Label>Less (g)</Label>
-                        <NumericInput value={less} onChange={e => setLess(e.target.value)} label="Less (g)" className="h-11 mono bg-secondary/50" data-testid="less-input" />
+                        <Label className="text-sm md:text-base font-medium">Less (g)</Label>
+                        <NumericInput value={less} onChange={e => setLess(e.target.value)} label="Less (g)" className="h-12 md:h-14 text-base md:text-lg mono bg-secondary/50" data-testid="less-input" />
                       </div>
                       <div className="space-y-2">
-                        <Label>Net Weight (g)</Label>
-                        <div className="h-11 px-3 flex items-center rounded-md bg-muted/50 border border-border mono font-bold text-primary" data-testid="net-weight-display">
+                        <Label className="text-sm md:text-base font-medium">Net Weight (g)</Label>
+                        <div className="h-12 md:h-14 px-4 flex items-center rounded-md bg-muted/50 border border-border mono font-bold text-primary text-base md:text-lg" data-testid="net-weight-display">
                           {netWeight.toFixed(3)}
                         </div>
                         {studdedLessGrams > 0 && (
-                          <p className="text-xs text-primary mt-0.5" data-testid="studded-less-note">
+                          <p className="text-xs md:text-sm text-primary mt-0.5" data-testid="studded-less-note">
                             Incl. diamond less: -{studdedLessGrams.toFixed(3)}g
                           </p>
                         )}
@@ -514,25 +514,25 @@ export default function ItemCalculator() {
                 {/* Making Charges */}
                 <Card className="bg-card border-border">
                   <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                    <CardTitle className="text-base">Making Charges</CardTitle>
-                    <div className="flex gap-1">
-                      <Button variant="outline" size="sm" onClick={() => addMakingCharge('percentage')} className="text-xs h-7" data-testid="add-making-percentage">+ % Rate</Button>
-                      <Button variant="outline" size="sm" onClick={() => addMakingCharge('per_gram')} className="text-xs h-7" data-testid="add-making-pergram">+ Per Gram</Button>
-                      <Button variant="outline" size="sm" onClick={() => addMakingCharge('per_piece')} className="text-xs h-7" data-testid="add-making-perpiece">+ Per Piece</Button>
+                    <CardTitle className="text-base md:text-lg">Making Charges</CardTitle>
+                    <div className="flex gap-1.5">
+                      <Button variant="outline" size="sm" onClick={() => addMakingCharge('percentage')} className="text-xs md:text-sm h-8 md:h-10 px-3" data-testid="add-making-percentage">+ % Rate</Button>
+                      <Button variant="outline" size="sm" onClick={() => addMakingCharge('per_gram')} className="text-xs md:text-sm h-8 md:h-10 px-3" data-testid="add-making-pergram">+ Per Gram</Button>
+                      <Button variant="outline" size="sm" onClick={() => addMakingCharge('per_piece')} className="text-xs md:text-sm h-8 md:h-10 px-3" data-testid="add-making-perpiece">+ Per Piece</Button>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {makingCharges.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">No making charges added</p>}
+                    {makingCharges.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No making charges added</p>}
                     {makingCharges.map((mc, idx) => (
-                      <div key={idx} className="flex items-end gap-3 p-3 rounded-lg bg-secondary/20 border border-border">
+                      <div key={idx} className="flex items-end gap-3 md:gap-4 p-3 md:p-4 rounded-lg bg-secondary/20 border border-border">
                         <div className="flex-1">
-                          <Label className="text-xs text-muted-foreground capitalize">{mc.type === 'percentage' ? '% Making' : mc.type === 'per_gram' ? 'Per Gram (Rs.)' : 'Per Piece (Rs.)'}</Label>
-                          <NumericInput value={mc.value} onChange={e => updateMakingCharge(idx, 'value', e.target.value)} label={mc.type === 'percentage' ? '% Making' : mc.type === 'per_gram' ? 'Per Gram (Rs.)' : 'Per Piece (Rs.)'} className="h-9 mono bg-secondary/50 mt-1" data-testid={`making-value-${idx}`} />
+                          <Label className="text-xs md:text-sm text-muted-foreground capitalize">{mc.type === 'percentage' ? '% Making' : mc.type === 'per_gram' ? 'Per Gram (Rs.)' : 'Per Piece (Rs.)'}</Label>
+                          <NumericInput value={mc.value} onChange={e => updateMakingCharge(idx, 'value', e.target.value)} label={mc.type === 'percentage' ? '% Making' : mc.type === 'per_gram' ? 'Per Gram (Rs.)' : 'Per Piece (Rs.)'} className="h-10 md:h-12 mono bg-secondary/50 mt-1 text-base" data-testid={`making-value-${idx}`} />
                         </div>
                         {mc.type === 'per_piece' && (
-                          <div className="w-24">
-                            <Label className="text-xs text-muted-foreground">Qty</Label>
-                            <NumericInput value={mc.quantity} onChange={e => updateMakingCharge(idx, 'quantity', e.target.value)} label="Qty" className="h-9 mono bg-secondary/50 mt-1" data-testid={`making-qty-${idx}`} />
+                          <div className="w-28">
+                            <Label className="text-xs md:text-sm text-muted-foreground">Qty</Label>
+                            <NumericInput value={mc.quantity} onChange={e => updateMakingCharge(idx, 'quantity', e.target.value)} label="Qty" className="h-10 md:h-12 mono bg-secondary/50 mt-1 text-base" data-testid={`making-qty-${idx}`} />
                           </div>
                         )}
                         {mc.type === 'percentage' && (
@@ -552,27 +552,27 @@ export default function ItemCalculator() {
                 {/* Stone Charges */}
                 <Card className="bg-card border-border">
                   <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                    <CardTitle className="text-base">Stone Charges</CardTitle>
-                    <div className="flex gap-1">
-                      <Button variant="outline" size="sm" onClick={() => addStoneCharge('kundan')} className="text-xs h-7" data-testid="add-stone-kundan">+ Kundan</Button>
-                      <Button variant="outline" size="sm" onClick={() => addStoneCharge('stone')} className="text-xs h-7" data-testid="add-stone-stone">+ Stone</Button>
-                      <Button variant="outline" size="sm" onClick={() => addStoneCharge('moti')} className="text-xs h-7" data-testid="add-stone-moti">+ Moti</Button>
+                    <CardTitle className="text-base md:text-lg">Stone Charges</CardTitle>
+                    <div className="flex gap-1.5">
+                      <Button variant="outline" size="sm" onClick={() => addStoneCharge('kundan')} className="text-xs md:text-sm h-8 md:h-10 px-3" data-testid="add-stone-kundan">+ Kundan</Button>
+                      <Button variant="outline" size="sm" onClick={() => addStoneCharge('stone')} className="text-xs md:text-sm h-8 md:h-10 px-3" data-testid="add-stone-stone">+ Stone</Button>
+                      <Button variant="outline" size="sm" onClick={() => addStoneCharge('moti')} className="text-xs md:text-sm h-8 md:h-10 px-3" data-testid="add-stone-moti">+ Moti</Button>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {stoneCharges.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">No stone charges added</p>}
+                    {stoneCharges.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No stone charges added</p>}
                     {stoneCharges.map((sc, idx) => (
-                      <div key={idx} className="flex items-end gap-3 p-3 rounded-lg bg-secondary/20 border border-border">
+                      <div key={idx} className="flex items-end gap-3 md:gap-4 p-3 md:p-4 rounded-lg bg-secondary/20 border border-border">
                         <div className="flex-1">
-                          <Label className="text-xs text-muted-foreground capitalize">
+                          <Label className="text-xs md:text-sm text-muted-foreground capitalize">
                             {sc.type === 'kundan' ? 'Kundan - Per Piece (Rs.)' : sc.type === 'stone' ? 'Stone - Per Gram (Rs.)' : 'Moti - Total (Rs.)'}
                           </Label>
-                          <NumericInput value={sc.value} onChange={e => updateStoneCharge(idx, 'value', e.target.value)} label={sc.type === 'kundan' ? 'Kundan (Rs.)' : sc.type === 'stone' ? 'Stone (Rs.)' : 'Moti (Rs.)'} className="h-9 mono bg-secondary/50 mt-1" data-testid={`stone-value-${idx}`} />
+                          <NumericInput value={sc.value} onChange={e => updateStoneCharge(idx, 'value', e.target.value)} label={sc.type === 'kundan' ? 'Kundan (Rs.)' : sc.type === 'stone' ? 'Stone (Rs.)' : 'Moti (Rs.)'} className="h-10 md:h-12 mono bg-secondary/50 mt-1 text-base" data-testid={`stone-value-${idx}`} />
                         </div>
                         {sc.type === 'kundan' && (
-                          <div className="w-24">
-                            <Label className="text-xs text-muted-foreground">Pieces</Label>
-                            <NumericInput value={sc.quantity} onChange={e => updateStoneCharge(idx, 'quantity', e.target.value)} label="Pieces" className="h-9 mono bg-secondary/50 mt-1" data-testid={`stone-qty-${idx}`} />
+                          <div className="w-28">
+                            <Label className="text-xs md:text-sm text-muted-foreground">Pieces</Label>
+                            <NumericInput value={sc.quantity} onChange={e => updateStoneCharge(idx, 'quantity', e.target.value)} label="Pieces" className="h-10 md:h-12 mono bg-secondary/50 mt-1 text-base" data-testid={`stone-qty-${idx}`} />
                           </div>
                         )}
                         <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-destructive" onClick={() => removeStoneCharge(idx)}>
@@ -587,25 +587,25 @@ export default function ItemCalculator() {
                 {itemType === 'diamond' && (
                   <Card className="bg-card border-[hsl(196,70%,52%)]/30">
                     <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                      <CardTitle className="text-base text-[hsl(196,70%,52%)]">Studded (Diamond) Charges</CardTitle>
-                      <div className="flex gap-1">
-                        <Button variant="outline" size="sm" onClick={() => addStuddedCharge('diamond')} className="text-xs h-7" data-testid="add-studded-diamond">+ Diamond</Button>
-                        <Button variant="outline" size="sm" onClick={() => addStuddedCharge('solitaire')} className="text-xs h-7" data-testid="add-studded-solitaire">+ Solitaire</Button>
-                        <Button variant="outline" size="sm" onClick={() => addStuddedCharge('colored_stones')} className="text-xs h-7" data-testid="add-studded-colored">+ Colored</Button>
+                      <CardTitle className="text-base md:text-lg text-[hsl(196,70%,52%)]">Studded (Diamond) Charges</CardTitle>
+                      <div className="flex gap-1.5">
+                        <Button variant="outline" size="sm" onClick={() => addStuddedCharge('diamond')} className="text-xs md:text-sm h-8 md:h-10 px-3" data-testid="add-studded-diamond">+ Diamond</Button>
+                        <Button variant="outline" size="sm" onClick={() => addStuddedCharge('solitaire')} className="text-xs md:text-sm h-8 md:h-10 px-3" data-testid="add-studded-solitaire">+ Solitaire</Button>
+                        <Button variant="outline" size="sm" onClick={() => addStuddedCharge('colored_stones')} className="text-xs md:text-sm h-8 md:h-10 px-3" data-testid="add-studded-colored">+ Colored</Button>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      {studdedCharges.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">No studded charges added</p>}
+                      {studdedCharges.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No studded charges added</p>}
                       {studdedCharges.map((sc, idx) => (
-                        <div key={idx} className="p-3 rounded-lg bg-[hsl(196,70%,52%)]/5 border border-[hsl(196,70%,52%)]/20">
-                          <div className="flex items-end gap-3">
+                        <div key={idx} className="p-3 md:p-4 rounded-lg bg-[hsl(196,70%,52%)]/5 border border-[hsl(196,70%,52%)]/20">
+                          <div className="flex items-end gap-3 md:gap-4">
                             <div className="flex-1">
-                              <Label className="text-xs text-muted-foreground capitalize">{sc.type.replace('_', ' ')} - Carats</Label>
-                              <NumericInput value={sc.carats} onChange={e => updateStuddedCharge(idx, 'carats', e.target.value)} label="Carats" className="h-9 mono bg-secondary/50 mt-1" data-testid={`studded-carats-${idx}`} />
+                              <Label className="text-xs md:text-sm text-muted-foreground capitalize">{sc.type.replace('_', ' ')} - Carats</Label>
+                              <NumericInput value={sc.carats} onChange={e => updateStuddedCharge(idx, 'carats', e.target.value)} label="Carats" className="h-10 md:h-12 mono bg-secondary/50 mt-1 text-base" data-testid={`studded-carats-${idx}`} />
                             </div>
                             <div className="flex-1">
-                              <Label className="text-xs text-muted-foreground">Rate per Carat (Rs.)</Label>
-                              <NumericInput value={sc.rate_per_carat} onChange={e => updateStuddedCharge(idx, 'rate_per_carat', e.target.value)} label="Rate per Carat" className="h-9 mono bg-secondary/50 mt-1" data-testid={`studded-rate-${idx}`} />
+                              <Label className="text-xs md:text-sm text-muted-foreground">Rate per Carat (Rs.)</Label>
+                              <NumericInput value={sc.rate_per_carat} onChange={e => updateStuddedCharge(idx, 'rate_per_carat', e.target.value)} label="Rate per Carat" className="h-10 md:h-12 mono bg-secondary/50 mt-1 text-base" data-testid={`studded-rate-${idx}`} />
                             </div>
                             <div className="text-sm mono font-medium text-[hsl(196,70%,52%)]">
                               {formatCurrency((parseFloat(sc.carats) || 0) * (parseFloat(sc.rate_per_carat) || 0))}
@@ -662,10 +662,10 @@ export default function ItemCalculator() {
               <div>
                 <Card className="bg-card border-border shadow-[var(--shadow-elev-1)] sticky top-20">
                   <CardHeader className="pb-2">
-                    <CardTitle className="heading text-lg">Item Summary</CardTitle>
+                    <CardTitle className="heading text-lg md:text-xl">Item Summary</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="text-sm space-y-2">
+                  <CardContent className="space-y-3 md:space-y-4">
+                    <div className="text-sm md:text-base space-y-2 md:space-y-3">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Item</span>
                         <span className="font-medium">{itemName || '-'}</span>
@@ -682,14 +682,14 @@ export default function ItemCalculator() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Rate/10g</span>
-                        <span className="mono">{formatCurrency(rateNum)}</span>
+                        <span className="mono font-medium">{formatCurrency(rateNum)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Net Weight</span>
-                        <span className="mono">{netWeight.toFixed(3)}g</span>
+                        <span className="mono font-medium">{netWeight.toFixed(3)}g</span>
                       </div>
                       {studdedLessGrams > 0 && (
-                        <div className="flex justify-between text-xs">
+                        <div className="flex justify-between text-xs md:text-sm">
                           <span className="text-primary">Diamond Less</span>
                           <span className="mono text-primary">-{studdedLessGrams.toFixed(3)}g</span>
                         </div>
@@ -698,41 +698,41 @@ export default function ItemCalculator() {
 
                     <Separator className="bg-border" />
 
-                    <div className="text-sm space-y-2">
+                    <div className="text-sm md:text-base space-y-2 md:space-y-3">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Gold Value</span>
-                        <span className="mono text-primary">{formatCurrency(goldValue)}</span>
+                        <span className="mono text-primary font-medium">{formatCurrency(goldValue)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Making</span>
-                        <span className="mono">{formatCurrency(makingTotal)}</span>
+                        <span className="mono font-medium">{formatCurrency(makingTotal)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Stone</span>
-                        <span className="mono">{formatCurrency(stoneTotal)}</span>
+                        <span className="mono font-medium">{formatCurrency(stoneTotal)}</span>
                       </div>
                       {itemType === 'diamond' && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Studded</span>
-                          <span className="mono text-[hsl(196,70%,52%)]">{formatCurrency(studdedTotal)}</span>
+                          <span className="mono font-medium text-[hsl(196,70%,52%)]">{formatCurrency(studdedTotal)}</span>
                         </div>
                       )}
                     </div>
 
                     <Separator className="bg-primary/30" />
 
-                    <div className="flex justify-between text-lg font-bold">
+                    <div className="flex justify-between text-lg md:text-xl font-bold">
                       <span className="heading">Total</span>
                       <span className="mono text-primary">{formatCurrency(itemTotal)}</span>
                     </div>
 
                     <Button
-                      className="w-full h-11 mt-4 text-base font-semibold rounded-xl"
+                      className="w-full h-12 md:h-14 mt-4 text-base md:text-lg font-semibold rounded-xl"
                       onClick={saveItem}
                       disabled={saving}
                       data-testid="save-item-button"
                     >
-                      <Save size={16} className="mr-2" />
+                      <Save size={18} className="mr-2" />
                       {saving ? 'Saving...' : isEditing ? 'Update Item' : 'Save Item'}
                     </Button>
                   </CardContent>

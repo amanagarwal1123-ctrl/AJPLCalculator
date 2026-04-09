@@ -159,3 +159,52 @@ iframe[src*="emergent"] {
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground));
 }
+
+
+/* ─── Tablet Optimizations (≥768px touch devices) ─── */
+@media (min-width: 768px) {
+  /* Larger base input height for all inputs */
+  input, select, textarea {
+    min-height: 48px;
+    font-size: 16px !important;
+  }
+
+  /* NumericInput tappable appearance */
+  input.numpad-digits {
+    min-height: 52px;
+    font-size: 18px !important;
+    font-weight: 600;
+    border: 1.5px solid hsl(var(--border));
+    background: hsl(224 50% 18%) !important;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input.numpad-digits:not(:read-only),
+  input.numpad-digits[readonly] {
+    cursor: pointer;
+  }
+  input.numpad-digits:focus,
+  input.numpad-digits:active {
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.15);
+  }
+
+  /* Larger buttons everywhere */
+  button {
+    min-height: 42px;
+  }
+
+  /* Labels more legible */
+  label {
+    font-size: 14px;
+  }
+
+  /* Card padding boost */
+  .space-y-2 > * + * { margin-top: 0.625rem; }
+  .space-y-3 > * + * { margin-top: 0.875rem; }
+
+  /* Mono values — bigger, bolder */
+  .mono {
+    font-size: 1em;
+    letter-spacing: 0.04em;
+  }
+}

@@ -186,21 +186,21 @@ export default function RateManagement() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-xs text-muted-foreground mb-4">Enter rate per 10 grams for each purity</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
                     {rates[rateType]?.purities?.map((p, idx) => (
-                      <div key={idx} className="p-4 rounded-lg bg-secondary/20 border border-border">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-primary">{p.purity_name}</span>
-                          <span className="text-xs text-muted-foreground">{p.purity_percent}%</span>
+                      <div key={idx} className="p-4 md:p-5 rounded-xl bg-secondary/20 border border-border">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="font-semibold text-primary text-base md:text-lg">{p.purity_name}</span>
+                          <span className="text-xs md:text-sm text-muted-foreground">{p.purity_percent}%</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">Rs.</span>
+                          <span className="text-sm md:text-base text-muted-foreground">Rs.</span>
                           <NumericInput
                             value={p.rate_per_10g || ''}
                             onChange={e => updateRate(rateType, idx, e.target.value)}
                             placeholder="0"
                             label={`${p.purity_name} Rate/10g`}
-                            className="h-10 mono bg-secondary/50"
+                            className="h-12 md:h-14 mono bg-secondary/50 text-base md:text-lg"
                             data-testid={`rate-${rateType}-${p.purity_name}`}
                           />
                           <span className="text-xs text-muted-foreground">/10g</span>
