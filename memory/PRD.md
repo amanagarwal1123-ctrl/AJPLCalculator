@@ -11,37 +11,32 @@ Jewelry business management application with sales tracking, billing, customer m
 
 ## What's Been Implemented
 
+### Tablet Layout Optimization (April 2026)
+- Redesigned NumpadModal: centered max-w-xl, 72px buttons, rounded-2xl, scale-on-press animation
+- NumericInput: chevron indicator for tappability, 52px min-height on tablet
+- Global CSS tablet rules (≥768px): 48px inputs, 42px buttons, 14px labels
+- ItemCalculator: 56px weight inputs, larger charge buttons, bigger summary sidebar
+- RateManagement: larger rate cards with 56px inputs
+- JetBrains Mono font for all numeric displays
+
 ### Custom Numpad for Tablet Input (April 2026)
-- Phone-style NumpadModal with 0-9, dot, backspace, Done button
-- NumericInput component replaces all type="number" inputs
-- Opens on tap, shows current value, confirms on Done
-- Re-opening preserves existing value for editing
-- JetBrains Mono font for improved number legibility
+- Phone-style NumpadModal with 0-9, dot, backspace, Done
+- NumericInput replaces all type="number" inputs app-wide
 - Applied across: ItemCalculator, MrpCalculator, RateManagement, BillPage
 
 ### Old Gold (OG) Feature (April 2026)
-- OG section in Bill Summary: checkbox toggle after Grand Total
-- Photo upload + value input (display-only, not in calculations)
-- Brown "OG ₹X" badge on Admin/Manager dashboard bill cards
+- OG section in Bill Summary with photo upload + value
+- Brown "OG" badge on Admin/Manager dashboard bill cards
 
 ### Buyback Rates (March 2026)
 - "buyback" rate card alongside "normal" and "ajpl"
-- Displayed on Admin, Manager, and Sales Exec dashboards
+- Displayed on all dashboards
 
 ### Reference Normalization & Edit (March 2026)
-- Aggressive Unicode normalization for references
-- Admin can edit bill reference inline
+- Aggressive Unicode normalization, admin bill reference edit
 
-### Data Safety Backup (March 2026)
-- AES-256-CBC encrypted .dat backup, Excel snapshots, import modes
-
-### Session Management
-- Admin sessions with IP/user-agent, End All Sessions
-
-## Key Files
-- `context/NumpadContext.js` - Global numpad state management
-- `components/NumpadModal.js` - Phone-style numpad overlay
-- `components/NumericInput.js` - Drop-in number input replacement
+### Data Safety Backup, Session Management, Business Logic
+- All previously implemented features intact
 
 ## Prioritized Backlog
 ### P1 - Refactoring
