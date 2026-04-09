@@ -11,25 +11,26 @@ Jewelry business management application with sales tracking, billing, customer m
 
 ## What's Been Implemented
 
+### Custom Numpad for Tablet Input (April 2026)
+- Phone-style NumpadModal with 0-9, dot, backspace, Done button
+- NumericInput component replaces all type="number" inputs
+- Opens on tap, shows current value, confirms on Done
+- Re-opening preserves existing value for editing
+- JetBrains Mono font for improved number legibility
+- Applied across: ItemCalculator, MrpCalculator, RateManagement, BillPage
+
 ### Old Gold (OG) Feature (April 2026)
-- OG section in Bill Summary: checkbox toggle after Grand Total, before action buttons
-- Expands to show photo upload + value input (display-only, not in calculations)
-- Brown/amber color scheme (hsl 30 range)
-- PUT /api/bills/{bill_id}/old-gold endpoint
-- OG badge visible on Admin Dashboard and Manager Dashboard bill cards
-- OG shown in Manager summary dialog
-- Bill summary endpoint includes old_gold field
+- OG section in Bill Summary: checkbox toggle after Grand Total
+- Photo upload + value input (display-only, not in calculations)
+- Brown "OG ₹X" badge on Admin/Manager dashboard bill cards
 
 ### Buyback Rates (March 2026)
 - "buyback" rate card alongside "normal" and "ajpl"
-- Buyback Rates tab in Rate Management page (admin)
-- Buyback rates display on Admin, Manager, and Sales Exec dashboards
+- Displayed on Admin, Manager, and Sales Exec dashboards
 
 ### Reference Normalization & Edit (March 2026)
-- Aggressive Unicode normalization (zero-width chars, NBSP, BOM etc.)
-- Known reference lookup table for canonical forms
-- PUT /api/bills/{bill_id}/reference: admin-only bill reference update
-- POST /api/admin/normalize-references: one-time data cleanup
+- Aggressive Unicode normalization for references
+- Admin can edit bill reference inline
 
 ### Data Safety Backup (March 2026)
 - AES-256-CBC encrypted .dat backup, Excel snapshots, import modes
@@ -37,13 +38,10 @@ Jewelry business management application with sales tracking, billing, customer m
 ### Session Management
 - Admin sessions with IP/user-agent, End All Sessions
 
-### Business Logic
-- Diamond calculation, multi-phone customers, today's sales approved-only
-
-## Key Endpoints
-- `PUT /api/bills/{bill_id}/old-gold` - Set OG data (enabled, photo, value)
-- `GET/PUT /api/rates/buyback` - Buyback rate card CRUD
-- `PUT /api/bills/{bill_id}/reference` - Admin edit bill reference
+## Key Files
+- `context/NumpadContext.js` - Global numpad state management
+- `components/NumpadModal.js` - Phone-style numpad overlay
+- `components/NumericInput.js` - Drop-in number input replacement
 
 ## Prioritized Backlog
 ### P1 - Refactoring
