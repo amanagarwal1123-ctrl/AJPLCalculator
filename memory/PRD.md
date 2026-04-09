@@ -11,39 +11,39 @@ Jewelry business management application with sales tracking, billing, customer m
 
 ## What's Been Implemented
 
+### Old Gold (OG) Feature (April 2026)
+- OG section in Bill Summary: checkbox toggle after Grand Total, before action buttons
+- Expands to show photo upload + value input (display-only, not in calculations)
+- Brown/amber color scheme (hsl 30 range)
+- PUT /api/bills/{bill_id}/old-gold endpoint
+- OG badge visible on Admin Dashboard and Manager Dashboard bill cards
+- OG shown in Manager summary dialog
+- Bill summary endpoint includes old_gold field
+
 ### Buyback Rates (March 2026)
-- New "buyback" rate card alongside "normal" and "ajpl"
+- "buyback" rate card alongside "normal" and "ajpl"
 - Buyback Rates tab in Rate Management page (admin)
 - Buyback rates display on Admin, Manager, and Sales Exec dashboards
-- Only purities with rate > 0 shown; auto-synced with purity additions/deletions
 
 ### Reference Normalization & Edit (March 2026)
 - Aggressive Unicode normalization (zero-width chars, NBSP, BOM etc.)
 - Known reference lookup table for canonical forms
 - PUT /api/bills/{bill_id}/reference: admin-only bill reference update
 - POST /api/admin/normalize-references: one-time data cleanup
-- GET /api/admin/reference-diagnostics: raw hex debugging
 
 ### Data Safety Backup (March 2026)
-- AES-256-CBC encrypted .dat backup with AJPLDAT1 container format
-- Excel .xlsx snapshot, import with merge/replace modes
-- Audit logging, decode instructions for disaster recovery
+- AES-256-CBC encrypted .dat backup, Excel snapshots, import modes
 
 ### Session Management
-- Admin sessions with IP/user-agent, End All Sessions button
-
-### Security & Authorization
-- Bill access control, manager branch scoping
-- Customer profile → bills sync (write + read enrichment)
+- Admin sessions with IP/user-agent, End All Sessions
 
 ### Business Logic
-- Diamond calculation on gross_weight, multi-phone customers
-- Today's Sales only counts approved bills
+- Diamond calculation, multi-phone customers, today's sales approved-only
 
 ## Key Endpoints
+- `PUT /api/bills/{bill_id}/old-gold` - Set OG data (enabled, photo, value)
 - `GET/PUT /api/rates/buyback` - Buyback rate card CRUD
 - `PUT /api/bills/{bill_id}/reference` - Admin edit bill reference
-- `POST /api/admin/normalize-references` - Normalize all references
 
 ## Prioritized Backlog
 ### P1 - Refactoring
