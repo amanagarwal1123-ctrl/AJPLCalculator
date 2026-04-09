@@ -28,6 +28,8 @@ import MrpCalculator from "@/pages/MrpCalculator";
 import SalespersonPerformance from "@/pages/SalespersonPerformance";
 import DataSafetyPage from "@/pages/DataSafetyPage";
 import { Toaster } from "@/components/ui/sonner";
+import { NumpadProvider } from "@/context/NumpadContext";
+import NumpadModal from "@/components/NumpadModal";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || window.location.origin;
 export const API = `${BACKEND_URL}/api`;
@@ -119,6 +121,7 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <AuthProvider>
+          <NumpadProvider>
           <ErrorBoundary>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
@@ -150,7 +153,9 @@ function App() {
             <Route path="/customer/:customerId" element={<PrivateRoute><CustomerProfilePage /></PrivateRoute>} />
           </Routes>
           </ErrorBoundary>
+          <NumpadModal />
           <Toaster position="top-right" richColors />
+          </NumpadProvider>
         </AuthProvider>
       </BrowserRouter>
     </div>

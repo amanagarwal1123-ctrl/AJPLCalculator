@@ -4,6 +4,7 @@ import { apiClient } from '@/App';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import NumericInput from '@/components/NumericInput';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -162,7 +163,7 @@ export default function MrpCalculator() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Gross Weight (g) *</Label>
-                      <Input type="number" step="0.001" value={grossWeight} onChange={e => setGrossWeight(e.target.value)} className="h-11 mono bg-secondary/50" data-testid="mrp-gross-weight" />
+                      <NumericInput value={grossWeight} onChange={e => setGrossWeight(e.target.value)} label="Gross Weight (g)" className="h-11 mono bg-secondary/50" data-testid="mrp-gross-weight" />
                     </div>
                     <div className="space-y-2">
                       <Label>Net Weight (g)</Label>
@@ -187,7 +188,7 @@ export default function MrpCalculator() {
                     <div key={idx} className="flex items-end gap-3 p-3 rounded-lg bg-[hsl(196,70%,52%)]/5 border border-[hsl(196,70%,52%)]/20">
                       <div className="flex-1">
                         <Label className="text-xs text-muted-foreground capitalize">{sw.type.replace('_', ' ')} (carats)</Label>
-                        <Input type="number" step="0.001" value={sw.weight} onChange={e => updateStuddedWeight(idx, e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`mrp-sw-${idx}`} />
+                        <NumericInput value={sw.weight} onChange={e => updateStuddedWeight(idx, e.target.value)} label="Weight (g)" className="h-9 mono bg-secondary/50 mt-1" data-testid={`mrp-sw-${idx}`} />
                       </div>
                       <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-destructive" onClick={() => removeStuddedWeight(idx)}><Trash2 size={14} /></Button>
                     </div>
@@ -200,7 +201,7 @@ export default function MrpCalculator() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>MRP (Rs.) *</Label>
-                    <Input type="number" value={mrp} onChange={e => setMrp(e.target.value)} className="h-11 mono bg-secondary/50 text-lg" data-testid="mrp-price" />
+                    <NumericInput value={mrp} onChange={e => setMrp(e.target.value)} label="MRP" className="h-11 mono bg-secondary/50 text-lg" data-testid="mrp-price" />
                   </div>
                   <div className="flex items-center justify-between">
                     <Label className="text-sm text-muted-foreground">Discounts</Label>
@@ -213,7 +214,7 @@ export default function MrpCalculator() {
                     <div key={idx} className="flex items-end gap-3 p-3 rounded-lg bg-secondary/20 border border-border">
                       <div className="flex-1">
                         <Label className="text-xs text-muted-foreground">{d.type === 'percentage' ? 'Discount (%)' : 'Flat Discount (Rs.)'}</Label>
-                        <Input type="number" value={d.value} onChange={e => updateDiscount(idx, e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`mrp-discount-${idx}`} />
+                        <NumericInput value={d.value} onChange={e => updateDiscount(idx, e.target.value)} label="Discount" className="h-9 mono bg-secondary/50 mt-1" data-testid={`mrp-discount-${idx}`} />
                       </div>
                       {d.type === 'percentage' && mrpNum > 0 && <span className="text-xs mono text-muted-foreground pb-2">= {formatCurrency(mrpNum * (parseFloat(d.value) || 0) / 100)}</span>}
                       <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-destructive" onClick={() => removeDiscount(idx)}><Trash2 size={14} /></Button>

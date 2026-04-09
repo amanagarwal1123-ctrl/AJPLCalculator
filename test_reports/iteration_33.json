@@ -1,0 +1,100 @@
+{
+  "summary": "Tested NumpadModal feature for tablet-friendly number input. All core functionality verified: numpad opens on click, displays current value, number keys (0-9) work, decimal key adds dot (only once), backspace removes digits, Done button confirms value and fills input, X button closes without saving, re-clicking input reopens with existing value. JetBrains Mono font confirmed applied to .numpad-digits and .mono classes.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "NumpadModal opens when clicking NumericInput fields",
+    "Numpad displays current value at top in numpad-display area",
+    "Number keys (0-9) append digits to display correctly",
+    "Decimal key (.) adds dot to display",
+    "Decimal key prevents adding second dot (only one allowed)",
+    "Backspace key removes last digit from display",
+    "Clear button (X next to value) clears entire display",
+    "Done button confirms value and fills the input field",
+    "Done button closes the numpad modal",
+    "Close button (X in header) closes numpad without saving",
+    "Re-clicking input reopens numpad with existing value preserved",
+    "RateManagement page: NumericInput works for rate inputs (rate-normal-*, rate-ajpl-*, rate-buyback-*)",
+    "RateManagement page: NumericInput works for new-purity-percent input",
+    "ItemCalculator page: NumericInput works for gross-weight-input",
+    "ItemCalculator page: NumericInput works for less-input",
+    "ItemCalculator page: NumericInput works for making charge value inputs",
+    "ItemCalculator page: NumericInput works for stone charge value inputs",
+    "ItemCalculator page: NumericInput works for studded charge inputs (carats, rate_per_carat)",
+    "MrpCalculator page: NumericInput works for mrp-gross-weight",
+    "MrpCalculator page: NumericInput works for mrp-price",
+    "MrpCalculator page: NumericInput works for discount inputs",
+    "MrpCalculator page: NumericInput works for studded weight inputs",
+    "BillPage: NumericInput works for ext-charge-amount (external charge)",
+    "BillPage: NumericInput works for og-value-input (Old Gold value)",
+    "JetBrains Mono font applied to .numpad-digits class",
+    "JetBrains Mono font applied to .mono class",
+    "Numpad label shows field name (e.g., 'GROSS WEIGHT (G)', '24KT RATE/10G', 'MRP')"
+  ],
+
+  "test_report_links": [
+    "/app/test_reports/iteration_33.json"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [],
+
+  "success_rate": {
+    "backend": "N/A (frontend-only testing)",
+    "frontend": "100% (all NumpadModal features verified)"
+  },
+
+  "test_credentials": {
+    "admin": {
+      "username": "admin",
+      "password": "admin1123"
+    }
+  },
+
+  "seed_data_creation": "None - used existing bills and rate data",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "NumpadModal feature fully tested. Key components: NumpadContext.js (provider with openNumpad/closeNumpad/confirm), NumpadModal.js (phone-style numpad overlay), NumericInput.js (drop-in replacement for type=number inputs). All data-testid attributes working: numpad-modal, numpad-display, numpad-key-{0-9,.backspace}, numpad-enter, numpad-close, numpad-clear. JetBrains Mono font loaded via Google Fonts and applied to .numpad-digits and .mono classes. NumericInput uses readOnly and inputMode='none' to prevent native keyboard.",
+
+  "feature_verification_details": {
+    "components_tested": [
+      {"component": "NumpadModal", "testid": "numpad-modal", "status": "PASS", "notes": "Phone-style numpad with 1-9, ., 0, backspace layout"},
+      {"component": "NumpadDisplay", "testid": "numpad-display", "status": "PASS", "notes": "Shows current value with JetBrains Mono font"},
+      {"component": "NumpadKeys", "testid": "numpad-key-{0-9,.backspace}", "status": "PASS", "notes": "All keys functional"},
+      {"component": "NumpadEnter", "testid": "numpad-enter", "status": "PASS", "notes": "Done button confirms and closes"},
+      {"component": "NumpadClose", "testid": "numpad-close", "status": "PASS", "notes": "X button closes without saving"},
+      {"component": "NumpadClear", "testid": "numpad-clear", "status": "PASS", "notes": "Clears display value"},
+      {"component": "NumericInput", "testid": "various", "status": "PASS", "notes": "Drop-in replacement for number inputs"}
+    ],
+    "pages_tested": [
+      {"page": "RateManagement", "path": "/admin/rates", "status": "PASS", "inputs_tested": ["rate inputs", "purity percent"]},
+      {"page": "ItemCalculator", "path": "/bill/:billId/add-item", "status": "PASS", "inputs_tested": ["gross weight", "less", "making charges", "stone charges", "studded charges"]},
+      {"page": "MrpCalculator", "path": "/bill/:billId/mrp", "status": "PASS", "inputs_tested": ["gross weight", "MRP price", "discounts", "studded weights"]},
+      {"page": "BillPage", "path": "/bill/:billId", "status": "PASS", "inputs_tested": ["external charge amount", "OG value"]}
+    ],
+    "font_verification": {
+      "numpad_digits_class": "JetBrains Mono applied - verified via computed style",
+      "mono_class": "JetBrains Mono applied - verified via computed style"
+    }
+  },
+
+  "mocked_apis": {
+    "OTP_delivery": "OTP codes visible via GET /api/admin/pending-otps instead of actual SMS delivery"
+  }
+}

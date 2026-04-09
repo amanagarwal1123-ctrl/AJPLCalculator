@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { BarChart3, Download, Filter, Calendar, Users, UserX, TrendingUp, AlertTriangle, MessageSquare, Star, ChevronDown, ChevronUp, ExternalLink, ShoppingBag, UserCheck, UserMinus } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
+import NumericInput from '@/components/NumericInput';
 import { toast } from 'sonner';
 
 const GOLD_COLOR = 'hsl(44, 82%, 52%)';
@@ -1096,12 +1097,11 @@ export default function Reports() {
                       </CardTitle>
                       <div className="flex items-center gap-2">
                         <Label className="text-xs text-muted-foreground whitespace-nowrap">Not visited in</Label>
-                        <Input 
-                          type="number" 
+                        <NumericInput
                           value={inactiveDays} 
                           onChange={e => handleInactiveDaysChange(e.target.value)}
+                          label="Inactive Days"
                           className="h-8 w-20 bg-secondary/50 mono text-sm text-center" 
-                          min="1"
                           data-testid="inactive-days-input"
                         />
                         <Label className="text-xs text-muted-foreground whitespace-nowrap">days</Label>

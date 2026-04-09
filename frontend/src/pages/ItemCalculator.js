@@ -4,6 +4,7 @@ import { apiClient } from '@/App';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import NumericInput from '@/components/NumericInput';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -466,12 +467,14 @@ export default function ItemCalculator() {
                       <div className="space-y-2">
                         <Label>Rate per 10g ({selectedPurity?.name})</Label>
                         <Input
-                          type="number"
+                          type="text"
+                          inputMode="none"
                           value={rate}
                           onChange={e => setRate(e.target.value)}
                           readOnly={rateMode !== 'manual'}
                           className={`h-11 mono ${rateMode !== 'manual' ? 'bg-muted/50 cursor-not-allowed' : 'bg-secondary/50'}`}
                           data-testid="rate-input"
+                          {...(rateMode === 'manual' ? { onClick: undefined } : {})}
                         />
                       </div>
                     </div>
@@ -487,11 +490,11 @@ export default function ItemCalculator() {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <Label>Gross Weight (g)</Label>
-                        <Input type="number" step="0.001" value={grossWeight} onChange={e => setGrossWeight(e.target.value)} className="h-11 mono bg-secondary/50" data-testid="gross-weight-input" />
+                        <NumericInput value={grossWeight} onChange={e => setGrossWeight(e.target.value)} label="Gross Weight (g)" className="h-11 mono bg-secondary/50" data-testid="gross-weight-input" />
                       </div>
                       <div className="space-y-2">
                         <Label>Less (g)</Label>
-                        <Input type="number" step="0.001" value={less} onChange={e => setLess(e.target.value)} className="h-11 mono bg-secondary/50" data-testid="less-input" />
+                        <NumericInput value={less} onChange={e => setLess(e.target.value)} label="Less (g)" className="h-11 mono bg-secondary/50" data-testid="less-input" />
                       </div>
                       <div className="space-y-2">
                         <Label>Net Weight (g)</Label>
@@ -524,12 +527,12 @@ export default function ItemCalculator() {
                       <div key={idx} className="flex items-end gap-3 p-3 rounded-lg bg-secondary/20 border border-border">
                         <div className="flex-1">
                           <Label className="text-xs text-muted-foreground capitalize">{mc.type === 'percentage' ? '% Making' : mc.type === 'per_gram' ? 'Per Gram (Rs.)' : 'Per Piece (Rs.)'}</Label>
-                          <Input type="number" step="0.01" value={mc.value} onChange={e => updateMakingCharge(idx, 'value', e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`making-value-${idx}`} />
+                          <NumericInput value={mc.value} onChange={e => updateMakingCharge(idx, 'value', e.target.value)} label={mc.type === 'percentage' ? '% Making' : mc.type === 'per_gram' ? 'Per Gram (Rs.)' : 'Per Piece (Rs.)'} className="h-9 mono bg-secondary/50 mt-1" data-testid={`making-value-${idx}`} />
                         </div>
                         {mc.type === 'per_piece' && (
                           <div className="w-24">
                             <Label className="text-xs text-muted-foreground">Qty</Label>
-                            <Input type="number" value={mc.quantity} onChange={e => updateMakingCharge(idx, 'quantity', e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`making-qty-${idx}`} />
+                            <NumericInput value={mc.quantity} onChange={e => updateMakingCharge(idx, 'quantity', e.target.value)} label="Qty" className="h-9 mono bg-secondary/50 mt-1" data-testid={`making-qty-${idx}`} />
                           </div>
                         )}
                         {mc.type === 'percentage' && (
@@ -564,12 +567,12 @@ export default function ItemCalculator() {
                           <Label className="text-xs text-muted-foreground capitalize">
                             {sc.type === 'kundan' ? 'Kundan - Per Piece (Rs.)' : sc.type === 'stone' ? 'Stone - Per Gram (Rs.)' : 'Moti - Total (Rs.)'}
                           </Label>
-                          <Input type="number" step="0.01" value={sc.value} onChange={e => updateStoneCharge(idx, 'value', e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`stone-value-${idx}`} />
+                          <NumericInput value={sc.value} onChange={e => updateStoneCharge(idx, 'value', e.target.value)} label={sc.type === 'kundan' ? 'Kundan (Rs.)' : sc.type === 'stone' ? 'Stone (Rs.)' : 'Moti (Rs.)'} className="h-9 mono bg-secondary/50 mt-1" data-testid={`stone-value-${idx}`} />
                         </div>
                         {sc.type === 'kundan' && (
                           <div className="w-24">
                             <Label className="text-xs text-muted-foreground">Pieces</Label>
-                            <Input type="number" value={sc.quantity} onChange={e => updateStoneCharge(idx, 'quantity', e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`stone-qty-${idx}`} />
+                            <NumericInput value={sc.quantity} onChange={e => updateStoneCharge(idx, 'quantity', e.target.value)} label="Pieces" className="h-9 mono bg-secondary/50 mt-1" data-testid={`stone-qty-${idx}`} />
                           </div>
                         )}
                         <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-destructive" onClick={() => removeStoneCharge(idx)}>
@@ -598,11 +601,11 @@ export default function ItemCalculator() {
                           <div className="flex items-end gap-3">
                             <div className="flex-1">
                               <Label className="text-xs text-muted-foreground capitalize">{sc.type.replace('_', ' ')} - Carats</Label>
-                              <Input type="number" step="0.01" value={sc.carats} onChange={e => updateStuddedCharge(idx, 'carats', e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`studded-carats-${idx}`} />
+                              <NumericInput value={sc.carats} onChange={e => updateStuddedCharge(idx, 'carats', e.target.value)} label="Carats" className="h-9 mono bg-secondary/50 mt-1" data-testid={`studded-carats-${idx}`} />
                             </div>
                             <div className="flex-1">
                               <Label className="text-xs text-muted-foreground">Rate per Carat (Rs.)</Label>
-                              <Input type="number" step="0.01" value={sc.rate_per_carat} onChange={e => updateStuddedCharge(idx, 'rate_per_carat', e.target.value)} className="h-9 mono bg-secondary/50 mt-1" data-testid={`studded-rate-${idx}`} />
+                              <NumericInput value={sc.rate_per_carat} onChange={e => updateStuddedCharge(idx, 'rate_per_carat', e.target.value)} label="Rate per Carat" className="h-9 mono bg-secondary/50 mt-1" data-testid={`studded-rate-${idx}`} />
                             </div>
                             <div className="text-sm mono font-medium text-[hsl(196,70%,52%)]">
                               {formatCurrency((parseFloat(sc.carats) || 0) * (parseFloat(sc.rate_per_carat) || 0))}

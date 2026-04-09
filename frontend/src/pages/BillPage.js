@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Plus, Trash2, Send, Printer, Download, ArrowLeft, Edit, CheckCircle, Clock, History, Layers, ChevronRight, User, Camera, X, ZoomIn, Percent, Home } from 'lucide-react';
+import NumericInput from '@/components/NumericInput';
 import { toast } from 'sonner';
 
 export default function BillPage() {
@@ -531,7 +532,7 @@ export default function BillPage() {
                     {showExtChargeForm && (
                       <div className="mt-2 space-y-2 p-3 bg-secondary/30 rounded-lg">
                         <Input placeholder="Charge name" value={extChargeName} onChange={e => setExtChargeName(e.target.value)} className="h-9 text-sm bg-secondary/50" data-testid="ext-charge-name" />
-                        <Input placeholder="Amount" type="number" value={extChargeAmount} onChange={e => setExtChargeAmount(e.target.value)} className="h-9 text-sm bg-secondary/50 mono" data-testid="ext-charge-amount" />
+                        <NumericInput placeholder="Amount" value={extChargeAmount} onChange={e => setExtChargeAmount(e.target.value)} label="Ext. Charge Amount" className="h-9 text-sm bg-secondary/50 mono" data-testid="ext-charge-amount" />
                         <Button size="sm" className="w-full h-8" onClick={addExternalCharge} data-testid="ext-charge-save">Add Charge</Button>
                       </div>
                     )}
@@ -605,11 +606,11 @@ export default function BillPage() {
                           <span className="text-xs text-[hsl(30,50%,50%)]">Value:</span>
                           {canEdit() ? (
                             <>
-                              <Input
-                                type="number"
+                              <NumericInput
                                 placeholder="Enter OG value"
                                 value={ogValue}
                                 onChange={e => setOgValue(e.target.value)}
+                                label="Old Gold Value"
                                 className="h-8 text-sm mono bg-secondary/50 flex-1"
                                 data-testid="og-value-input"
                               />

@@ -3,6 +3,7 @@ import { useAuth, apiClient } from '@/App';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import NumericInput from '@/components/NumericInput';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -157,7 +158,7 @@ export default function RateManagement() {
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Percent</Label>
-                <Input placeholder="e.g. 66" type="number" value={newPurityPercent} onChange={e => setNewPurityPercent(e.target.value)} className="h-9 w-24 mono bg-secondary/50" data-testid="new-purity-percent" />
+                <NumericInput placeholder="e.g. 66" value={newPurityPercent} onChange={e => setNewPurityPercent(e.target.value)} label="Purity Percent" className="h-9 w-24 mono bg-secondary/50" data-testid="new-purity-percent" />
               </div>
               <Button size="sm" onClick={addPurity} data-testid="add-purity-button">
                 <Plus size={14} className="mr-1" /> Add
@@ -194,11 +195,11 @@ export default function RateManagement() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm text-muted-foreground">Rs.</span>
-                          <Input
-                            type="number"
+                          <NumericInput
                             value={p.rate_per_10g || ''}
                             onChange={e => updateRate(rateType, idx, e.target.value)}
                             placeholder="0"
+                            label={`${p.purity_name} Rate/10g`}
                             className="h-10 mono bg-secondary/50"
                             data-testid={`rate-${rateType}-${p.purity_name}`}
                           />
