@@ -11,31 +11,20 @@ Jewelry business management application with sales tracking, billing, customer m
 
 ## What's Been Implemented
 
+### Bill List Pagination (April 2026)
+- 8-day pages for all Admin Dashboard tabs (Pending, Approved, Drafts, All)
+- Cyclops lens wheel paginator at top and bottom of bill list
+- Active page shown as large golden circle, adjacent pages scale down
+- Page resets to 1 when switching tabs
+- Shows "Showing X days (Y bills) · Page N of M" info
+
 ### Tablet Layout Optimization (April 2026)
-- Redesigned NumpadModal: centered max-w-xl, 72px buttons, rounded-2xl, scale-on-press animation
-- NumericInput: chevron indicator for tappability, 52px min-height on tablet
-- Global CSS tablet rules (≥768px): 48px inputs, 42px buttons, 14px labels
-- ItemCalculator: 56px weight inputs, larger charge buttons, bigger summary sidebar
-- RateManagement: larger rate cards with 56px inputs
-- JetBrains Mono font for all numeric displays
+- Redesigned NumpadModal: centered max-w-xl, 72px buttons, scale-on-press
+- NumericInput: chevron indicator, 52px min-height on tablet
+- Global CSS tablet rules: larger inputs/buttons/labels
+- ItemCalculator/RateManagement: larger inputs and buttons
 
-### Custom Numpad for Tablet Input (April 2026)
-- Phone-style NumpadModal with 0-9, dot, backspace, Done
-- NumericInput replaces all type="number" inputs app-wide
-- Applied across: ItemCalculator, MrpCalculator, RateManagement, BillPage
-
-### Old Gold (OG) Feature (April 2026)
-- OG section in Bill Summary with photo upload + value
-- Brown "OG" badge on Admin/Manager dashboard bill cards
-
-### Buyback Rates (March 2026)
-- "buyback" rate card alongside "normal" and "ajpl"
-- Displayed on all dashboards
-
-### Reference Normalization & Edit (March 2026)
-- Aggressive Unicode normalization, admin bill reference edit
-
-### Data Safety Backup, Session Management, Business Logic
+### Custom Numpad, Old Gold, Buyback Rates, Reference Normalization
 - All previously implemented features intact
 
 ## Prioritized Backlog

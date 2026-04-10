@@ -4,7 +4,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { DollarSign, FileText, TrendingUp, Receipt, Eye, Trash2, Settings, Users, GitBranch, Tag, BarChart3, KeyRound, RefreshCw, Copy, CheckCircle, Clock, Shield, LogOut, Check, X, ChevronDown, Monitor, Smartphone, Globe } from 'lucide-react';
+import { DollarSign, FileText, TrendingUp, Receipt, Eye, Trash2, Settings, Users, GitBranch, Tag, BarChart3, KeyRound, RefreshCw, Copy, CheckCircle, Clock, Shield, LogOut, Check, X, ChevronDown, Monitor, Smartphone, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -22,9 +22,13 @@ export default function AdminDashboard() {
   const [showSessions, setShowSessions] = useState(false);
   const [expandedUsers, setExpandedUsers] = useState({});
   const [buybackRates, setBuybackRates] = useState(null);
+  const [billPage, setBillPage] = useState(0);
+
+  const DAYS_PER_PAGE = 8;
 
   const handleSetBillTab = useCallback((tab) => {
     setBillTab(tab);
+    setBillPage(0);
     setSearchParams({ tab }, { replace: true });
   }, [setSearchParams]);
 
@@ -145,6 +149,79 @@ export default function AdminDashboard() {
     groupedBills[date].push(b);
   });
   const sortedDates = Object.keys(groupedBills).sort((a, b) => b.localeCompare(a));
+
+  // Pagination: chunk sortedDates into pages of DAYS_PER_PAGE
+  const totalPages = Math.max(1, Math.ceil(sortedDates.length / DAYS_PER_PAGE));
+  const pagedDates = sortedDates.slice(billPage * DAYS_PER_PAGE, (billPage + 1) * DAYS_PER_PAGE);
+  const pagedBillCount = pagedDates.reduce((sum, d) => sum + (groupedBills[d]?.length || 0), 0);
+
+  // Cyclops wheel paginator component
+  const Paginator = ({ position }) => {
+    if (totalPages <= 1) return null;
+    // Show a window of page numbers around the current page
+    const radius = 2;
+    const pages = [];
+    for (let i = 0; i < totalPages; i++) pages.push(i);
+    
+    return (
+      <div className={`flex items-center justify-center gap-1 ${position === 'top' ? 'mb-4' : 'mt-5'}`} data-testid={`paginator-${position}`}>
+        <button
+          onClick={() => setBillPage(p => Math.max(0, p - 1))}
+          disabled={billPage === 0}
+          className="w-9 h-9 rounded-full flex items-center justify-center bg-secondary/50 border border-border disabled:opacity-30 hover:bg-secondary transition-colors"
+          data-testid="page-prev"
+        >
+          <ChevronLeft size={16} />
+        </button>
+        
+        <div className="flex items-center gap-[2px] mx-1 py-1 px-1 rounded-full bg-[hsl(224,50%,12%)] border border-border/50 overflow-hidden" data-testid="page-wheel">
+          {pages.map(i => {
+            const dist = Math.abs(i - billPage);
+            const isActive = i === billPage;
+            // Only render pages within window
+            if (dist > radius && i !== 0 && i !== totalPages - 1) {
+              // Show ellipsis dot at boundary
+              if (dist === radius + 1) return <span key={i} className="w-2 h-2 rounded-full bg-muted-foreground/20 mx-0.5" />;
+              return null;
+            }
+            const scale = isActive ? 1 : dist === 1 ? 0.82 : 0.65;
+            const opacity = isActive ? 1 : dist === 1 ? 0.7 : 0.4;
+            return (
+              <button
+                key={i}
+                onClick={() => setBillPage(i)}
+                className="relative flex items-center justify-center transition-all duration-200"
+                style={{
+                  width: isActive ? 40 : 28,
+                  height: isActive ? 40 : 28,
+                  transform: `scale(${scale})`,
+                  opacity,
+                }}
+                data-testid={`page-${i}`}
+              >
+                <span className={`w-full h-full rounded-full flex items-center justify-center mono text-xs font-bold transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-primary/40' 
+                    : 'bg-secondary/60 text-muted-foreground hover:bg-secondary'
+                }`}>
+                  {i + 1}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        
+        <button
+          onClick={() => setBillPage(p => Math.min(totalPages - 1, p + 1))}
+          disabled={billPage === totalPages - 1}
+          className="w-9 h-9 rounded-full flex items-center justify-center bg-secondary/50 border border-border disabled:opacity-30 hover:bg-secondary transition-colors"
+          data-testid="page-next"
+        >
+          <ChevronRight size={16} />
+        </button>
+      </div>
+    );
+  };
 
   const kpiCards = [
     { label: "Today's Sales", value: formatCurrency(analytics?.today_sales), icon: DollarSign, color: 'text-primary' },
@@ -352,8 +429,13 @@ export default function AdminDashboard() {
             </div>
 
             {loading ? <p className="text-muted-foreground text-center py-8">Loading...</p> : sortedDates.length === 0 ? <p className="text-muted-foreground text-center py-8">No bills found</p> : (
-              <div className="space-y-6">
-                {sortedDates.map(date => (
+              <div className="space-y-4">
+                <Paginator position="top" />
+                <p className="text-xs text-muted-foreground text-center">
+                  Showing {pagedDates.length} day{pagedDates.length !== 1 ? 's' : ''} ({pagedBillCount} bills) &middot; Page {billPage + 1} of {totalPages}
+                </p>
+                <div className="space-y-6">
+                {pagedDates.map(date => (
                   <div key={date}>
                     {/* Date header */}
                     <div className="flex items-center gap-3 mb-3">
@@ -412,6 +494,8 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 ))}
+                </div>
+                <Paginator position="bottom" />
               </div>
             )}
           </CardContent>
