@@ -466,16 +466,19 @@ export default function ItemCalculator() {
                       </div>
                       <div className="space-y-2">
                         <Label>Rate per 10g ({selectedPurity?.name})</Label>
-                        <Input
-                          type="text"
-                          inputMode="none"
-                          value={rate}
-                          onChange={e => setRate(e.target.value)}
-                          readOnly={rateMode !== 'manual'}
-                          className={`h-11 mono ${rateMode !== 'manual' ? 'bg-muted/50 cursor-not-allowed' : 'bg-secondary/50'}`}
-                          data-testid="rate-input"
-                          {...(rateMode === 'manual' ? { onClick: undefined } : {})}
-                        />
+                        {rateMode === 'manual' ? (
+                          <NumericInput
+                            value={rate}
+                            onChange={e => setRate(e.target.value)}
+                            label={`Rate per 10g (${selectedPurity?.name || ''})`}
+                            className="h-12 md:h-14 text-base md:text-lg mono bg-secondary/50"
+                            data-testid="rate-input"
+                          />
+                        ) : (
+                          <div className="h-12 md:h-14 px-4 flex items-center rounded-md bg-muted/50 border border-border mono font-bold text-base md:text-lg" data-testid="rate-input">
+                            {rate || 0}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>
