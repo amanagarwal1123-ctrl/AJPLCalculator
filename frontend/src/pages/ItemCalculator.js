@@ -66,9 +66,11 @@ export default function ItemCalculator() {
         setRateMode(item.rate_mode || 'normal');
         setSelectedPurity({ name: item.purity_name, percent: item.purity_percent });
         setItemName(item.item_name || '');
+        setTagNumber(item.tag_number || '');
         setRate(String(item.rate_per_10g || ''));
         setGrossWeight(String(item.gross_weight || ''));
-        setLess(String(item.less || ''));
+        // For diamond items, use original_less (before studded_less was added by backend)
+        setLess(String(item.original_less ?? item.less ?? ''));
         setMakingCharges(item.making_charges || []);
         setStoneCharges(item.stone_charges || []);
         setStuddedCharges(item.studded_charges || []);
