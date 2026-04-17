@@ -40,12 +40,25 @@ export default function SalesExecDashboard() {
   const [salespeople, setSalespeople] = useState([]);
   const [salesperson, setSalesperson] = useState('');
   const [buybackRates, setBuybackRates] = useState(null);
+  const [istClock, setIstClock] = useState({ time: '', date: '' });
 
   useEffect(() => {
     loadBills();
     loadBranches();
     loadSalespeople();
     loadBuybackRates();
+    const tick = () => {
+      const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      const h = now.getHours();
+      const m = now.getMinutes().toString().padStart(2, '0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      setIstClock({ time: `${h12}:${m} ${ampm}`, date: `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}` });
+    };
+    tick();
+    const clockInterval = setInterval(tick, 30000);
+    return () => clearInterval(clockInterval);
   }, []);
 
   const loadBuybackRates = async () => {
@@ -228,9 +241,17 @@ export default function SalesExecDashboard() {
                 <p className="text-[10px] text-muted-foreground truncate">{userBranch?.name || 'Branch'} &middot; {user?.full_name}</p>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="logout-button" className="shrink-0">
-              <LogOut size={16} className="mr-1" /> <span className="hidden sm:inline">Logout</span>
-            </Button>
+            <div className="flex items-center gap-3 shrink-0">
+              {istClock.time && (
+                <div className="text-right hidden sm:block" data-testid="ist-clock">
+                  <p className="mono text-sm font-bold text-primary leading-tight">{istClock.time}</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">{istClock.date}</p>
+                </div>
+              )}
+              <Button variant="ghost" size="sm" onClick={handleLogout} data-testid="logout-button" className="shrink-0">
+                <LogOut size={16} className="mr-1" /> <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
           </div>
         </header>
 

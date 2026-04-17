@@ -154,6 +154,14 @@ def serialize_doc(doc):
 
 IST = pytz.timezone('Asia/Kolkata')
 
+def ist_now():
+    """Return current datetime in IST."""
+    return datetime.now(IST)
+
+def ist_now_str():
+    """Return current IST datetime as ISO string."""
+    return datetime.now(IST).isoformat()
+
 # Uploads directory
 UPLOAD_DIR = ROOT_DIR / 'uploads'
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -1128,8 +1136,8 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
         "executive_id": user.get('id'),
         "executive_name": user.get('full_name', ''),
         "branch_id": user.get('branch_id', ''),
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": ist_now_str(),
+        "updated_at": ist_now_str(),
         "sent_at": None,
         "approved_at": None,
         "last_modified_by": user.get('full_name', ''),
@@ -1176,7 +1184,7 @@ async def update_bill(bill_id: str, updates: dict, user=Depends(get_current_user
         totals = calculate_bill_totals(items, updates['external_charges'])
         updates.update(totals)
 
-    updates['updated_at'] = datetime.now(timezone.utc).isoformat()
+    updates['updated_at'] = ist_now_str()
     updates['last_modified_by'] = user.get('full_name', '')
     
     # If manager/admin editing a sent bill, mark as edited
@@ -1190,7 +1198,7 @@ async def update_bill(bill_id: str, updates: dict, user=Depends(get_current_user
     # Add to change log
     new_total = updates.get('grand_total', old_total)
     change_entry = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": ist_now_str(),
         "user": user.get('full_name', ''),
         "role": user.get('role', ''),
         "action": "edit",
@@ -1221,7 +1229,7 @@ async def update_bill_reference(bill_id: str, req: BillReferenceUpdate, user=Dep
     old_ref = bill.get('customer_reference', '')
     
     change_entry = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": ist_now_str(),
         "user": user.get('full_name', ''),
         "role": user.get('role', ''),
         "action": "reference_update",
@@ -1231,7 +1239,7 @@ async def update_bill_reference(bill_id: str, req: BillReferenceUpdate, user=Dep
     
     await db.bills.update_one(
         {"id": bill_id},
-        {"$set": {"customer_reference": new_ref, "updated_at": datetime.now(timezone.utc).isoformat()},
+        {"$set": {"customer_reference": new_ref, "updated_at": ist_now_str()},
          "$push": {"change_log": change_entry}}
     )
     updated = await db.bills.find_one({"id": bill_id})
@@ -1252,7 +1260,7 @@ async def update_bill_old_gold(bill_id: str, req: OldGoldUpdate, user=Depends(ge
     og_data = {"enabled": req.enabled, "photo": req.photo, "value": req.value or 0}
     await db.bills.update_one(
         {"id": bill_id},
-        {"$set": {"old_gold": og_data, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        {"$set": {"old_gold": og_data, "updated_at": ist_now_str()}}
     )
     updated = await db.bills.find_one({"id": bill_id})
     return serialize_doc(updated)
@@ -1322,7 +1330,7 @@ async def approve_bill(bill_id: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="Bill must be sent or edited to approve")
     
     change_entry = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": ist_now_str(),
         "user": user.get('full_name', ''),
         "role": user.get('role', ''),
         "action": "approved",
@@ -1334,8 +1342,8 @@ async def approve_bill(bill_id: str, user=Depends(get_current_user)):
         {"id": bill_id},
         {"$set": {
             "status": "approved",
-            "approved_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "approved_at": ist_now_str(),
+            "updated_at": ist_now_str(),
             "last_modified_by": user.get('full_name', ''),
         }, "$push": {"change_log": change_entry}}
     )
@@ -1356,8 +1364,8 @@ async def send_bill_to_manager(bill_id: str, user=Depends(get_current_user)):
         {"id": bill_id},
         {"$set": {
             "status": "sent",
-            "sent_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
+            "sent_at": ist_now_str(),
+            "updated_at": ist_now_str(),
         }}
     )
     # Update customer total spent - use customer_id if available, fallback to phone matching
@@ -1373,6 +1381,54 @@ async def send_bill_to_manager(bill_id: str, user=Depends(get_current_user)):
             {"$inc": {"total_spent": bill.get('grand_total', 0)}}
         )
     return {"status": "sent"}
+
+
+@api_router.get("/server-time")
+async def get_server_time():
+    """Return current IST time for frontend clock."""
+    now = ist_now()
+    return {
+        "ist": now.isoformat(),
+        "date": now.strftime("%Y-%m-%d"),
+        "time": now.strftime("%I:%M %p"),
+        "display_date": now.strftime("%-d %B %Y"),
+    }
+
+@api_router.post("/admin/fix-timestamps")
+async def fix_today_timestamps(user=Depends(get_current_user)):
+    """Fix bills created today that have UTC timestamps — convert to IST."""
+    await require_role(user, ["admin"])
+    today_ist = ist_now().strftime("%Y-%m-%d")
+    
+    fixed = 0
+    async for bill in db.bills.find({"created_date": today_ist}):
+        created_at = bill.get("created_at", "")
+        # Check if it's a UTC timestamp (ends with +00:00 or doesn't have +05:30)
+        if created_at and "+05:30" not in created_at:
+            try:
+                # Parse the UTC timestamp and convert to IST
+                if created_at.endswith("+00:00"):
+                    dt = datetime.fromisoformat(created_at)
+                elif "T" in created_at:
+                    dt = datetime.fromisoformat(created_at).replace(tzinfo=timezone.utc)
+                else:
+                    continue
+                ist_dt = dt.astimezone(IST)
+                updates = {"created_at": ist_dt.isoformat()}
+                # Also fix updated_at, sent_at, approved_at if they're UTC
+                for field in ["updated_at", "sent_at", "approved_at"]:
+                    val = bill.get(field)
+                    if val and isinstance(val, str) and "+05:30" not in val and "T" in val:
+                        try:
+                            fdt = datetime.fromisoformat(val if val.endswith("+00:00") else val).replace(tzinfo=timezone.utc) if "+00:00" not in val else datetime.fromisoformat(val)
+                            updates[field] = fdt.astimezone(IST).isoformat()
+                        except Exception:
+                            pass
+                await db.bills.update_one({"_id": bill["_id"]}, {"$set": updates})
+                fixed += 1
+            except Exception:
+                pass
+    return {"fixed": fixed, "date": today_ist}
 
 @api_router.get("/bills")
 async def list_bills(

@@ -22,13 +22,29 @@ export default function ManagerDashboard() {
   const [summaryData, setSummaryData] = useState(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [buybackRates, setBuybackRates] = useState(null);
+  const [istClock, setIstClock] = useState({ time: '', date: '' });
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setSearchParams({ tab }, { replace: true });
   };
 
-  useEffect(() => { loadData(); loadBuybackRates(); }, []);
+  useEffect(() => {
+    loadData();
+    loadBuybackRates();
+    const tick = () => {
+      const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      const h = now.getHours();
+      const m = now.getMinutes().toString().padStart(2, '0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      setIstClock({ time: `${h12}:${m} ${ampm}`, date: `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}` });
+    };
+    tick();
+    const clockInterval = setInterval(tick, 30000);
+    return () => clearInterval(clockInterval);
+  }, []);
 
   const loadBuybackRates = async () => {
     try {
@@ -271,9 +287,17 @@ export default function ManagerDashboard() {
   return (
     <AppLayout>
       <div className="space-y-4 sm:space-y-6">
-        <div>
-          <h1 className="heading text-2xl sm:text-3xl font-bold">Manager Dashboard</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Welcome, {user?.full_name}</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="heading text-2xl sm:text-3xl font-bold">Manager Dashboard</h1>
+            <p className="text-muted-foreground mt-1 text-sm">Welcome, {user?.full_name}</p>
+          </div>
+          {istClock.time && (
+            <div className="text-right" data-testid="ist-clock">
+              <p className="mono text-lg font-bold text-primary leading-tight">{istClock.time}</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">{istClock.date}</p>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">

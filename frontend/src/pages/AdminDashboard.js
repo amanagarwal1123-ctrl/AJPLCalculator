@@ -23,8 +23,28 @@ export default function AdminDashboard() {
   const [expandedUsers, setExpandedUsers] = useState({});
   const [buybackRates, setBuybackRates] = useState(null);
   const [billPage, setBillPage] = useState(0);
+  const [istClock, setIstClock] = useState({ time: '', date: '' });
 
   const DAYS_PER_PAGE = 8;
+
+  // Live IST clock
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      const h = now.getHours();
+      const m = now.getMinutes().toString().padStart(2, '0');
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      setIstClock({
+        time: `${h12}:${m} ${ampm}`,
+        date: `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`,
+      });
+    };
+    tick();
+    const interval = setInterval(tick, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSetBillTab = useCallback((tab) => {
     setBillTab(tab);
@@ -254,9 +274,17 @@ export default function AdminDashboard() {
             <h1 className="heading text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
             <p className="text-muted-foreground mt-1 text-sm">Welcome back, {user?.full_name}</p>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => { setShowSessions(!showSessions); if (!showSessions) loadSessions(); }} data-testid="toggle-sessions-btn">
-            <Shield size={14} className="mr-1" /> Sessions
-          </Button>
+          <div className="flex items-center gap-3">
+            {istClock.time && (
+              <div className="text-right hidden sm:block" data-testid="ist-clock">
+                <p className="mono text-lg font-bold text-primary leading-tight">{istClock.time}</p>
+                <p className="text-[11px] text-muted-foreground leading-tight">{istClock.date}</p>
+              </div>
+            )}
+            <Button variant="secondary" size="sm" onClick={() => { setShowSessions(!showSessions); if (!showSessions) loadSessions(); }} data-testid="toggle-sessions-btn">
+              <Shield size={14} className="mr-1" /> Sessions
+            </Button>
+          </div>
         </div>
 
         {/* Active Sessions Panel */}
