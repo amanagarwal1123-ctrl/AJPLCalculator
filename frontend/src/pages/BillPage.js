@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth, apiClient } from '@/App';
 
-const IMG_BASE = process.env.REACT_APP_BACKEND_URL || window.location.origin;
+const IMG_BASE = '';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
