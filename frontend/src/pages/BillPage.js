@@ -581,8 +581,12 @@ export default function BillPage() {
                                 alt="Old Gold"
                                 className="w-20 h-20 rounded-lg object-cover border border-[hsl(30,60%,35%)]/40 cursor-pointer"
                                 onClick={() => setLightboxImg(`${IMG_BASE}${bill.old_gold.photo}`)}
+                                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling && (e.target.nextSibling.style.display = 'flex'); }}
                                 data-testid="og-photo-preview"
                               />
+                              <div className="w-20 h-20 rounded-lg border border-dashed border-[hsl(30,60%,35%)]/40 items-center justify-center text-[hsl(30,50%,50%)] text-[10px] text-center hidden">
+                                Photo unavailable
+                              </div>
                               {canEdit() && (
                                 <button
                                   className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center"
