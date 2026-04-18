@@ -57,8 +57,9 @@ export default function SalesExecDashboard() {
       setIstClock({ time: `${h12}:${m} ${ampm}`, date: `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}` });
     };
     tick();
-    const clockInterval = setInterval(tick, 30000);
-    return () => clearInterval(clockInterval);
+    const clockInterval = setInterval(tick, 1000);
+    const dataInterval = setInterval(loadBills, 15000);
+    return () => { clearInterval(clockInterval); clearInterval(dataInterval); };
   }, []);
 
   const loadBuybackRates = async () => {

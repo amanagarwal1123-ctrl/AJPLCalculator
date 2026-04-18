@@ -24,6 +24,11 @@ Jewelry business management application with sales tracking, billing, customer m
 - Global CSS tablet rules: larger inputs/buttons/labels
 - ItemCalculator/RateManagement: larger inputs and buttons
 
+### UI Polish (Feb 2026)
+- Replaced DollarSign icon with IndianRupee in Admin/Manager Dashboard (removes $ sign in sales card)
+- Dashboard IST clock ticks every 1s; sales/data auto-refresh every 15s (live feel)
+- OG photo uses full BACKEND_URL (deployment-safe); shows "No Image" placeholder when absent; thumbnail opens lightbox on click
+
 ### Custom Numpad, Old Gold, Buyback Rates, Reference Normalization
 - All previously implemented features intact
 

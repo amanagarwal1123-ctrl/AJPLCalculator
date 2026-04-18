@@ -33,6 +33,7 @@ import NumpadModal from "@/components/NumpadModal";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || window.location.origin;
 export const API = `${BACKEND_URL}/api`;
+export { BACKEND_URL };
 
 // Auth Context
 export const AuthContext = createContext(null);

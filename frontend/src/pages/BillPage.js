@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth, apiClient } from '@/App';
-
-const IMG_BASE = '';
+import { useAuth, apiClient, BACKEND_URL } from '@/App';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +29,8 @@ export default function BillPage() {
   const [ogExpanded, setOgExpanded] = useState(false);
   const [ogValue, setOgValue] = useState('');
   const [ogUploading, setOgUploading] = useState(false);
+
+  const IMG_BASE = BACKEND_URL;
 
   const REFERENCE_OPTIONS = ['Instagram', 'Facebook', 'Friends', 'Family', 'Repeat Customer', 'Walk-in', 'Google', 'Newspaper', 'TV', 'Other'];
 
@@ -596,13 +596,22 @@ export default function BillPage() {
                               )}
                             </div>
                           ) : canEdit() ? (
-                            <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[hsl(30,60%,35%)]/40 cursor-pointer hover:bg-[hsl(30,40%,15%)]/30 text-[hsl(30,50%,50%)] text-xs">
-                              <Camera size={14} />
-                              {ogUploading ? 'Uploading...' : 'Upload OG Photo'}
-                              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleOgPhotoUpload(e.target.files?.[0])} data-testid="og-photo-upload" />
-                            </label>
+                            <div className="flex items-center gap-3">
+                              <div className="w-20 h-20 rounded-lg border border-dashed border-[hsl(30,60%,35%)]/40 bg-[hsl(30,40%,15%)]/20 flex flex-col items-center justify-center text-[hsl(30,50%,50%)]" data-testid="og-no-image-placeholder">
+                                <Camera size={16} className="opacity-50" />
+                                <span className="text-[9px] mt-1 uppercase tracking-wider opacity-70">No Image</span>
+                              </div>
+                              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[hsl(30,60%,35%)]/40 cursor-pointer hover:bg-[hsl(30,40%,15%)]/30 text-[hsl(30,50%,50%)] text-xs">
+                                <Camera size={14} />
+                                {ogUploading ? 'Uploading...' : 'Upload OG Photo'}
+                                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleOgPhotoUpload(e.target.files?.[0])} data-testid="og-photo-upload" />
+                              </label>
+                            </div>
                           ) : (
-                            <p className="text-xs text-muted-foreground">No photo</p>
+                            <div className="w-20 h-20 rounded-lg border border-dashed border-[hsl(30,60%,35%)]/40 bg-[hsl(30,40%,15%)]/20 flex flex-col items-center justify-center text-[hsl(30,50%,50%)]" data-testid="og-no-image-placeholder">
+                              <Camera size={16} className="opacity-50" />
+                              <span className="text-[9px] mt-1 uppercase tracking-wider opacity-70">No Image</span>
+                            </div>
                           )}
                         </div>
                         {/* OG Value */}

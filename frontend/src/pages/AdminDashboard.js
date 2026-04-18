@@ -4,7 +4,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { DollarSign, FileText, TrendingUp, Receipt, Eye, Trash2, Settings, Users, GitBranch, Tag, BarChart3, KeyRound, RefreshCw, Copy, CheckCircle, Clock, Shield, LogOut, Check, X, ChevronDown, Monitor, Smartphone, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
+import { IndianRupee, FileText, TrendingUp, Receipt, Eye, Trash2, Settings, Users, GitBranch, Tag, BarChart3, KeyRound, RefreshCw, Copy, CheckCircle, Clock, Shield, LogOut, Check, X, ChevronDown, Monitor, Smartphone, Globe, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -42,7 +42,7 @@ export default function AdminDashboard() {
       });
     };
     tick();
-    const interval = setInterval(tick, 30000);
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -57,7 +57,7 @@ export default function AdminDashboard() {
     loadOtps();
     loadBuybackRates();
     const otpInterval = setInterval(loadOtps, 10000);
-    const dataInterval = setInterval(loadData, 30000);
+    const dataInterval = setInterval(loadData, 15000);
     return () => { clearInterval(otpInterval); clearInterval(dataInterval); };
   }, []);
 
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
   };
 
   const kpiCards = [
-    { label: "Today's Sales", value: formatCurrency(analytics?.today_sales), icon: DollarSign, color: 'text-primary' },
+        { label: "Today's Sales", value: formatCurrency(analytics?.today_sales), icon: IndianRupee, color: 'text-primary' },,
     { label: 'Bills Today', value: analytics?.today_count || 0, icon: FileText, color: 'text-[hsl(196,70%,52%)]' },
     { label: 'Avg Ticket', value: formatCurrency(analytics?.avg_ticket), icon: TrendingUp, color: 'text-[hsl(160,52%,46%)]' },
     { label: 'GST Collected', value: formatCurrency(analytics?.today_gst), icon: Receipt, color: 'text-[hsl(270,35%,66%)]' },

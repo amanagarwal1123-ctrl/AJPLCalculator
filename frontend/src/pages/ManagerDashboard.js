@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { Eye, CheckCircle, FileText, DollarSign, Clock, AlertTriangle, ClipboardList } from 'lucide-react';
+import { Eye, CheckCircle, FileText, IndianRupee, Clock, AlertTriangle, ClipboardList } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -42,8 +42,9 @@ export default function ManagerDashboard() {
       setIstClock({ time: `${h12}:${m} ${ampm}`, date: `${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}` });
     };
     tick();
-    const clockInterval = setInterval(tick, 30000);
-    return () => clearInterval(clockInterval);
+    const clockInterval = setInterval(tick, 1000);
+    const dataInterval = setInterval(loadData, 15000);
+    return () => { clearInterval(clockInterval); clearInterval(dataInterval); };
   }, []);
 
   const loadBuybackRates = async () => {
