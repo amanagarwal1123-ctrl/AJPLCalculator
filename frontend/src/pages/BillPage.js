@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
-import { Plus, Trash2, Send, Printer, Download, ArrowLeft, Edit, CheckCircle, Clock, History, Layers, ChevronRight, User, Camera, X, ZoomIn, Percent, Home } from 'lucide-react';
+import { Plus, Trash2, Send, Printer, Download, ArrowLeft, Edit, CheckCircle, Clock, History, Layers, ChevronRight, ChevronDown, User, Camera, X, ZoomIn, Percent, Home, Calculator } from 'lucide-react';
 import NumericInput from '@/components/NumericInput';
+import ItemBreakdown from '@/components/ItemBreakdown';
 import { toast } from 'sonner';
 
 export default function BillPage() {
@@ -29,6 +30,9 @@ export default function BillPage() {
   const [ogExpanded, setOgExpanded] = useState(false);
   const [ogValue, setOgValue] = useState('');
   const [ogUploading, setOgUploading] = useState(false);
+  const [expandedBreakdowns, setExpandedBreakdowns] = useState({});
+
+  const toggleBreakdown = (idx) => setExpandedBreakdowns(prev => ({ ...prev, [idx]: !prev[idx] }));
 
   const IMG_BASE = BACKEND_URL;
 
@@ -479,6 +483,18 @@ export default function BillPage() {
                                   ))}
                                 </div>
                               )}
+                              {/* Calculation Breakdown toggle */}
+                              <button
+                                type="button"
+                                onClick={() => toggleBreakdown(idx)}
+                                className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
+                                data-testid={`toggle-breakdown-${idx}`}
+                              >
+                                <Calculator size={12} />
+                                {expandedBreakdowns[idx] ? 'Hide' : 'Show'} calculation breakdown
+                                <ChevronDown size={12} className={`transition-transform ${expandedBreakdowns[idx] ? 'rotate-180' : ''}`} />
+                              </button>
+                              {expandedBreakdowns[idx] && <ItemBreakdown item={item} />}
                             </div>
                             <div className="flex flex-col items-end gap-1 shrink-0">
                               <span className="mono text-base sm:text-lg font-bold text-primary">{formatCurrency(item.total_amount)}</span>

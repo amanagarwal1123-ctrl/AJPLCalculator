@@ -28,6 +28,9 @@ Jewelry business management application with sales tracking, billing, customer m
 - Replaced DollarSign icon with IndianRupee in Admin/Manager Dashboard (removes $ sign in sales card)
 - Dashboard IST clock ticks every 1s; sales/data auto-refresh every 15s (live feel)
 - OG photo uses full BACKEND_URL (deployment-safe); shows "No Image" placeholder when absent; thumbnail opens lightbox on click
+- Diamond `Less` display shows entered (original) value, not adjusted; carat deduction shown separately
+- Per-item **Calculation Breakdown** drawer on BillPage showing full step-by-step math (gross → less → carat dedupe → net → gold value → making × weight → stone → diamond → total)
+- Frontend `calcMakingTotal` now uses gross weight for diamond items (matches backend)
 
 ### Custom Numpad, Old Gold, Buyback Rates, Reference Normalization
 - All previously implemented features intact
