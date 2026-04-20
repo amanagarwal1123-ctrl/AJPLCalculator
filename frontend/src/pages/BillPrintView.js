@@ -99,7 +99,7 @@ export default function BillPrintView() {
                   {!isMrp && (
                     <div style={{ textAlign: 'center', borderLeft: '1px solid #555', borderRight: '1px solid #555' }}>
                       <div style={{ color: '#555', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Less</div>
-                      <div style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{(item.less || 0).toFixed(3)}g</div>
+                      <div style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{((item.item_type === 'diamond' ? (item.original_less ?? item.less) : item.less) || 0).toFixed(3)}g</div>
                     </div>
                   )}
                   <div style={{ textAlign: 'center' }}>

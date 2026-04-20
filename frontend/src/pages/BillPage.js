@@ -405,7 +405,7 @@ export default function BillPage() {
                                 <>
                                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mt-2 text-xs text-muted-foreground">
                                     <span>Gross: <span className="text-foreground">{item.gross_weight}g</span></span>
-                                    <span>Less: <span className="text-foreground">{item.less}g</span></span>
+                                    <span>Less: <span className="text-foreground">{item.item_type === 'diamond' ? (item.original_less ?? item.less) : item.less}g</span></span>
                                     <span>Net: <span className="mono text-foreground font-medium">{item.net_weight}g</span>{item.studded_less_grams > 0 && <span className="text-primary ml-1">(-{item.studded_less_grams}g)</span>}</span>
                                     <span>Rate: <span className="mono text-foreground">{formatCurrency(item.rate_per_10g)}/10g</span></span>
                                   </div>
@@ -415,6 +415,20 @@ export default function BillPage() {
                                     <span>Stone: <span className="mono">{formatCurrency(item.total_stone)}</span></span>
                                     {item.item_type === 'diamond' && <span>Studded: <span className="mono">{formatCurrency(item.total_studded)}</span></span>}
                                   </div>
+                                  {/* Studded (diamond) entries detail - shows carats */}
+                                  {item.item_type === 'diamond' && item.studded_charges?.length > 0 && (
+                                    <div className="mt-1.5 text-[10px] text-muted-foreground">
+                                      Diamond: {item.studded_charges.map((sc, si) => (
+                                        <span key={si} className="mr-2">
+                                          <span className="capitalize">{sc.type?.replace('_', ' ')}</span>{' '}
+                                          <span className="mono text-[hsl(196,70%,52%)]">{(sc.carats || 0)}ct</span>
+                                          {sc.less_type === 'L' && sc.weight_grams > 0 && <span className="text-primary"> (L:-{sc.weight_grams}g)</span>}{' '}
+                                          × <span className="mono">{formatCurrency(sc.rate_per_carat || 0)}/ct</span>
+                                          {' = '}<span className="mono">{formatCurrency(sc.calculated_amount || 0)}</span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
                                   {/* Making charge details */}
                                   {item.making_charges?.length > 0 && (
                                     <div className="mt-1.5 text-[10px] text-muted-foreground">

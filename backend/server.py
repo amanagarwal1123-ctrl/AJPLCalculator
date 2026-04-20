@@ -2383,7 +2383,8 @@ async def generate_bill_pdf(bill_id: str, user=Depends(get_current_user)):
             item_name = item_name[:max_chars-1] + '..'
         
         gross_wt = item.get('gross_weight', 0)
-        less_wt = item.get('less', 0)
+        # For diamond items, display the original less (carat deduction already reflected in net)
+        less_wt = item.get('original_less', item.get('less', 0)) if item.get('item_type') == 'diamond' else item.get('less', 0)
         net_wt = item.get('net_weight', 0)
         
         is_mrp_item = item.get('item_type') == 'mrp'

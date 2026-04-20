@@ -141,6 +141,9 @@ export default function ItemCalculator() {
   const goldValue = netWeight * rateNum / 10;
 
   // Calculate making charges total
+  // For diamond items, making is calculated on GROSS weight (matches backend calc_engine.py)
+  // For gold items, making is calculated on NET weight
+  const makingWeight = itemType === 'diamond' ? (parseFloat(grossWeight) || 0) : netWeight;
   const calcMakingTotal = () => {
     let total = 0;
     for (const mc of makingCharges) {
@@ -148,9 +151,9 @@ export default function ItemCalculator() {
       if (mc.type === 'percentage') {
         const rate24kt = rateNum / (purityPercent / 100);
         const perGram = (val / 100) * (rate24kt / 10);
-        total += perGram * netWeight;
+        total += perGram * makingWeight;
       } else if (mc.type === 'per_gram') {
-        total += val * netWeight;
+        total += val * makingWeight;
       } else if (mc.type === 'per_piece') {
         total += val * (parseFloat(mc.quantity) || 1);
       }
