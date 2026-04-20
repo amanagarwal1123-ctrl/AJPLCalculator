@@ -217,6 +217,16 @@ export default function BillPage() {
     } catch (err) { toast.error(err.response?.data?.detail || 'Failed to approve'); }
   };
 
+  const toggleGst = async () => {
+    const disabling = (bill?.gst_percent ?? 3) !== 0;
+    if (!window.confirm(disabling ? 'Remove GST from this bill?' : 'Re-enable 3% GST on this bill?')) return;
+    try {
+      await apiClient.put(`/bills/${billId}/gst`);
+      toast.success(disabling ? 'GST removed' : 'GST re-enabled');
+      loadBill();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to toggle GST'); }
+  };
+
   const downloadPdf = async () => {
     try {
       const res = await apiClient.get(`/bills/${billId}/pdf`, { responseType: 'blob' });
@@ -570,7 +580,24 @@ export default function BillPage() {
                   <div className="flex justify-between text-sm"><span className="text-muted-foreground">Ext. Charges Total</span><span className="mono">{formatCurrency(bill.external_charges_total)}</span></div>
                   <Separator className="bg-border" />
                   <div className="flex justify-between text-sm font-medium"><span>Subtotal (without GST)</span><span className="mono">{formatCurrency(bill.subtotal_without_gst)}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">GST (3%)</span><span className="mono">{formatCurrency(bill.gst_amount)}</span></div>
+                  <div className="flex justify-between items-center text-sm group" data-testid="gst-row">
+                    <div className="flex items-center gap-2">
+                      <span className={`${bill.gst_percent === 0 ? 'text-muted-foreground/60 line-through' : 'text-muted-foreground'}`}>
+                        GST ({bill.gst_percent ?? 3}%)
+                      </span>
+                      {user?.role === 'admin' && (
+                        <button
+                          type="button"
+                          onClick={toggleGst}
+                          className="text-[10px] font-medium px-2 py-0.5 rounded-full border border-primary/40 text-primary hover:bg-primary/10 transition-colors"
+                          data-testid="toggle-gst-btn"
+                        >
+                          {bill.gst_percent === 0 ? 'Re-enable' : 'Remove'}
+                        </button>
+                      )}
+                    </div>
+                    <span className={`mono ${bill.gst_percent === 0 ? 'text-muted-foreground/60 line-through' : ''}`}>{formatCurrency(bill.gst_amount)}</span>
+                  </div>
                   <Separator className="bg-primary/30" />
                   <div className="flex justify-between text-lg font-bold"><span className="heading">Grand Total</span><span className="mono text-primary">{formatCurrency(bill.grand_total)}</span></div>
 

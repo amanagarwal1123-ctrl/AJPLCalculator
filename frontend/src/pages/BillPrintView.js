@@ -223,7 +223,7 @@ export default function BillPrintView() {
                 <span>Subtotal (excl. GST)</span><span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{fmt(bill.subtotal_without_gst)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#333' }}>
-                <span>GST ({bill.gst_percent || 3}%)</span><span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{fmt(bill.gst_amount)}</span>
+                <span>GST ({bill.gst_percent ?? 3}%)</span><span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{fmt(bill.gst_amount)}</span>
               </div>
               <div style={{ height: '2px', background: '#000', margin: '6px 0' }} />
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '16px', padding: '4px 0' }}>

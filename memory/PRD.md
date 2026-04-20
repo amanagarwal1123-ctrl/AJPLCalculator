@@ -31,6 +31,7 @@ Jewelry business management application with sales tracking, billing, customer m
 - Diamond `Less` display shows entered (original) value, not adjusted; carat deduction shown separately
 - Per-item **Calculation Breakdown** drawer on BillPage showing full step-by-step math (gross → less → carat dedupe → net → gold value → making × weight → stone → diamond → total)
 - Frontend `calcMakingTotal` now uses gross weight for diamond items (matches backend)
+- **Admin GST Toggle**: `PUT /bills/{id}/gst` flips a bill between 3% GST and 0%. Bill Summary shows strike-through with one-click "Remove" / "Re-enable" pill (admin-only). Change logged in bill history; Print/PDF render the saved percent.
 
 ### Custom Numpad, Old Gold, Buyback Rates, Reference Normalization
 - All previously implemented features intact

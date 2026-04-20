@@ -1163,6 +1163,8 @@ async def update_bill(bill_id: str, updates: dict, user=Depends(get_current_user
     old_total = bill.get('grand_total', 0)
     
     # Recalculate if items changed
+    # Use existing bill's gst_percent (may have been disabled by admin via /bills/{id}/gst)
+    current_gst_percent = bill.get('gst_percent', 3.0)
     if 'items' in updates:
         calculated_items = []
         for item in updates['items']:
@@ -1177,11 +1179,11 @@ async def update_bill(bill_id: str, updates: dict, user=Depends(get_current_user
                 calculated_items.append(calc)
         updates['items'] = calculated_items
         ext_charges = updates.get('external_charges', bill.get('external_charges', []))
-        totals = calculate_bill_totals(calculated_items, ext_charges)
+        totals = calculate_bill_totals(calculated_items, ext_charges, gst_percent=current_gst_percent)
         updates.update(totals)
     elif 'external_charges' in updates:
         items = bill.get('items', [])
-        totals = calculate_bill_totals(items, updates['external_charges'])
+        totals = calculate_bill_totals(items, updates['external_charges'], gst_percent=current_gst_percent)
         updates.update(totals)
 
     updates['updated_at'] = ist_now_str()
@@ -3038,6 +3040,41 @@ async def toggle_mmi(bill_id: str, user=Depends(get_current_user)):
     current = bill.get("mmi_entered", False)
     await db.bills.update_one({"id": bill_id}, {"$set": {"mmi_entered": not current}})
     return {"mmi_entered": not current}
+
+# ============ GST TOGGLE (Admin) ============
+@api_router.put("/bills/{bill_id}/gst")
+async def toggle_bill_gst(bill_id: str, user=Depends(get_current_user)):
+    """Admin-only: toggle GST on/off for a bill. Recalculates grand total."""
+    await require_role(user, ["admin"])
+    bill = await db.bills.find_one({"id": bill_id})
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+    # Toggle: if currently disabled (gst_percent == 0), re-enable to 3%. Else disable to 0.
+    currently_disabled = float(bill.get("gst_percent", 3) or 0) == 0
+    new_gst_percent = 3.0 if currently_disabled else 0.0
+    items = bill.get("items", [])
+    ext_charges = bill.get("external_charges", [])
+    totals = calculate_bill_totals(items, ext_charges, gst_percent=new_gst_percent)
+    change_entry = {
+        "timestamp": ist_now_str(),
+        "user": user.get("full_name", ""),
+        "role": user.get("role", ""),
+        "action": f"gst_{'enabled' if currently_disabled else 'disabled'}",
+        "old_total": bill.get("grand_total", 0),
+        "new_total": totals["grand_total"],
+    }
+    await db.bills.update_one(
+        {"id": bill_id},
+        {
+            "$set": {
+                **totals,
+                "updated_at": ist_now_str(),
+                "last_modified_by": user.get("full_name", ""),
+            },
+            "$push": {"change_log": change_entry},
+        },
+    )
+    return {"gst_percent": new_gst_percent, "gst_disabled": new_gst_percent == 0, **totals}
 
 # ============ ITEM NAME EDIT ============
 @api_router.put("/item-names/{item_id}")
