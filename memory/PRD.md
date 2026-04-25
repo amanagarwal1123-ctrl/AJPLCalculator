@@ -24,7 +24,12 @@ Jewelry business management application with sales tracking, billing, customer m
 - Global CSS tablet rules: larger inputs/buttons/labels
 - ItemCalculator/RateManagement: larger inputs and buttons
 
-### UI Polish (Feb 2026)
+### Manager Edit-Approval Flow & Dynamic Rates (Feb 2026)
+- **Manager edit on approved bills now requires admin approval**: `POST /bills/{id}/edit-request` (manager) creates pending request; `PUT /bills/{id}/edit-request/decide` (admin) approves/rejects. One approval = one save; afterwards bill returns to `edited` and waits for admin re-approval. Manager is locked out from re-editing until admin re-approves (which clears the consumed request).
+- **Admin Dashboard** has a new yellow "Edit Requests" panel showing pending requests with Approve/Reject buttons.
+- **Bill Page** shows banners for pending / approved / consumed edit requests; `Request Edit Approval` button on approved bills for manager.
+- **Audit log overhaul**: every `created`, `sent_to_manager`, `approved`, `item_added/modified/removed`, `external_charges_updated`, `totals_updated`, `status_change`, `rate_card_update`, `rate_sync`, `gst_disabled/enabled`, `mmi_*`, `old_gold_updated`, `reference_update`, `edit_request_*` action recorded with user, role, timestamp, and structured `details` payload. Frontend renders rich diffs (old → new) with colour-coded action chips.
+- **Dynamic rates for draft/sent/edited bills**: items with `rate_mode in ('normal','ajpl')` and matching purity are auto-recalculated from current `rate_cards` on every fetch (`apply_dynamic_rates(persist=True)` on GET /bills, GET /bills/{id}, GET /bills/{id}/summary) and on rate card update (`PUT /api/rates/{rate_type}` walks all non-approved bills and persists new totals + change_log entry). Manual rate entries are untouched. Approved bills are immutable.
 - Replaced DollarSign icon with IndianRupee in Admin/Manager Dashboard (removes $ sign in sales card)
 - Dashboard IST clock ticks every 1s; sales/data auto-refresh every 15s (live feel)
 - OG photo uses full BACKEND_URL (deployment-safe); shows "No Image" placeholder when absent; thumbnail opens lightbox on click
@@ -32,6 +37,8 @@ Jewelry business management application with sales tracking, billing, customer m
 - Per-item **Calculation Breakdown** drawer on BillPage showing full step-by-step math (gross → less → carat dedupe → net → gold value → making × weight → stone → diamond → total)
 - Frontend `calcMakingTotal` now uses gross weight for diamond items (matches backend)
 - **Admin GST Toggle**: `PUT /bills/{id}/gst` flips a bill between 3% GST and 0%. Bill Summary shows strike-through with one-click "Remove" / "Re-enable" pill (admin-only). Change logged in bill history; Print/PDF render the saved percent.
+
+### UI Polish (Feb 2026)
 
 ### Custom Numpad, Old Gold, Buyback Rates, Reference Normalization
 - All previously implemented features intact

@@ -270,6 +270,161 @@ async def enrich_bills_with_customer_data(bills_serialized: list) -> list:
         return
     raise HTTPException(status_code=403, detail="Insufficient permissions")
 
+
+# ============ DYNAMIC RATE HELPERS ============
+async def _build_rate_lookup() -> dict:
+    """Build {(rate_mode, purity_name) -> rate_per_10g} from current rate_cards."""
+    lookup = {}
+    async for rc in db.rate_cards.find({"rate_type": {"$in": ["normal", "ajpl"]}}):
+        rt = rc.get("rate_type")
+        for p in rc.get("purities", []):
+            lookup[(rt, p.get("purity_name"))] = float(p.get("rate_per_10g", 0) or 0)
+    return lookup
+
+
+def _recalc_bill_with_rates(bill_doc: dict, rate_lookup: dict) -> dict:
+    """Recalculate items and totals using current rates for non-manual rate_modes.
+    Mutates and returns the bill_doc copy.
+    """
+    items = bill_doc.get("items", []) or []
+    new_items = []
+    rate_changed = False
+    for item in items:
+        rate_mode = item.get("rate_mode")
+        # Skip MRP and manual entries
+        if item.get("item_type") == "mrp" or rate_mode not in ("normal", "ajpl"):
+            new_items.append(item)
+            continue
+        purity_name = item.get("purity_name")
+        new_rate = rate_lookup.get((rate_mode, purity_name))
+        if new_rate is None or new_rate <= 0:
+            new_items.append(item)
+            continue
+        if abs(float(item.get("rate_per_10g", 0) or 0) - new_rate) < 0.005:
+            new_items.append(item)
+            continue
+        # Rate changed — recalc this item
+        rate_changed = True
+        item_copy = {**item, "rate_per_10g": new_rate}
+        if item.get("item_type") == "diamond":
+            new_items.append(calculate_diamond_item(item_copy))
+        else:
+            new_items.append(calculate_gold_item(item_copy))
+    if rate_changed:
+        bill_doc["items"] = new_items
+        gst_pct = bill_doc.get("gst_percent", 3.0)
+        totals = calculate_bill_totals(new_items, bill_doc.get("external_charges", []), gst_percent=gst_pct)
+        bill_doc.update(totals)
+    return bill_doc
+
+
+async def apply_dynamic_rates(bill_doc: dict, persist: bool = True) -> dict:
+    """For draft/sent/edited bills, refresh item rates from current rate cards.
+    If persist=True and rates changed, writes changes back to the DB and appends a change_log entry.
+    Approved bills are untouched.
+    """
+    if not bill_doc:
+        return bill_doc
+    if bill_doc.get("status") not in ("draft", "sent", "edited"):
+        return bill_doc
+    rate_lookup = await _build_rate_lookup()
+    if not rate_lookup:
+        return bill_doc
+    old_total = bill_doc.get("grand_total", 0)
+    old_items_snapshot = [
+        {"item_name": it.get("item_name"), "rate_per_10g": it.get("rate_per_10g"), "rate_mode": it.get("rate_mode"), "purity_name": it.get("purity_name")}
+        for it in bill_doc.get("items", []) or []
+    ]
+    _recalc_bill_with_rates(bill_doc, rate_lookup)
+    new_total = bill_doc.get("grand_total", 0)
+    if persist and abs(float(old_total) - float(new_total)) > 0.005:
+        rate_change_summary = []
+        for old_it, new_it in zip(old_items_snapshot, bill_doc.get("items", [])):
+            old_r = float(old_it.get("rate_per_10g") or 0)
+            new_r = float(new_it.get("rate_per_10g") or 0)
+            if abs(old_r - new_r) > 0.005:
+                rate_change_summary.append({
+                    "item": old_it.get("item_name"),
+                    "purity": old_it.get("purity_name"),
+                    "rate_mode": old_it.get("rate_mode"),
+                    "old_rate": old_r,
+                    "new_rate": new_r,
+                })
+        change_entry = {
+            "timestamp": ist_now_str(),
+            "user": "System (auto rate sync)",
+            "role": "system",
+            "action": "rate_sync",
+            "old_total": float(old_total),
+            "new_total": float(new_total),
+            "details": rate_change_summary,
+        }
+        await db.bills.update_one(
+            {"id": bill_doc["id"]},
+            {"$set": {
+                "items": bill_doc["items"],
+                "items_total": bill_doc.get("items_total"),
+                "subtotal_without_gst": bill_doc.get("subtotal_without_gst"),
+                "gst_amount": bill_doc.get("gst_amount"),
+                "grand_total": bill_doc.get("grand_total"),
+                "updated_at": ist_now_str(),
+            }, "$push": {"change_log": change_entry}}
+        )
+    return bill_doc
+
+
+async def apply_dynamic_rates_many(bills_serialized: list, persist: bool = False) -> list:
+    """Bulk apply for list endpoints. Skips approved. Persist=False by default to avoid huge writes on every list."""
+    if not bills_serialized:
+        return bills_serialized
+    rate_lookup = await _build_rate_lookup()
+    if not rate_lookup:
+        return bills_serialized
+    for b in bills_serialized:
+        if b.get("status") in ("draft", "sent", "edited"):
+            _recalc_bill_with_rates(b, rate_lookup)
+    return bills_serialized
+
+
+# ============ AUDIT-LOG HELPERS ============
+def _summarize_item(it: dict) -> str:
+    name = it.get("item_name", "?")
+    typ = it.get("item_type", "gold")
+    if typ == "mrp":
+        return f"{name} (MRP ₹{it.get('mrp', 0):,.0f})"
+    return f"{name} ({it.get('purity_name', '')}, {it.get('gross_weight', 0)}g)"
+
+
+def _diff_items(old_items: list, new_items: list) -> list:
+    """Compute a human-readable diff between two item lists."""
+    out = []
+    old_items = old_items or []
+    new_items = new_items or []
+    # Match by index (UI keeps positional identity)
+    max_len = max(len(old_items), len(new_items))
+    for i in range(max_len):
+        old = old_items[i] if i < len(old_items) else None
+        new = new_items[i] if i < len(new_items) else None
+        if old is None and new is not None:
+            out.append({"op": "added", "index": i, "item": _summarize_item(new), "amount": new.get("total_amount", 0)})
+            continue
+        if new is None and old is not None:
+            out.append({"op": "removed", "index": i, "item": _summarize_item(old), "amount": old.get("total_amount", 0)})
+            continue
+        if old and new:
+            field_changes = []
+            for f in ("rate_per_10g", "gross_weight", "less", "purity_name", "rate_mode", "item_name", "tag_number", "mrp"):
+                ov = old.get(f)
+                nv = new.get(f)
+                if ov != nv and not (ov in (None, "", 0) and nv in (None, "", 0)):
+                    field_changes.append({"field": f, "old": ov, "new": nv})
+            if abs(float(old.get("total_amount", 0) or 0) - float(new.get("total_amount", 0) or 0)) > 0.005:
+                field_changes.append({"field": "total_amount", "old": old.get("total_amount", 0), "new": new.get("total_amount", 0)})
+            if field_changes:
+                out.append({"op": "modified", "index": i, "item": _summarize_item(new), "changes": field_changes})
+    return out
+
+
 # ============ MODELS ============
 class LoginRequest(BaseModel):
     username: str
@@ -805,7 +960,49 @@ async def update_rates(rate_type: str, req: RateCardUpdate, user=Depends(get_cur
             "updated_by": user.get('full_name', 'admin'),
         }}
     )
-    return {"status": "updated"}
+    # Sync dynamic rates into all non-approved bills (draft, sent, edited)
+    synced_bills = 0
+    if rate_type in ("normal", "ajpl"):
+        rate_lookup = await _build_rate_lookup()
+        async for b in db.bills.find({"status": {"$in": ["draft", "sent", "edited"]}}):
+            doc = serialize_doc(b)
+            old_total = doc.get("grand_total", 0)
+            old_snapshot = [
+                {"item_name": it.get("item_name"), "rate_per_10g": it.get("rate_per_10g"), "rate_mode": it.get("rate_mode"), "purity_name": it.get("purity_name")}
+                for it in doc.get("items", []) or []
+            ]
+            _recalc_bill_with_rates(doc, rate_lookup)
+            new_total = doc.get("grand_total", 0)
+            if abs(float(old_total) - float(new_total)) > 0.005:
+                changes = []
+                for o, n in zip(old_snapshot, doc.get("items", [])):
+                    if abs(float(o.get("rate_per_10g") or 0) - float(n.get("rate_per_10g") or 0)) > 0.005:
+                        changes.append({
+                            "item": o.get("item_name"), "purity": o.get("purity_name"), "rate_mode": o.get("rate_mode"),
+                            "old_rate": o.get("rate_per_10g"), "new_rate": n.get("rate_per_10g"),
+                        })
+                change_entry = {
+                    "timestamp": ist_now_str(),
+                    "user": user.get('full_name', 'admin'),
+                    "role": "admin",
+                    "action": "rate_card_update",
+                    "old_total": float(old_total),
+                    "new_total": float(new_total),
+                    "details": changes,
+                }
+                await db.bills.update_one(
+                    {"id": doc["id"]},
+                    {"$set": {
+                        "items": doc["items"],
+                        "items_total": doc.get("items_total"),
+                        "subtotal_without_gst": doc.get("subtotal_without_gst"),
+                        "gst_amount": doc.get("gst_amount"),
+                        "grand_total": doc.get("grand_total"),
+                        "updated_at": ist_now_str(),
+                    }, "$push": {"change_log": change_entry}}
+                )
+                synced_bills += 1
+    return {"status": "updated", "synced_bills": synced_bills}
 
 # ============ ITEM NAMES MANAGEMENT ============
 @api_router.get("/item-names")
@@ -1141,7 +1338,21 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
         "sent_at": None,
         "approved_at": None,
         "last_modified_by": user.get('full_name', ''),
-        "change_log": [],
+        "edit_request": None,
+        "change_log": [
+            {
+                "timestamp": ist_now_str(),
+                "user": user.get('full_name', ''),
+                "role": user.get('role', ''),
+                "action": "created",
+                "details": {
+                    "items": [_summarize_item(it) for it in calculated_items],
+                    "items_count": len(calculated_items),
+                    "grand_total": totals.get("grand_total"),
+                    "customer": req.customer_name,
+                },
+            }
+        ],
     }
     await db.bills.insert_one(bill_doc)
     return serialize_doc(bill_doc)
@@ -1152,15 +1363,32 @@ async def update_bill(bill_id: str, updates: dict, user=Depends(get_current_user
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
     
-    # Check permissions
-    if bill["status"] != "draft" and user.get('role') == 'executive':
-        raise HTTPException(status_code=403, detail="Cannot edit sent bill as executive")
-    
-    if user.get('role') == 'executive' and bill.get('executive_id') != user.get('id'):
-        raise HTTPException(status_code=403, detail="Cannot edit another executive's bill")
+    role = user.get('role')
+    status = bill.get("status")
+    edit_req = bill.get("edit_request") or {}
+
+    # Permission rules
+    if role == 'executive':
+        if status != 'draft':
+            raise HTTPException(status_code=403, detail="Cannot edit sent bill as executive")
+        if bill.get('executive_id') != user.get('id'):
+            raise HTTPException(status_code=403, detail="Cannot edit another executive's bill")
+    elif role == 'manager':
+        if status == 'approved':
+            # Manager needs an approved edit request that's not yet consumed
+            if edit_req.get("status") != "approved" or edit_req.get("requested_by") != user.get('id'):
+                raise HTTPException(status_code=403, detail="Approved bill is locked. Request admin approval to edit.")
+        elif status in ('sent', 'edited'):
+            # Block manager from re-editing a bill they already edited via consumed request — needs admin re-approval
+            if edit_req.get("status") == "consumed":
+                raise HTTPException(status_code=403, detail="Bill is awaiting admin re-approval. Request a new edit approval to make further changes.")
+        # 'draft' fall-through is allowed (rare for manager but harmless)
+    # admin: always allowed
 
     # Build audit log entry
     old_total = bill.get('grand_total', 0)
+    old_items = bill.get('items', []) or []
+    old_external_charges = bill.get('external_charges', []) or []
     
     # Recalculate if items changed
     # Use existing bill's gst_percent (may have been disabled by admin via /bills/{id}/gst)
@@ -1189,28 +1417,89 @@ async def update_bill(bill_id: str, updates: dict, user=Depends(get_current_user
     updates['updated_at'] = ist_now_str()
     updates['last_modified_by'] = user.get('full_name', '')
     
+    status_change = None
     # If manager/admin editing a sent bill, mark as edited
-    if bill.get('status') == 'sent' and user.get('role') in ['admin', 'manager']:
+    if status == 'sent' and role in ['admin', 'manager']:
         updates['status'] = 'edited'
+        status_change = ('sent', 'edited')
+
+    # Manager editing approved bill via consumed edit-request → mark as edited & consume
+    consumed_request = False
+    if role == 'manager' and status == 'approved' and edit_req.get('status') == 'approved':
+        updates['status'] = 'edited'
+        status_change = ('approved', 'edited')
+        consumed_request = True
     
     # Remove fields that shouldn't be directly updated
-    for field in ['id', 'bill_number', 'created_at', 'executive_id', 'change_log']:
+    for field in ['id', 'bill_number', 'created_at', 'executive_id', 'change_log', 'edit_request']:
         updates.pop(field, None)
     
-    # Add to change log
+    # Build detailed change log entries
     new_total = updates.get('grand_total', old_total)
-    change_entry = {
-        "timestamp": ist_now_str(),
-        "user": user.get('full_name', ''),
-        "role": user.get('role', ''),
-        "action": "edit",
-        "old_total": old_total,
-        "new_total": new_total,
-    }
-    
+    log_entries = []
+    new_items_list = updates.get('items', old_items) if 'items' in updates else old_items
+    item_changes = _diff_items(old_items, new_items_list)
+    for ch in item_changes:
+        log_entries.append({
+            "timestamp": ist_now_str(),
+            "user": user.get('full_name', ''),
+            "role": role,
+            "action": f"item_{ch['op']}",
+            "details": ch,
+        })
+    if 'external_charges' in updates:
+        new_ext = updates.get('external_charges', [])
+        if [(e.get('name'), e.get('amount')) for e in old_external_charges] != [(e.get('name'), e.get('amount')) for e in new_ext]:
+            log_entries.append({
+                "timestamp": ist_now_str(),
+                "user": user.get('full_name', ''),
+                "role": role,
+                "action": "external_charges_updated",
+                "details": {"old": old_external_charges, "new": new_ext},
+            })
+    if abs(float(old_total) - float(new_total)) > 0.005:
+        log_entries.append({
+            "timestamp": ist_now_str(),
+            "user": user.get('full_name', ''),
+            "role": role,
+            "action": "totals_updated",
+            "old_total": float(old_total),
+            "new_total": float(new_total),
+        })
+    if status_change:
+        log_entries.append({
+            "timestamp": ist_now_str(),
+            "user": user.get('full_name', ''),
+            "role": role,
+            "action": "status_change",
+            "details": {"from": status_change[0], "to": status_change[1]},
+        })
+    if not log_entries:
+        # Fallback so that every save has at least one trace
+        log_entries.append({
+            "timestamp": ist_now_str(),
+            "user": user.get('full_name', ''),
+            "role": role,
+            "action": "edit",
+            "old_total": float(old_total),
+            "new_total": float(new_total),
+        })
+
+    set_updates = {**updates}
+    if consumed_request:
+        set_updates["edit_request.status"] = "consumed"
+        set_updates["edit_request.consumed_at"] = ist_now_str()
+        log_entries.append({
+            "timestamp": ist_now_str(),
+            "user": user.get('full_name', ''),
+            "role": role,
+            "action": "edit_request_consumed",
+            "details": {"request_id": edit_req.get("id")},
+        })
+
     await db.bills.update_one(
         {"id": bill_id}, 
-        {"$set": updates, "$push": {"change_log": change_entry}}
+        {"$set": set_updates, "$push": {"change_log": {"$each": log_entries}}}
     )
     updated = await db.bills.find_one({"id": bill_id})
     return serialize_doc(updated)
@@ -1260,10 +1549,22 @@ async def update_bill_old_gold(bill_id: str, req: OldGoldUpdate, user=Depends(ge
         raise HTTPException(status_code=404, detail="Bill not found")
     
     og_data = {"enabled": req.enabled, "photo": req.photo, "value": req.value or 0}
-    await db.bills.update_one(
-        {"id": bill_id},
-        {"$set": {"old_gold": og_data, "updated_at": ist_now_str()}}
-    )
+    old_og = bill.get("old_gold") or {"enabled": False, "photo": None, "value": 0}
+    if old_og != og_data:
+        change_entry = {
+            "timestamp": ist_now_str(),
+            "user": user.get('full_name', ''),
+            "role": user.get('role', ''),
+            "action": "old_gold_updated",
+            "details": {"old": old_og, "new": og_data},
+        }
+        await db.bills.update_one(
+            {"id": bill_id},
+            {"$set": {"old_gold": og_data, "updated_at": ist_now_str()},
+             "$push": {"change_log": change_entry}}
+        )
+    else:
+        await db.bills.update_one({"id": bill_id}, {"$set": {"old_gold": og_data, "updated_at": ist_now_str()}})
     updated = await db.bills.find_one({"id": bill_id})
     return serialize_doc(updated)
 
@@ -1340,16 +1641,125 @@ async def approve_bill(bill_id: str, user=Depends(get_current_user)):
         "new_total": bill.get('grand_total', 0),
     }
     
+    set_payload = {
+        "status": "approved",
+        "approved_at": ist_now_str(),
+        "updated_at": ist_now_str(),
+        "last_modified_by": user.get('full_name', ''),
+    }
+    # If a previous edit-request is consumed, clear it so manager can request again later.
+    if (bill.get("edit_request") or {}).get("status") == "consumed":
+        set_payload["edit_request"] = None
     await db.bills.update_one(
         {"id": bill_id},
-        {"$set": {
-            "status": "approved",
-            "approved_at": ist_now_str(),
-            "updated_at": ist_now_str(),
-            "last_modified_by": user.get('full_name', ''),
-        }, "$push": {"change_log": change_entry}}
+        {"$set": set_payload, "$push": {"change_log": change_entry}}
     )
     return {"status": "approved"}
+
+
+# ============ EDIT REQUEST FLOW (manager → admin) ============
+class EditRequestCreate(BaseModel):
+    note: Optional[str] = ""
+
+
+@api_router.post("/bills/{bill_id}/edit-request")
+async def create_edit_request(bill_id: str, req: EditRequestCreate, user=Depends(get_current_user)):
+    """Manager-only: request admin approval to edit an approved bill."""
+    await require_role(user, ["manager"])
+    bill = await db.bills.find_one({"id": bill_id})
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+    if bill.get("status") != "approved":
+        raise HTTPException(status_code=400, detail="Edit request only required for approved bills")
+    existing = bill.get("edit_request") or {}
+    if existing.get("status") in ("pending", "approved"):
+        raise HTTPException(status_code=400, detail="An edit request is already active for this bill")
+    edit_req = {
+        "id": str(uuid.uuid4()),
+        "status": "pending",
+        "requested_by": user.get("id"),
+        "requested_by_name": user.get("full_name", ""),
+        "requested_by_role": user.get("role", "manager"),
+        "requested_at": ist_now_str(),
+        "note": (req.note or "").strip(),
+        "decided_by": None,
+        "decided_by_name": None,
+        "decided_at": None,
+    }
+    change_entry = {
+        "timestamp": ist_now_str(),
+        "user": user.get("full_name", ""),
+        "role": user.get("role", ""),
+        "action": "edit_request_created",
+        "details": {"request_id": edit_req["id"], "note": edit_req["note"]},
+    }
+    await db.bills.update_one(
+        {"id": bill_id},
+        {"$set": {"edit_request": edit_req}, "$push": {"change_log": change_entry}}
+    )
+    return edit_req
+
+
+class EditRequestDecision(BaseModel):
+    action: str  # 'approve' | 'reject'
+    note: Optional[str] = ""
+
+
+@api_router.put("/bills/{bill_id}/edit-request/decide")
+async def decide_edit_request(bill_id: str, req: EditRequestDecision, user=Depends(get_current_user)):
+    """Admin-only: approve or reject a manager's edit request."""
+    await require_role(user, ["admin"])
+    if req.action not in ("approve", "reject"):
+        raise HTTPException(status_code=400, detail="action must be 'approve' or 'reject'")
+    bill = await db.bills.find_one({"id": bill_id})
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+    edit_req = bill.get("edit_request") or {}
+    if edit_req.get("status") != "pending":
+        raise HTTPException(status_code=400, detail="No pending edit request on this bill")
+    new_status = "approved" if req.action == "approve" else "rejected"
+    edit_req.update({
+        "status": new_status,
+        "decided_by": user.get("id"),
+        "decided_by_name": user.get("full_name", ""),
+        "decided_at": ist_now_str(),
+        "decision_note": (req.note or "").strip(),
+    })
+    change_entry = {
+        "timestamp": ist_now_str(),
+        "user": user.get("full_name", ""),
+        "role": user.get("role", ""),
+        "action": f"edit_request_{new_status}",
+        "details": {
+            "request_id": edit_req.get("id"),
+            "requester": edit_req.get("requested_by_name"),
+            "note": edit_req.get("decision_note"),
+        },
+    }
+    await db.bills.update_one(
+        {"id": bill_id},
+        {"$set": {"edit_request": edit_req}, "$push": {"change_log": change_entry}}
+    )
+    return edit_req
+
+
+@api_router.get("/admin/edit-requests")
+async def list_pending_edit_requests(user=Depends(get_current_user)):
+    """Admin-only: all bills currently awaiting an edit-request decision."""
+    await require_role(user, ["admin"])
+    pending = []
+    async for b in db.bills.find({"edit_request.status": "pending"}):
+        pending.append({
+            "bill_id": b.get("id"),
+            "bill_number": b.get("bill_number"),
+            "customer_name": b.get("customer_name"),
+            "customer_phone": b.get("customer_phone"),
+            "grand_total": b.get("grand_total"),
+            "status": b.get("status"),
+            "edit_request": b.get("edit_request"),
+        })
+    return pending
+
 
 @api_router.put("/bills/{bill_id}/send")
 async def send_bill_to_manager(bill_id: str, user=Depends(get_current_user)):
@@ -1368,7 +1778,14 @@ async def send_bill_to_manager(bill_id: str, user=Depends(get_current_user)):
             "status": "sent",
             "sent_at": ist_now_str(),
             "updated_at": ist_now_str(),
-        }}
+        },
+        "$push": {"change_log": {
+            "timestamp": ist_now_str(),
+            "user": user.get('full_name', ''),
+            "role": user.get('role', ''),
+            "action": "sent_to_manager",
+            "details": {"grand_total": bill.get('grand_total', 0)},
+        }}}
     )
     # Update customer total spent - use customer_id if available, fallback to phone matching
     cust_id = bill.get('customer_id')
@@ -1469,6 +1886,7 @@ async def list_bills(
     
     bills = await db.bills.find(query).sort("created_at", -1).to_list(5000)
     serialized = [serialize_doc(b) for b in bills]
+    serialized = await apply_dynamic_rates_many(serialized, persist=False)
     return await enrich_bills_with_customer_data(serialized)
 
 @api_router.get("/bills/{bill_id}/summary")
@@ -1480,6 +1898,7 @@ async def get_bill_summary(bill_id: str, user=Depends(get_current_user)):
     await check_bill_access(bill, user)
     
     bill_data = serialize_doc(bill)
+    bill_data = await apply_dynamic_rates(bill_data, persist=True)
     
     # Return FULL item details - nothing hidden
     item_summaries = []
@@ -1548,6 +1967,7 @@ async def get_bill(bill_id: str, user=Depends(get_current_user)):
         raise HTTPException(status_code=404, detail="Bill not found")
     await check_bill_access(bill, user)
     serialized = serialize_doc(bill)
+    serialized = await apply_dynamic_rates(serialized, persist=True)
     enriched = await enrich_bills_with_customer_data([serialized])
     return enriched[0]
 
@@ -3038,7 +3458,16 @@ async def toggle_mmi(bill_id: str, user=Depends(get_current_user)):
     if not bill:
         raise HTTPException(status_code=404, detail="Bill not found")
     current = bill.get("mmi_entered", False)
-    await db.bills.update_one({"id": bill_id}, {"$set": {"mmi_entered": not current}})
+    change_entry = {
+        "timestamp": ist_now_str(),
+        "user": user.get('full_name', ''),
+        "role": user.get('role', ''),
+        "action": f"mmi_{'cleared' if current else 'entered'}",
+    }
+    await db.bills.update_one(
+        {"id": bill_id},
+        {"$set": {"mmi_entered": not current}, "$push": {"change_log": change_entry}}
+    )
     return {"mmi_entered": not current}
 
 # ============ GST TOGGLE (Admin) ============

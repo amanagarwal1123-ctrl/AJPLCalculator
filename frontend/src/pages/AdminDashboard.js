@@ -24,6 +24,7 @@ export default function AdminDashboard() {
   const [buybackRates, setBuybackRates] = useState(null);
   const [billPage, setBillPage] = useState(0);
   const [istClock, setIstClock] = useState({ time: '', date: '' });
+  const [editRequests, setEditRequests] = useState([]);
 
   const DAYS_PER_PAGE = 8;
 
@@ -56,13 +57,28 @@ export default function AdminDashboard() {
     loadData();
     loadOtps();
     loadBuybackRates();
+    loadEditRequests();
     const otpInterval = setInterval(loadOtps, 10000);
     const dataInterval = setInterval(loadData, 15000);
-    return () => { clearInterval(otpInterval); clearInterval(dataInterval); };
+    const editReqInterval = setInterval(loadEditRequests, 15000);
+    return () => { clearInterval(otpInterval); clearInterval(dataInterval); clearInterval(editReqInterval); };
   }, []);
 
   const loadBuybackRates = async () => {
     try { const res = await apiClient.get('/rates/buyback'); setBuybackRates(res.data); } catch (err) {}
+  };
+
+  const loadEditRequests = async () => {
+    try { const res = await apiClient.get('/admin/edit-requests'); setEditRequests(res.data); } catch (err) {}
+  };
+
+  const decideEditRequest = async (billId, action) => {
+    const note = window.prompt(`Add a note for ${action} (optional):`, '') ?? '';
+    try {
+      await apiClient.put(`/bills/${billId}/edit-request/decide`, { action, note });
+      toast.success(`Edit request ${action === 'approve' ? 'approved' : 'rejected'}`);
+      loadEditRequests();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to decide'); }
   };
 
   const loadData = async () => {
@@ -423,6 +439,40 @@ export default function AdminDashboard() {
             </Button>
           ))}
         </div>
+
+        {/* Pending Edit Requests Panel */}
+        {editRequests.length > 0 && (
+          <Card className="bg-card border-yellow-500/30 shadow-[var(--shadow-elev-1)]" data-testid="edit-requests-panel">
+            <CardHeader className="pb-2">
+              <CardTitle className="heading text-base flex items-center gap-2">
+                <Clock size={16} className="text-yellow-400" /> Edit Requests
+                <span className="ml-1 px-2 py-0.5 rounded-full bg-yellow-500/15 text-yellow-300 text-xs font-semibold">{editRequests.length}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {editRequests.map(req => (
+                <div key={req.bill_id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20" data-testid={`edit-req-${req.bill_id}`}>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="mono text-xs font-bold">{req.bill_number}</span>
+                      <span className="text-xs text-muted-foreground truncate">· {req.customer_name}</span>
+                      <span className="mono text-xs font-bold text-primary whitespace-nowrap">{formatCurrency(req.grand_total)}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Requested by <span className="font-medium">{req.edit_request?.requested_by_name}</span> · {req.edit_request?.requested_at?.slice(0, 16).replace('T', ' ')}
+                    </p>
+                    {req.edit_request?.note && <p className="text-[11px] italic text-yellow-300/80 mt-0.5">"{req.edit_request.note}"</p>}
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => navigate(`/bill/${req.bill_id}`)} data-testid={`edit-req-view-${req.bill_id}`}><Eye size={14} /></Button>
+                    <Button size="sm" className="h-8 px-2 text-xs bg-[hsl(160,52%,46%)] hover:bg-[hsl(160,52%,40%)] text-white" onClick={() => decideEditRequest(req.bill_id, 'approve')} data-testid={`edit-req-approve-${req.bill_id}`}><Check size={12} className="mr-1" />Approve</Button>
+                    <Button size="sm" variant="destructive" className="h-8 px-2 text-xs" onClick={() => decideEditRequest(req.bill_id, 'reject')} data-testid={`edit-req-reject-${req.bill_id}`}><X size={12} className="mr-1" />Reject</Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Buyback Rates Display */}
         {buybackRates?.purities?.some(p => p.rate_per_10g > 0) && (

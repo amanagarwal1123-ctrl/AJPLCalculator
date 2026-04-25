@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
-import { Plus, Trash2, Send, Printer, Download, ArrowLeft, Edit, CheckCircle, Clock, History, Layers, ChevronRight, ChevronDown, User, Camera, X, ZoomIn, Percent, Home, Calculator } from 'lucide-react';
+import { Plus, Trash2, Send, Printer, Download, ArrowLeft, Edit, CheckCircle, Clock, History, Layers, ChevronRight, ChevronDown, User, Camera, X, ZoomIn, Percent, Home, Calculator, Check } from 'lucide-react';
 import NumericInput from '@/components/NumericInput';
 import ItemBreakdown from '@/components/ItemBreakdown';
 import { toast } from 'sonner';
@@ -126,8 +126,33 @@ export default function BillPage() {
   const canEdit = () => {
     if (!bill) return false;
     if (bill.status === 'draft') return true;
-    if (bill.status !== 'draft' && (user?.role === 'admin' || user?.role === 'manager')) return true;
+    if (user?.role === 'admin') return bill.status !== 'approved' || true; // admin always
+    if (user?.role === 'manager') {
+      // Manager can edit sent/edited normally; approved only if has approved edit_request that isn't consumed
+      if (bill.status === 'sent' || bill.status === 'edited') return true;
+      if (bill.status === 'approved') {
+        return bill.edit_request?.status === 'approved' && bill.edit_request?.requested_by === user?.id;
+      }
+    }
     return false;
+  };
+
+  const requestEdit = async () => {
+    const note = window.prompt('Briefly describe what you need to change (sent to admin):', '') ?? '';
+    try {
+      await apiClient.post(`/bills/${billId}/edit-request`, { note });
+      toast.success('Edit request sent to admin');
+      loadBill();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to send edit request'); }
+  };
+
+  const decideEditRequest = async (action) => {
+    const note = window.prompt(`Add a note for ${action} (optional):`, '') ?? '';
+    try {
+      await apiClient.put(`/bills/${billId}/edit-request/decide`, { action, note });
+      toast.success(`Edit request ${action === 'approve' ? 'approved' : 'rejected'}`);
+      loadBill();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Failed to decide'); }
   };
 
   const saveReference = async (ref) => {
@@ -716,23 +741,103 @@ export default function BillPage() {
                     {(bill.status === 'sent' || bill.status === 'edited') && (user?.role === 'admin' || user?.role === 'manager') && (
                       <Button className="w-full h-11 text-base font-semibold rounded-xl bg-[hsl(160,52%,46%)] hover:bg-[hsl(160,52%,40%)] text-white" onClick={approveBill} data-testid="approve-bill-button"><CheckCircle size={16} className="mr-2" /> Approve Bill</Button>
                     )}
+                    {/* Edit-request flow for approved bills */}
+                    {bill.status === 'approved' && user?.role === 'manager' && (!bill.edit_request || ['rejected','consumed'].includes(bill.edit_request?.status)) && (
+                      <Button variant="outline" className="w-full h-11 text-base font-semibold rounded-xl border-primary/40 text-primary hover:bg-primary/10" onClick={requestEdit} data-testid="request-edit-btn">
+                        <Edit size={16} className="mr-2" /> Request Edit Approval
+                      </Button>
+                    )}
+                    {bill.status === 'approved' && bill.edit_request?.status === 'pending' && (
+                      <div className="rounded-xl p-3 border border-yellow-500/30 bg-yellow-500/10 text-xs text-yellow-300" data-testid="edit-request-pending-banner">
+                        <div className="flex items-center gap-2 font-semibold mb-1"><Clock size={12} /> Edit request pending admin approval</div>
+                        <p className="text-yellow-300/80">Requested by {bill.edit_request.requested_by_name} · {bill.edit_request.requested_at?.slice(0,16).replace('T',' ')}</p>
+                        {bill.edit_request.note && <p className="italic text-yellow-300/70 mt-1">"{bill.edit_request.note}"</p>}
+                        {user?.role === 'admin' && (
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            <Button size="sm" className="h-8 text-xs bg-[hsl(160,52%,46%)] hover:bg-[hsl(160,52%,40%)] text-white" onClick={() => decideEditRequest('approve')} data-testid="approve-edit-req-btn"><Check size={12} className="mr-1"/>Approve</Button>
+                            <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={() => decideEditRequest('reject')} data-testid="reject-edit-req-btn"><X size={12} className="mr-1"/>Reject</Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {bill.status === 'approved' && bill.edit_request?.status === 'approved' && bill.edit_request?.requested_by === user?.id && (
+                      <div className="rounded-xl p-3 border border-[hsl(160,52%,46%)]/40 bg-[hsl(160,52%,46%)]/10 text-xs text-[hsl(160,72%,75%)]" data-testid="edit-request-approved-banner">
+                        <div className="flex items-center gap-2 font-semibold mb-1"><CheckCircle size={12} /> Edit unlocked by admin</div>
+                        <p className="text-[hsl(160,72%,75%)]/80">Make your change and save — it counts as one edit. Bill will go back to admin for re-approval.</p>
+                      </div>
+                    )}
                   </div>
 
                   {bill.change_log && bill.change_log.length > 0 && (
                     <>
                       <Separator className="bg-border" />
                       <div>
-                        <div className="flex items-center gap-2 mb-2"><History size={14} className="text-muted-foreground" /><span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Change Log</span></div>
-                        <div className="space-y-2 max-h-40 overflow-y-auto">
-                          {bill.change_log.slice().reverse().map((log, idx) => (
-                            <div key={idx} className="text-xs p-2 rounded bg-secondary/30 border border-border">
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium">{log.user}</span>
-                                <span className={`px-1.5 py-0.5 rounded text-[10px] capitalize ${log.action === 'approved' ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'}`}>{log.action}</span>
+                        <div className="flex items-center gap-2 mb-2"><History size={14} className="text-muted-foreground" /><span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Change Log ({bill.change_log.length})</span></div>
+                        <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                          {bill.change_log.slice().reverse().map((log, idx) => {
+                            const actionStyles = {
+                              created: 'bg-blue-500/20 text-blue-400',
+                              sent_to_manager: 'bg-blue-500/20 text-blue-400',
+                              approved: 'bg-green-500/20 text-green-400',
+                              edit_request_created: 'bg-purple-500/20 text-purple-400',
+                              edit_request_approved: 'bg-green-500/20 text-green-400',
+                              edit_request_rejected: 'bg-red-500/20 text-red-400',
+                              edit_request_consumed: 'bg-purple-500/20 text-purple-400',
+                              status_change: 'bg-orange-500/20 text-orange-400',
+                              rate_sync: 'bg-cyan-500/20 text-cyan-400',
+                              rate_card_update: 'bg-cyan-500/20 text-cyan-400',
+                              gst_disabled: 'bg-yellow-500/20 text-yellow-400',
+                              gst_enabled: 'bg-yellow-500/20 text-yellow-400',
+                              item_added: 'bg-emerald-500/20 text-emerald-400',
+                              item_removed: 'bg-red-500/20 text-red-400',
+                              item_modified: 'bg-orange-500/20 text-orange-400',
+                              external_charges_updated: 'bg-orange-500/20 text-orange-400',
+                              old_gold_updated: 'bg-[hsl(30,70%,55%)]/20 text-[hsl(30,70%,55%)]',
+                              reference_update: 'bg-purple-500/20 text-purple-400',
+                              totals_updated: 'bg-orange-500/20 text-orange-400',
+                              mmi_entered: 'bg-pink-500/20 text-pink-400',
+                              mmi_cleared: 'bg-pink-500/20 text-pink-400',
+                              edit: 'bg-orange-500/20 text-orange-400',
+                            };
+                            const cls = actionStyles[log.action] || 'bg-gray-500/20 text-gray-400';
+                            const d = log.details;
+                            return (
+                              <div key={idx} className="text-xs p-2 rounded bg-secondary/30 border border-border" data-testid={`change-log-${idx}`}>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="font-medium truncate">{log.user}</span>
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] capitalize whitespace-nowrap ${cls}`}>{log.action?.replace(/_/g, ' ')}</span>
+                                </div>
+                                <p className="text-muted-foreground mt-0.5 mono text-[10px]">{log.timestamp?.slice(0, 16).replace('T', ' ')}{log.role && ` · ${log.role}`}</p>
+                                {/* Detailed payloads */}
+                                {(log.old_total != null && log.new_total != null && log.old_total !== log.new_total) && (
+                                  <p className="text-[10px] mt-1 mono"><span className="text-muted-foreground">₹{Number(log.old_total).toLocaleString('en-IN')}</span> → <span className="text-primary font-medium">₹{Number(log.new_total).toLocaleString('en-IN')}</span></p>
+                                )}
+                                {log.old_reference !== undefined && (
+                                  <p className="text-[10px] mt-1">Ref: <span className="line-through text-muted-foreground">{log.old_reference || '∅'}</span> → <span className="text-primary">{log.new_reference || '∅'}</span></p>
+                                )}
+                                {d && d.op === 'modified' && d.changes && (
+                                  <div className="text-[10px] mt-1 space-y-0.5">
+                                    <p className="text-muted-foreground italic">{d.item}</p>
+                                    {d.changes.map((c, ci) => (
+                                      <p key={ci}><span className="text-muted-foreground">{c.field}:</span> <span className="line-through opacity-60">{String(c.old ?? '∅')}</span> → <span className="text-primary">{String(c.new ?? '∅')}</span></p>
+                                    ))}
+                                  </div>
+                                )}
+                                {d && (d.op === 'added' || d.op === 'removed') && (
+                                  <p className="text-[10px] mt-1 italic text-muted-foreground">{d.item}{d.amount ? ` · ₹${Number(d.amount).toLocaleString('en-IN')}` : ''}</p>
+                                )}
+                                {Array.isArray(d) && d.length > 0 && d[0]?.old_rate != null && (
+                                  <div className="text-[10px] mt-1 space-y-0.5">
+                                    {d.map((r, ri) => (
+                                      <p key={ri}><span className="text-muted-foreground">{r.item} ({r.purity} · {r.rate_mode}):</span> <span className="line-through opacity-60">₹{Number(r.old_rate).toLocaleString('en-IN')}</span> → <span className="text-primary">₹{Number(r.new_rate).toLocaleString('en-IN')}</span>/10g</p>
+                                    ))}
+                                  </div>
+                                )}
+                                {d && d.note && <p className="text-[10px] italic text-muted-foreground mt-1">"{d.note}"</p>}
+                                {d && d.requester && <p className="text-[10px] text-muted-foreground mt-1">Requested by: {d.requester}</p>}
                               </div>
-                              <p className="text-muted-foreground mt-0.5">{log.timestamp?.slice(0, 16).replace('T', ' ')}</p>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     </>
