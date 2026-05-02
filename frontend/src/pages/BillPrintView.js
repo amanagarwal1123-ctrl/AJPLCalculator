@@ -44,11 +44,11 @@ export default function BillPrintView() {
         </div>
       </div>
 
-      <div className="print-sheet" style={{ maxWidth: '800px', margin: '0 auto', padding: '16px', background: '#fff', color: '#000', fontFamily: "'Manrope', sans-serif", fontSize: '14px', lineHeight: 1.5 }}>
+      <div className="print-sheet print-compact" style={{ maxWidth: '800px', margin: '0 auto', padding: '16px', background: '#fff', color: '#000', fontFamily: "'Manrope', sans-serif", fontSize: '14px', lineHeight: 1.5 }}>
         <div style={{ border: '2px solid #000', padding: '20px', position: 'relative' }}>
 
           {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
+          <div className="print-header" style={{ textAlign: 'center', marginBottom: '20px', position: 'relative', zIndex: 1 }}>
             <img src="/ajpl-logo.png" alt="AJPL" style={{ height: '60px', margin: '0 auto 8px', display: 'block', objectFit: 'contain', filter: 'grayscale(100%) contrast(1.5)' }} />
             <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '13px', letterSpacing: '0.25em', textTransform: 'uppercase', color: '#000', fontWeight: 700, marginBottom: '8px' }}>TENTATIVE INVOICE</div>
             <div style={{ height: '1px', background: '#000', margin: '0 auto 10px', maxWidth: '250px' }} />
@@ -58,7 +58,7 @@ export default function BillPrintView() {
           </div>
 
           {/* Customer */}
-          <div style={{ border: '1px solid #000', borderRadius: '4px', padding: '12px 14px', marginBottom: '16px' }}>
+          <div className="print-customer" style={{ border: '1px solid #000', borderRadius: '4px', padding: '12px 14px', marginBottom: '16px' }}>
             <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '13px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#000', marginBottom: '8px', borderBottom: '1px solid #000', paddingBottom: '4px' }}>Customer</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', fontSize: '12px' }}>
               <div><span style={{ color: '#555' }}>Name:</span> <strong>{bill.customer_name}</strong></div>
@@ -71,14 +71,14 @@ export default function BillPrintView() {
           </div>
 
           {/* Items */}
-          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '13px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#000', marginBottom: '10px' }}>Items ({bill.items?.length || 0})</div>
+          <div data-print-label="items-section-title" style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '13px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#000', marginBottom: '10px' }}>Items ({bill.items?.length || 0})</div>
 
           {bill.items?.map((item, idx) => {
             const isMrp = item.item_type === 'mrp';
             return (
-              <div key={idx} style={{ border: '1px solid #333', borderRadius: '4px', padding: '12px', marginBottom: '10px', background: '#fff', pageBreakInside: 'avoid' }}>
+              <div key={idx} className="print-item" style={{ border: '1px solid #333', borderRadius: '4px', padding: '12px', marginBottom: '10px', background: '#fff', pageBreakInside: 'avoid' }}>
                 {/* Item header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                <div className="print-item-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                   <div>
                     <span style={{ fontSize: '10px', color: '#555', marginRight: '6px' }}>#{idx + 1}</span>
                     {item.tag_number && <span style={{ fontSize: '10px', color: '#333', marginRight: '6px', padding: '1px 4px', border: '1px solid #999', borderRadius: '2px' }}>{item.tag_number}</span>}
@@ -109,7 +109,7 @@ export default function BillPrintView() {
                 </div>
 
                 {/* Value breakdown */}
-                <div style={{ fontSize: '11px', lineHeight: '1.8' }}>
+                <div className="print-value-row" style={{ fontSize: '11px', lineHeight: '1.8' }}>
                   {isMrp ? (
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -187,7 +187,7 @@ export default function BillPrintView() {
                     </>
                   )}
                   {/* Item Total */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #000', marginTop: '4px', paddingTop: '4px', fontWeight: 700, fontSize: '13px' }}>
+                  <div className="print-item-total" style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #000', marginTop: '4px', paddingTop: '4px', fontWeight: 700, fontSize: '13px' }}>
                     <span>Item Total</span>
                     <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{fmt(item.total_amount)}</span>
                   </div>
@@ -202,7 +202,7 @@ export default function BillPrintView() {
           </div>
 
           {/* Totals */}
-          <div style={{ borderTop: '2px solid #000', paddingTop: '12px' }}>
+          <div className="print-totals" style={{ borderTop: '2px solid #000', paddingTop: '12px' }}>
             <div style={{ maxWidth: '320px', marginLeft: 'auto', fontSize: '12px', lineHeight: 2 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span>Items Total</span>
@@ -226,7 +226,7 @@ export default function BillPrintView() {
                 <span>GST ({bill.gst_percent ?? 3}%)</span><span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{fmt(bill.gst_amount)}</span>
               </div>
               <div style={{ height: '2px', background: '#000', margin: '6px 0' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '16px', padding: '4px 0' }}>
+              <div className="print-grand-total" style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '16px', padding: '4px 0' }}>
                 <span style={{ fontFamily: "'Cormorant Garamond', serif", letterSpacing: '0.05em' }}>GRAND TOTAL</span>
                 <span style={{ fontFamily: "'IBM Plex Mono', monospace", color: '#000' }}>{fmt(bill.grand_total)}</span>
               </div>

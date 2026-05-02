@@ -105,15 +105,50 @@
 }
 
 /* Print styles */
+@page { size: A4 portrait; margin: 6mm; }
+
 @media print {
-  body { background: white !important; }
+  html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
   .no-print { display: none !important; }
   .print-sheet {
     color: #0b1020;
     background: #faf8f0 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 10px !important;
+    line-height: 1.35 !important;
   }
+  .print-sheet > div { padding: 8px !important; border-width: 1px !important; }
+  .print-sheet h1, .print-sheet h2, .print-sheet h3 { margin: 0 !important; }
+  .print-sheet img { max-height: 38px !important; }
+  .print-compact .print-item {
+    padding: 4px 6px !important;
+    margin-bottom: 3px !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .print-compact .print-item-header { margin-bottom: 2px !important; font-size: 10px !important; }
+  .print-compact .print-item-header strong { font-size: 10.5px !important; }
+  .print-compact .print-weight-row { padding: 2px 4px !important; margin-bottom: 2px !important; font-size: 8.5px !important; line-height: 1.1 !important; }
+  .print-compact .print-weight-row > div > div:first-child { font-size: 7px !important; }
+  .print-compact .print-value-row { font-size: 8.5px !important; line-height: 1.25 !important; display: grid !important; grid-template-columns: 1fr 1fr !important; column-gap: 12px !important; }
+  .print-compact .print-value-row > div { margin-bottom: 0 !important; padding: 0 !important; min-width: 0 !important; }
+  .print-compact .print-item-total { font-size: 10px !important; padding-top: 2px !important; margin-top: 2px !important; grid-column: 1 / -1 !important; }
+  .print-compact .print-customer { padding: 4px 6px !important; margin-bottom: 5px !important; font-size: 9px !important; line-height: 1.3 !important; }
+  .print-compact .print-customer > div:first-child { font-size: 10px !important; margin-bottom: 3px !important; padding-bottom: 2px !important; }
+  .print-compact .print-header { margin-bottom: 6px !important; }
+  .print-compact .print-header img { height: 28px !important; margin-bottom: 2px !important; }
+  .print-compact .print-header > div { font-size: 9.5px !important; }
+  .print-compact .print-totals { padding-top: 4px !important; font-size: 9.5px !important; line-height: 1.4 !important; }
+  .print-compact .print-totals > div { font-size: 9.5px !important; line-height: 1.4 !important; }
+  .print-compact .print-grand-total { font-size: 12px !important; padding: 2px 0 !important; }
+  .print-compact .print-footer { margin-top: 4px !important; padding-top: 3px !important; }
+  .print-compact .print-footer p { font-size: 9px !important; }
+  .print-compact [data-print-label="items-section-title"] { font-size: 10px !important; margin-bottom: 3px !important; }
   .kintsugi-page::before,
   .kintsugi-veins { display: none; }
 }
