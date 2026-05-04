@@ -151,6 +151,30 @@ export default function AdminDashboard() {
     try { await apiClient.delete(`/bills/${billId}`); toast.success('Bill deleted'); loadData(); } catch (err) { toast.error('Failed to delete bill'); }
   };
 
+  const bulkDeleteTabBills = async () => {
+    // Only allowed on pending & draft tabs
+    const config = billTab === 'pending'
+      ? { statuses: ['sent', 'edited'], label: 'Pending' }
+      : billTab === 'draft'
+        ? { statuses: ['draft'], label: 'Drafts' }
+        : null;
+    if (!config) return;
+    const count = billTab === 'pending' ? pendingBills.length : draftBills.length;
+    if (count === 0) { toast.info(`No bills in ${config.label} to delete`); return; }
+    const first = window.confirm(`This will permanently delete ALL ${count} ${config.label.toLowerCase()} bill(s). This action cannot be undone. Continue?`);
+    if (!first) return;
+    const phrase = window.prompt(`Type DELETE to confirm deleting all ${count} ${config.label.toLowerCase()} bills:`);
+    if ((phrase || '').trim().toUpperCase() !== 'DELETE') { toast.info('Deletion cancelled'); return; }
+    try {
+      const res = await apiClient.post('/admin/bills/bulk-delete', { statuses: config.statuses });
+      toast.success(`Deleted ${res.data.deleted_count} ${config.label.toLowerCase()} bill(s)`);
+      setBillPage(0);
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Bulk delete failed');
+    }
+  };
+
   const approveBill = async (billId) => {
     try { await apiClient.put(`/bills/${billId}/approve`); toast.success('Bill approved!'); loadData(); } catch (err) { toast.error(err.response?.data?.detail || 'Failed to approve'); }
   };
@@ -495,15 +519,30 @@ export default function AdminDashboard() {
             <CardTitle className="heading text-lg sm:text-xl">Bills</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-1.5 mb-4 overflow-x-auto pb-1" data-testid="admin-bill-tabs">
-              {[
-                { key: 'pending', label: 'Pending', count: pendingBills.length },
-                { key: 'approved', label: 'Approved', count: approvedBills.length },
-                { key: 'draft', label: 'Drafts', count: draftBills.length },
-                { key: 'all', label: 'All', count: bills.length },
-              ].map(t => (
-                <button key={t.key} onClick={() => handleSetBillTab(t.key)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${billTab === t.key ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-secondary/50 text-muted-foreground border border-transparent hover:bg-secondary'}`} data-testid={`admin-tab-${t.key}`}>{t.label} ({t.count})</button>
-              ))}
+            <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+              <div className="flex gap-1.5 overflow-x-auto pb-1" data-testid="admin-bill-tabs">
+                {[
+                  { key: 'pending', label: 'Pending', count: pendingBills.length },
+                  { key: 'approved', label: 'Approved', count: approvedBills.length },
+                  { key: 'draft', label: 'Drafts', count: draftBills.length },
+                  { key: 'all', label: 'All', count: bills.length },
+                ].map(t => (
+                  <button key={t.key} onClick={() => handleSetBillTab(t.key)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${billTab === t.key ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-secondary/50 text-muted-foreground border border-transparent hover:bg-secondary'}`} data-testid={`admin-tab-${t.key}`}>{t.label} ({t.count})</button>
+                ))}
+              </div>
+              {(billTab === 'pending' || billTab === 'draft') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={bulkDeleteTabBills}
+                  disabled={(billTab === 'pending' ? pendingBills.length : draftBills.length) === 0}
+                  data-testid={`bulk-delete-${billTab}-button`}
+                >
+                  <Trash2 size={12} className="mr-1" />
+                  Delete All {billTab === 'pending' ? 'Pending' : 'Drafts'} ({billTab === 'pending' ? pendingBills.length : draftBills.length})
+                </Button>
+              )}
             </div>
 
             {loading ? <p className="text-muted-foreground text-center py-8">Loading...</p> : sortedDates.length === 0 ? <p className="text-muted-foreground text-center py-8">No bills found</p> : (

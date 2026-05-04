@@ -1977,6 +1977,23 @@ async def delete_bill(bill_id: str, user=Depends(get_current_user)):
     await db.bills.delete_one({"id": bill_id})
     return {"status": "deleted"}
 
+@api_router.post("/admin/bills/bulk-delete")
+async def bulk_delete_bills(req: dict, user=Depends(get_current_user)):
+    """Admin-only: bulk delete bills by status.
+    Body: { "statuses": ["draft"] } or { "statuses": ["sent", "edited"] }.
+    Approved bills can never be bulk deleted via this endpoint."""
+    await require_role(user, ["admin"])
+    statuses = req.get("statuses") or []
+    if not isinstance(statuses, list) or not statuses:
+        raise HTTPException(status_code=400, detail="statuses (non-empty list) required")
+    allowed = {"draft", "sent", "edited"}
+    safe_statuses = [s for s in statuses if s in allowed]
+    if not safe_statuses:
+        raise HTTPException(status_code=400, detail="Only draft/sent/edited statuses can be bulk-deleted")
+    result = await db.bills.delete_many({"status": {"$in": safe_statuses}})
+    logger.info(f"Bulk-delete bills by admin={user.get('full_name')} statuses={safe_statuses} count={result.deleted_count}")
+    return {"status": "deleted", "deleted_count": result.deleted_count, "statuses": safe_statuses}
+
 # ============ CALCULATE ENDPOINT ============
 @api_router.post("/calculate/item")
 async def calculate_item(item: dict, user=Depends(get_current_user)):

@@ -90,9 +90,27 @@ export default function RateManagement() {
     setRates(prev => {
       const rateCard = prev[rateType];
       if (!rateCard?.purities?.[purityIdx]) return prev;
-      const newPurities = rateCard.purities.map((p, i) =>
-        i === purityIdx ? { ...p, rate_per_10g: parseFloat(value) || 0 } : p
-      );
+      const parsed = parseFloat(value) || 0;
+      const editedPurity = rateCard.purities[purityIdx];
+      const is24K = (editedPurity.purity_name || '').toUpperCase().startsWith('24');
+
+      let newPurities;
+      if (is24K) {
+        // Editing 24K cascades to all other purities: rate = 24K_rate * (percent / 100)
+        newPurities = rateCard.purities.map((p, i) => {
+          if (i === purityIdx) {
+            return { ...p, rate_per_10g: parsed };
+          }
+          const pct = parseFloat(p.purity_percent) || 0;
+          const derived = Math.round((parsed * pct) / 100);
+          return { ...p, rate_per_10g: derived };
+        });
+      } else {
+        // Editing any non-24K purity: update only that field, leave others untouched
+        newPurities = rateCard.purities.map((p, i) =>
+          i === purityIdx ? { ...p, rate_per_10g: parsed } : p
+        );
+      }
       return { ...prev, [rateType]: { ...rateCard, purities: newPurities } };
     });
   };
@@ -185,12 +203,20 @@ export default function RateManagement() {
                   </Button>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-xs text-muted-foreground mb-4">Enter rate per 10 grams for each purity</p>
+                  <p className="text-xs text-muted-foreground mb-1">Enter rate per 10 grams for each purity</p>
+                  <p className="text-xs text-primary/80 mb-4" data-testid={`cascade-hint-${rateType}`}>
+                    Tip: Edit the <span className="font-semibold">24KT</span> rate to auto-calculate all other purities. Edit any other purity individually without affecting others.
+                  </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-                    {rates[rateType]?.purities?.map((p, idx) => (
-                      <div key={idx} className="p-4 md:p-5 rounded-xl bg-secondary/20 border border-border">
+                    {rates[rateType]?.purities?.map((p, idx) => {
+                      const is24K = (p.purity_name || '').toUpperCase().startsWith('24');
+                      return (
+                      <div key={idx} className={`p-4 md:p-5 rounded-xl border ${is24K ? 'bg-primary/10 border-primary/50 shadow-[0_0_0_1px_rgba(212,175,55,0.15)]' : 'bg-secondary/20 border-border'}`}>
                         <div className="flex items-center justify-between mb-3">
-                          <span className="font-semibold text-primary text-base md:text-lg">{p.purity_name}</span>
+                          <span className="font-semibold text-primary text-base md:text-lg flex items-center gap-2">
+                            {p.purity_name}
+                            {is24K && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary uppercase tracking-wider font-bold">Base</span>}
+                          </span>
                           <span className="text-xs md:text-sm text-muted-foreground">{p.purity_percent}%</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -205,8 +231,13 @@ export default function RateManagement() {
                           />
                           <span className="text-xs text-muted-foreground">/10g</span>
                         </div>
+                        {is24K && (
+                          <p className="text-[10px] text-primary/70 mt-2" data-testid={`cascade-note-${rateType}`}>
+                            Changes here auto-update 22/20/18/14 KT rates
+                          </p>
+                        )}
                       </div>
-                    ))}
+                    );})}
                   </div>
                   {rates[rateType]?.updated_at && (
                     <p className="text-xs text-muted-foreground mt-4">Last updated: {rates[rateType].updated_at?.slice(0, 10)} by {rates[rateType].updated_by}</p>

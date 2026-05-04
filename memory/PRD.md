@@ -40,6 +40,10 @@ Jewelry business management application with sales tracking, billing, customer m
 
 ### UI Polish (Feb 2026)
 
+### Rate Cascade + Bulk Delete (May 2026)
+- **24K → all-purities auto-cascade**: On `RateManagement` page, editing the 24KT rate for any category (Normal/AJPL/Buyback) auto-recomputes 22/20/18/14 KT rates using `percent / 100` ratio from each purity. Editing any non-24K purity is independent and does not touch other rates. 24K card is visually highlighted as "BASE" with a golden border and explanatory hint.
+- **Admin bulk-delete**: `POST /api/admin/bills/bulk-delete { statuses: ["draft"] }` (admin-only). Dashboard shows a red "Delete All Pending (n)" / "Delete All Drafts (n)" button that only appears on Pending & Drafts tabs. Approved bills are never deletable in bulk (server rejects). Double confirmation (confirm + typed DELETE phrase) enforced on the client.
+
 ### Custom Numpad, Old Gold, Buyback Rates, Reference Normalization
 - All previously implemented features intact
 
