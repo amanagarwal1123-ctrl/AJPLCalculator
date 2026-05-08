@@ -3487,6 +3487,50 @@ async def toggle_mmi(bill_id: str, user=Depends(get_current_user)):
     )
     return {"mmi_entered": not current}
 
+# ============ NP (Non-Purchase) TOGGLE ============
+@api_router.put("/bills/{bill_id}/np")
+async def toggle_np(bill_id: str, req: dict, user=Depends(get_current_user)):
+    """Mark/unmark a bill as NP (Non-Purchase). Admin or Manager only.
+    Body: { "is_np": bool, "reason": str (optional) }.
+    Allowed only for bills in draft/sent/edited status."""
+    await require_role(user, ["admin", "manager"])
+    bill = await db.bills.find_one({"id": bill_id})
+    if not bill:
+        raise HTTPException(status_code=404, detail="Bill not found")
+    if bill.get("status") == "approved":
+        raise HTTPException(status_code=400, detail="Approved bills cannot be marked NP")
+    is_np = bool(req.get("is_np", True))
+    reason = (req.get("reason") or "").strip()[:280]  # cap reason
+    now = ist_now_str()
+    if is_np:
+        np_doc = {
+            "is_np": True,
+            "reason": reason,
+            "marked_by": user.get('full_name', ''),
+            "marked_by_role": user.get('role', ''),
+            "marked_at": now,
+        }
+        change_entry = {
+            "timestamp": now,
+            "user": user.get('full_name', ''),
+            "role": user.get('role', ''),
+            "action": "np_marked",
+            "details": {"reason": reason},
+        }
+    else:
+        np_doc = {"is_np": False}
+        change_entry = {
+            "timestamp": now,
+            "user": user.get('full_name', ''),
+            "role": user.get('role', ''),
+            "action": "np_cleared",
+        }
+    await db.bills.update_one(
+        {"id": bill_id},
+        {"$set": {"np": np_doc, "updated_at": now}, "$push": {"change_log": change_entry}}
+    )
+    return {"np": np_doc}
+
 # ============ GST TOGGLE (Admin) ============
 @api_router.put("/bills/{bill_id}/gst")
 async def toggle_bill_gst(bill_id: str, user=Depends(get_current_user)):

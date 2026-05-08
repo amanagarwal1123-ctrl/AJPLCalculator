@@ -44,6 +44,11 @@ Jewelry business management application with sales tracking, billing, customer m
 - **24K → all-purities auto-cascade**: On `RateManagement` page, editing the 24KT rate for any category (Normal/AJPL/Buyback) auto-recomputes 22/20/18/14 KT rates using `percent / 100` ratio from each purity. Editing any non-24K purity is independent and does not touch other rates. 24K card is visually highlighted as "BASE" with a golden border and explanatory hint.
 - **Admin bulk-delete**: `POST /api/admin/bills/bulk-delete { statuses: ["draft"] }` (admin-only). Dashboard shows a red "Delete All Pending (n)" / "Delete All Drafts (n)" button that only appears on Pending & Drafts tabs. Approved bills are never deletable in bulk (server rejects). Double confirmation (confirm + typed DELETE phrase) enforced on the client.
 
+### NP (Non-Purchase) Marker + Diamond Sale Display (May 2026)
+- **NP toggle**: `PUT /api/bills/{id}/np { is_np, reason }` (admin/manager). Stores `np: {is_np, reason, marked_by, marked_by_role, marked_at}`; appends `np_marked` / `np_cleared` change_log entry. Approved bills cannot be marked NP (server returns 400).
+- **AdminDashboard & ManagerDashboard**: NP pill toggle (next to MMI on admin; dedicated "Mark NP" / "NP ✓" button on manager card + table row). Available only on non-approved bills (`draft / sent / edited`). Optional reason captured via prompt. NP'd bills get a red NP chip + reason on the card and a tinted background (manager).
+- **Diamond Sale Amount on cards**: When a bill contains items with `item_type === 'diamond'`, the sum of `total_studded` is shown as a small bluish "Diamond: ₹X,XXX" line directly below the grand total — visually clearly distinct from the bill total. Renders on both AdminDashboard cards and ManagerDashboard cards + tables. Hidden when no diamond items.
+
 ### Custom Numpad, Old Gold, Buyback Rates, Reference Normalization
 - All previously implemented features intact
 

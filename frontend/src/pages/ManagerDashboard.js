@@ -84,6 +84,35 @@ export default function ManagerDashboard() {
 
   const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
 
+  const toggleNp = async (bill) => {
+    const isNp = !!bill?.np?.is_np;
+    try {
+      if (isNp) {
+        if (!window.confirm('Remove NP (Non-Purchase) marker from this bill?')) return;
+        await apiClient.put(`/bills/${bill.id}/np`, { is_np: false });
+        toast.success('NP marker removed');
+      } else {
+        const reason = window.prompt('Mark as NP (Non-Purchase)\nOptional reason (leave blank to skip):', '');
+        if (reason === null) return;
+        await apiClient.put(`/bills/${bill.id}/np`, { is_np: true, reason: (reason || '').trim() });
+        toast.success('Bill marked NP');
+      }
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to toggle NP');
+    }
+  };
+
+  const getDiamondAmount = (bill) => {
+    if (!bill?.items?.length) return 0;
+    return bill.items.reduce((sum, it) => {
+      if ((it.item_type || '').toLowerCase() === 'diamond') {
+        return sum + (parseFloat(it.total_studded) || 0);
+      }
+      return sum;
+    }, 0);
+  };
+
   const sentBills = bills.filter(b => b.status === 'sent');
   const editedBills = bills.filter(b => b.status === 'edited');
   const approvedBills = bills.filter(b => b.status === 'approved');
@@ -95,29 +124,60 @@ export default function ManagerDashboard() {
     return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-500/20 text-gray-400'}`}>{status}</span>;
   };
 
-  const BillCard = ({ bill: b, showApprove = false }) => (
-    <div className="p-3 rounded-lg bg-secondary/20 border border-border overflow-hidden" data-testid={`manager-bill-card-${b.id}`}>
+  const BillCard = ({ bill: b, showApprove = false }) => {
+    const dia = getDiamondAmount(b);
+    return (
+    <div className={`p-3 rounded-lg border overflow-hidden ${b.np?.is_np ? 'bg-destructive/5 border-destructive/30' : 'bg-secondary/20 border-border'}`} data-testid={`manager-bill-card-${b.id}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 overflow-hidden">
           <p className="font-medium text-sm truncate text-primary cursor-pointer hover:underline" onClick={() => navigate(`/customer/${b.customer_phone}`)}>{b.customer_name}</p>
           <p className="text-[10px] text-muted-foreground mono mt-0.5 truncate">{b.bill_number}</p>
           <p className="text-xs text-muted-foreground mt-0.5 truncate">by {b.executive_name}{b.salesperson_name ? ` / ${b.salesperson_name}` : ''}</p>
-          {b.old_gold?.enabled && <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[hsl(30,50%,25%)] text-[hsl(30,70%,55%)] border border-[hsl(30,60%,35%)]/40">OG {formatCurrency(b.old_gold.value)}</span>}
+          <div className="flex flex-wrap gap-1 mt-1">
+            {b.old_gold?.enabled && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[hsl(30,50%,25%)] text-[hsl(30,70%,55%)] border border-[hsl(30,60%,35%)]/40">OG {formatCurrency(b.old_gold.value)}</span>}
+            {b.np?.is_np && (
+              <span
+                className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-destructive/15 text-destructive border border-destructive/40"
+                title={b.np?.reason ? `Reason: ${b.np.reason}` : 'Marked as Non-Purchase'}
+                data-testid={`manager-np-badge-${b.id}`}
+              >
+                NP{b.np?.reason ? ` · ${b.np.reason.length > 28 ? b.np.reason.slice(0,28)+'…' : b.np.reason}` : ''}
+              </span>
+            )}
+          </div>
         </div>
         <div className="text-right shrink-0 min-w-0">
           {statusBadge(b.status)}
           <p className="mono text-sm font-bold text-primary mt-1 whitespace-nowrap">{formatCurrency(b.grand_total)}</p>
+          {dia > 0 && (
+            <p className="mono text-[11px] font-medium text-sky-400/90 whitespace-nowrap" data-testid={`manager-diamond-amount-${b.id}`}>
+              Diamond: {formatCurrency(dia)}
+            </p>
+          )}
         </div>
       </div>
       <div className="flex gap-2 mt-3">
         <Button variant="secondary" size="sm" className="flex-1 h-10 min-w-0" onClick={() => viewSummary(b.id)} data-testid={`manager-summary-${b.id}`}><ClipboardList size={14} className="mr-1 shrink-0" /> <span className="truncate">Summary</span></Button>
         <Button variant="secondary" size="sm" className="flex-1 h-10 min-w-0" onClick={() => navigate(`/bill/${b.id}`)} data-testid={`manager-view-${b.id}`}><Eye size={14} className="mr-1 shrink-0" /> <span className="truncate">View</span></Button>
+        {b.status !== 'approved' && (
+          <Button
+            variant="outline"
+            size="sm"
+            className={`h-10 min-w-0 shrink-0 ${b.np?.is_np ? 'border-destructive/50 text-destructive hover:bg-destructive/10' : 'border-border text-muted-foreground hover:border-destructive/40 hover:text-destructive'}`}
+            onClick={() => toggleNp(b)}
+            data-testid={`manager-np-toggle-${b.id}`}
+            title={b.np?.is_np ? 'Remove NP marker' : 'Mark as Non-Purchase'}
+          >
+            <span className="truncate">{b.np?.is_np ? 'NP ✓' : 'Mark NP'}</span>
+          </Button>
+        )}
         {showApprove && b.status !== 'approved' && (
           <Button size="sm" className="h-10 bg-[hsl(160,52%,46%)] hover:bg-[hsl(160,52%,40%)] text-white min-w-0 shrink-0" onClick={() => approveBill(b.id)} data-testid={`manager-approve-${b.id}`}><CheckCircle size={14} className="mr-1 shrink-0" /> <span className="truncate">Approve</span></Button>
         )}
       </div>
     </div>
-  );
+    );
+  };
 
   const BillTable = ({ billList, showApprove = false }) => (
     <div className="hidden md:block overflow-x-auto">
@@ -147,12 +207,25 @@ export default function ManagerDashboard() {
               <TableCell className="mono text-right font-medium text-primary text-sm whitespace-nowrap">
                 {formatCurrency(b.grand_total)}
                 {b.old_gold?.enabled && <span className="ml-1.5 px-1 py-0.5 rounded text-[9px] font-semibold bg-[hsl(30,50%,25%)] text-[hsl(30,70%,55%)] border border-[hsl(30,60%,35%)]/40">OG</span>}
+                {b.np?.is_np && <span className="ml-1.5 px-1 py-0.5 rounded text-[9px] font-bold bg-destructive/15 text-destructive border border-destructive/40" title={b.np?.reason || 'Non-Purchase'}>NP</span>}
+                {(() => {
+                  const dia = getDiamondAmount(b);
+                  if (dia <= 0) return null;
+                  return (
+                    <div className="mono text-[10px] font-medium text-sky-400/90 mt-0.5" data-testid={`manager-diamond-amount-row-${b.id}`}>
+                      Diamond: {formatCurrency(dia)}
+                    </div>
+                  );
+                })()}
               </TableCell>
               <TableCell className="text-muted-foreground text-sm whitespace-nowrap">{b.created_at?.slice(0, 10)}</TableCell>
               <TableCell>
                 <div className="flex gap-1 flex-nowrap">
                   <Button variant="ghost" size="sm" className="shrink-0" onClick={() => viewSummary(b.id)} data-testid={`manager-summary-${b.id}`}><ClipboardList size={14} className="mr-1" /> Summary</Button>
                   <Button variant="ghost" size="sm" className="shrink-0" onClick={() => navigate(`/bill/${b.id}`)} data-testid={`manager-view-${b.id}`}><Eye size={14} className="mr-1" /> View</Button>
+                  {b.status !== 'approved' && (
+                    <Button variant="ghost" size="sm" className={`shrink-0 ${b.np?.is_np ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`} onClick={() => toggleNp(b)} data-testid={`manager-np-toggle-row-${b.id}`} title={b.np?.is_np ? 'Remove NP' : 'Mark NP'}>{b.np?.is_np ? 'NP ✓' : 'NP'}</Button>
+                  )}
                   {showApprove && b.status !== 'approved' && (
                     <Button variant="ghost" size="sm" className="text-green-400 shrink-0" onClick={() => approveBill(b.id)} data-testid={`manager-approve-${b.id}`}><CheckCircle size={14} className="mr-1" /> Approve</Button>
                   )}

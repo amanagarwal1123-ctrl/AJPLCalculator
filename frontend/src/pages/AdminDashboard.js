@@ -183,6 +183,35 @@ export default function AdminDashboard() {
     try { const res = await apiClient.put(`/bills/${billId}/mmi`); loadData(); } catch (err) { toast.error('Failed to toggle MMI'); }
   };
 
+  const toggleNp = async (bill) => {
+    const isNp = !!bill?.np?.is_np;
+    try {
+      if (isNp) {
+        if (!window.confirm('Remove NP (Non-Purchase) marker from this bill?')) return;
+        await apiClient.put(`/bills/${bill.id}/np`, { is_np: false });
+        toast.success('NP marker removed');
+      } else {
+        const reason = window.prompt('Mark as NP (Non-Purchase)\nOptional reason (leave blank to skip):', '');
+        if (reason === null) return; // user cancelled
+        await apiClient.put(`/bills/${bill.id}/np`, { is_np: true, reason: (reason || '').trim() });
+        toast.success('Bill marked NP');
+      }
+      loadData();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to toggle NP');
+    }
+  };
+
+  const getDiamondAmount = (bill) => {
+    if (!bill?.items?.length) return 0;
+    return bill.items.reduce((sum, it) => {
+      if ((it.item_type || '').toLowerCase() === 'diamond') {
+        return sum + (parseFloat(it.total_studded) || 0);
+      }
+      return sum;
+    }, 0);
+  };
+
   const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
 
   const now = new Date().toISOString();
@@ -588,15 +617,45 @@ export default function AdminDashboard() {
                                   <span>Wt: <span className="mono text-foreground">{getBillWeight(bill)}g</span></span>
                                   <span>Phone: <span className="mono text-foreground">{bill.customer_phone}</span></span>
                                   {bill.old_gold?.enabled && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[hsl(30,50%,25%)] text-[hsl(30,70%,55%)] border border-[hsl(30,60%,35%)]/40" data-testid={`og-badge-${bill.id}`}>OG {formatCurrency(bill.old_gold.value)}</span>}
+                                  {bill.np?.is_np && (
+                                    <span
+                                      className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-destructive/15 text-destructive border border-destructive/40"
+                                      title={bill.np?.reason ? `Reason: ${bill.np.reason}` : 'Marked as Non-Purchase'}
+                                      data-testid={`np-badge-${bill.id}`}
+                                    >
+                                      NP{bill.np?.reason ? ` · ${bill.np.reason.length > 28 ? bill.np.reason.slice(0,28)+'…' : bill.np.reason}` : ''}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-1 shrink-0">
                               <span className="mono text-base font-bold text-primary">{formatCurrency(bill.grand_total)}</span>
-                              {/* MMI Toggle */}
-                              <button onClick={() => toggleMmi(bill.id)} className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${bill.mmi_entered ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-secondary/50 text-muted-foreground border border-border hover:border-primary/30'}`} data-testid={`mmi-toggle-${bill.id}`}>
-                                {bill.mmi_entered ? <Check size={10} /> : <X size={10} />} MMI
-                              </button>
+                              {(() => {
+                                const dia = getDiamondAmount(bill);
+                                if (dia <= 0) return null;
+                                return (
+                                  <span className="mono text-[11px] font-medium text-sky-400/90" data-testid={`diamond-amount-${bill.id}`}>
+                                    Diamond: {formatCurrency(dia)}
+                                  </span>
+                                );
+                              })()}
+                              {/* MMI + NP Toggles */}
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => toggleMmi(bill.id)} className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${bill.mmi_entered ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-secondary/50 text-muted-foreground border border-border hover:border-primary/30'}`} data-testid={`mmi-toggle-${bill.id}`}>
+                                  {bill.mmi_entered ? <Check size={10} /> : <X size={10} />} MMI
+                                </button>
+                                {bill.status !== 'approved' && (
+                                  <button
+                                    onClick={() => toggleNp(bill)}
+                                    className={`flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${bill.np?.is_np ? 'bg-destructive/20 text-destructive border border-destructive/40' : 'bg-secondary/50 text-muted-foreground border border-border hover:border-destructive/30'}`}
+                                    data-testid={`np-toggle-${bill.id}`}
+                                    title={bill.np?.is_np ? 'Click to remove NP marker' : 'Mark as Non-Purchase'}
+                                  >
+                                    {bill.np?.is_np ? <Check size={10} /> : <X size={10} />} NP
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <div className="flex gap-2 mt-2">
