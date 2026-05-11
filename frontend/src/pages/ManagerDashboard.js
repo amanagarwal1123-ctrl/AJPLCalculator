@@ -113,10 +113,12 @@ export default function ManagerDashboard() {
     }, 0);
   };
 
-  const sentBills = bills.filter(b => b.status === 'sent');
-  const editedBills = bills.filter(b => b.status === 'edited');
+  const isNp = (b) => !!b?.np?.is_np;
+  const npBills = bills.filter(isNp);
+  const sentBills = bills.filter(b => !isNp(b) && b.status === 'sent');
+  const editedBills = bills.filter(b => !isNp(b) && b.status === 'edited');
   const approvedBills = bills.filter(b => b.status === 'approved');
-  const draftBills = bills.filter(b => b.status === 'draft');
+  const draftBills = bills.filter(b => !isNp(b) && b.status === 'draft');
   const pendingBills = [...sentBills, ...editedBills];
 
   const statusBadge = (status) => {
@@ -401,11 +403,13 @@ export default function ManagerDashboard() {
             <TabsTrigger value="pending" data-testid="tab-pending">Pending {pendingBills.length > 0 && <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-[hsl(38,85%,55%)]/20 text-[hsl(38,85%,55%)]">{pendingBills.length}</span>}</TabsTrigger>
             <TabsTrigger value="approved" data-testid="tab-approved">Approved</TabsTrigger>
             <TabsTrigger value="draft" data-testid="tab-drafts">Drafts</TabsTrigger>
+            <TabsTrigger value="np" data-testid="tab-np">NP {npBills.length > 0 && <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] bg-destructive/20 text-destructive">{npBills.length}</span>}</TabsTrigger>
             <TabsTrigger value="all" data-testid="tab-all">All</TabsTrigger>
           </TabsList>
           <TabsContent value="pending"><Card className="bg-card border-border"><CardHeader className="pb-3"><CardTitle className="heading text-lg sm:text-xl">Pending Review ({pendingBills.length})</CardTitle></CardHeader><CardContent><BillCardList billList={pendingBills} showApprove={true} /><BillTable billList={pendingBills} showApprove={true} /></CardContent></Card></TabsContent>
           <TabsContent value="approved"><Card className="bg-card border-border"><CardHeader className="pb-3"><CardTitle className="heading text-lg sm:text-xl">Approved Bills ({approvedBills.length})</CardTitle></CardHeader><CardContent><BillCardList billList={approvedBills} /><BillTable billList={approvedBills} /></CardContent></Card></TabsContent>
           <TabsContent value="draft"><Card className="bg-card border-border"><CardHeader className="pb-3"><CardTitle className="heading text-lg sm:text-xl">Draft Bills ({draftBills.length})</CardTitle></CardHeader><CardContent><BillCardList billList={draftBills} /><BillTable billList={draftBills} /></CardContent></Card></TabsContent>
+          <TabsContent value="np"><Card className="bg-card border-destructive/30"><CardHeader className="pb-3"><CardTitle className="heading text-lg sm:text-xl text-destructive">Non-Purchase ({npBills.length})</CardTitle></CardHeader><CardContent><BillCardList billList={npBills} /><BillTable billList={npBills} /></CardContent></Card></TabsContent>
           <TabsContent value="all"><Card className="bg-card border-border"><CardHeader className="pb-3"><CardTitle className="heading text-lg sm:text-xl">All Bills ({bills.length})</CardTitle></CardHeader><CardContent><BillCardList billList={bills} showApprove={true} /><BillTable billList={bills} showApprove={true} /></CardContent></Card></TabsContent>
         </Tabs>
 

@@ -217,16 +217,24 @@ export default function AdminDashboard() {
   const now = new Date().toISOString();
   const activeOtps = pendingOtps.filter(o => !o.verified && o.expires_at > now);
 
-  const pendingBills = bills.filter(b => b.status === 'sent' || b.status === 'edited');
+  const isNp = (b) => !!b?.np?.is_np;
+  const npBills = bills.filter(isNp);
+  const pendingBills = bills.filter(b => !isNp(b) && (b.status === 'sent' || b.status === 'edited'));
   const approvedBills = bills.filter(b => b.status === 'approved');
-  const draftBills = bills.filter(b => b.status === 'draft');
+  const draftBills = bills.filter(b => !isNp(b) && b.status === 'draft');
   const statusBadge = (s) => {
     const st = { draft: 'bg-yellow-500/20 text-yellow-400', sent: 'bg-blue-500/20 text-blue-400', edited: 'bg-orange-500/20 text-orange-400', approved: 'bg-green-500/20 text-green-400' };
     return <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${st[s] || 'bg-gray-500/20 text-gray-400'}`}>{s}</span>;
   };
 
   const getTabBills = () => {
-    switch (billTab) { case 'pending': return pendingBills; case 'approved': return approvedBills; case 'draft': return draftBills; default: return bills; }
+    switch (billTab) {
+      case 'pending': return pendingBills;
+      case 'approved': return approvedBills;
+      case 'draft': return draftBills;
+      case 'np': return npBills;
+      default: return bills;
+    }
   };
   const tabBills = getTabBills();
 
@@ -554,9 +562,10 @@ export default function AdminDashboard() {
                   { key: 'pending', label: 'Pending', count: pendingBills.length },
                   { key: 'approved', label: 'Approved', count: approvedBills.length },
                   { key: 'draft', label: 'Drafts', count: draftBills.length },
+                  { key: 'np', label: 'NP', count: npBills.length },
                   { key: 'all', label: 'All', count: bills.length },
                 ].map(t => (
-                  <button key={t.key} onClick={() => handleSetBillTab(t.key)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${billTab === t.key ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-secondary/50 text-muted-foreground border border-transparent hover:bg-secondary'}`} data-testid={`admin-tab-${t.key}`}>{t.label} ({t.count})</button>
+                  <button key={t.key} onClick={() => handleSetBillTab(t.key)} className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${billTab === t.key ? (t.key === 'np' ? 'bg-destructive/20 text-destructive border border-destructive/40' : 'bg-primary/20 text-primary border border-primary/30') : 'bg-secondary/50 text-muted-foreground border border-transparent hover:bg-secondary'}`} data-testid={`admin-tab-${t.key}`}>{t.label} ({t.count})</button>
                 ))}
               </div>
               {(billTab === 'pending' || billTab === 'draft') && (

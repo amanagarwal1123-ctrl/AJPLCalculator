@@ -48,6 +48,7 @@ Jewelry business management application with sales tracking, billing, customer m
 - **NP toggle**: `PUT /api/bills/{id}/np { is_np, reason }` (admin/manager). Stores `np: {is_np, reason, marked_by, marked_by_role, marked_at}`; appends `np_marked` / `np_cleared` change_log entry. Approved bills cannot be marked NP (server returns 400).
 - **AdminDashboard & ManagerDashboard**: NP pill toggle (next to MMI on admin; dedicated "Mark NP" / "NP ✓" button on manager card + table row). Available only on non-approved bills (`draft / sent / edited`). Optional reason captured via prompt. NP'd bills get a red NP chip + reason on the card and a tinted background (manager).
 - **Diamond Sale Amount on cards**: When a bill contains items with `item_type === 'diamond'`, the sum of `total_studded` is shown as a small bluish "Diamond: ₹X,XXX" line directly below the grand total — visually clearly distinct from the bill total. Renders on both AdminDashboard cards and ManagerDashboard cards + tables. Hidden when no diamond items.
+- **Dedicated NP tab**: Both AdminDashboard and ManagerDashboard now have a new red `NP (n)` tab between Drafts and All. NP'd bills automatically move out of Pending / Drafts tabs into this exclusive NP tab. Admin's NP tab inherits the existing cyclops date-wise pagination (8-day pages), so NP'd bills show grouped by date and paginated identically to other admin tabs.
 
 ### Custom Numpad, Old Gold, Buyback Rates, Reference Normalization
 - All previously implemented features intact
