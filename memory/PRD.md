@@ -50,6 +50,11 @@ Jewelry business management application with sales tracking, billing, customer m
 - **Diamond Sale Amount on cards**: When a bill contains items with `item_type === 'diamond'`, the sum of `total_studded` is shown as a small bluish "Diamond: ₹X,XXX" line directly below the grand total — visually clearly distinct from the bill total. Renders on both AdminDashboard cards and ManagerDashboard cards + tables. Hidden when no diamond items.
 - **Dedicated NP tab**: Both AdminDashboard and ManagerDashboard now have a new red `NP (n)` tab between Drafts and All. NP'd bills automatically move out of Pending / Drafts tabs into this exclusive NP tab. Admin's NP tab inherits the existing cyclops date-wise pagination (8-day pages), so NP'd bills show grouped by date and paginated identically to other admin tabs.
 
+### Reports Approved-Only + Pure Diamond Metric (Jun 2026)
+- **`GET /api/analytics/dashboard`** now filters `all_bills` by `status === 'approved'`. Pending/draft/edited/NP bills no longer pollute sales metrics (Total Sales, Total Bills, Total Customers, Gold Sales, Diamond Sales, KT analysis, daily/branch/executive sales, references).
+- **New `pure_diamond_total` field**: sum of `total_studded` across items with `item_type === 'diamond'` — the *diamond-stone* portion only, excluding the gold base of diamond items.
+- **Reports.js** now shows 6 summary cards in a row: Total Sales (Approved only) · Total Customers · Total Bills · Gold Sales · **Diamond + Gold** (full diamond item value) · **Diamond Only** (studded portion only, sky-blue).
+
 ### Custom Numpad, Old Gold, Buyback Rates, Reference Normalization
 - All previously implemented features intact
 

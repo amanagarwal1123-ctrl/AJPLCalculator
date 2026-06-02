@@ -288,11 +288,12 @@ export default function Reports() {
             {dateTo && <span className="mono">to {dateTo}</span>}
           </div>
         )}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <Card className="bg-card border-border" data-testid="total-sales-summary">
             <CardContent className="p-4">
               <p className="text-xs uppercase tracking-widest text-muted-foreground">Total Sales</p>
               <p className="mono text-xl font-bold text-primary mt-1">{formatCurrency(analytics?.all_time_total)}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Approved only</p>
             </CardContent>
           </Card>
           <Card className="bg-card border-border" data-testid="total-customers-summary">
@@ -315,8 +316,16 @@ export default function Reports() {
           </Card>
           <Card className="bg-card border-border" data-testid="diamond-sales-summary">
             <CardContent className="p-4">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Diamond Sales</p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">Diamond + Gold</p>
               <p className="mono text-lg font-bold text-[hsl(196,70%,52%)] mt-1">{formatCurrency(analytics?.diamond_total)}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Full diamond item value</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border-border" data-testid="pure-diamond-sales-summary">
+            <CardContent className="p-4">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">Diamond Only</p>
+              <p className="mono text-lg font-bold text-sky-400 mt-1">{formatCurrency(analytics?.pure_diamond_total)}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Studded portion only</p>
             </CardContent>
           </Card>
         </div>

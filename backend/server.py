@@ -2055,8 +2055,8 @@ async def get_dashboard_analytics(
     today_gst = sum(b.get('gst_amount', 0) for b in today_bills)
     avg_ticket = today_sales / today_count if today_count > 0 else 0
     
-    # All bills for analytics (with date range if provided)
-    analytics_filter = {**base_filter}
+    # All bills for analytics (with date range if provided) - ONLY APPROVED bills count as sales
+    analytics_filter = {**base_filter, "status": "approved"}
     if date_from or date_to:
         analytics_filter.setdefault('created_at', {})
         if date_from:
@@ -2071,15 +2071,15 @@ async def get_dashboard_analytics(
     item_analysis = {}
     gold_total = 0
     diamond_total = 0
+    pure_diamond_total = 0  # Diamond stones (studded) portion only, excludes gold base of diamond items
     mrp_total = 0
     reference_analysis = {}
     
     for bill in all_bills:
-        # Reference tracking - count unique customers per reference (only sent/approved/edited bills)
+        # Reference tracking - approved bills only (we've already filtered)
         ref = normalize_reference(bill.get('customer_reference', '') or '') or 'Unknown'
         phone = bill.get('customer_phone', '')
-        bill_status = bill.get('status', '')
-        if ref and bill_status in ('sent', 'approved', 'edited'):
+        if ref:
             if ref not in reference_analysis:
                 reference_analysis[ref] = {'count': 0, 'total': 0, '_phones': set()}
             reference_analysis[ref]['count'] += 1
@@ -2117,6 +2117,7 @@ async def get_dashboard_analytics(
                 
                 if item_type == 'diamond':
                     diamond_total += amount
+                    pure_diamond_total += float(item.get('total_studded') or 0)
                 else:
                     gold_total += amount
     
@@ -2173,6 +2174,7 @@ async def get_dashboard_analytics(
         "item_analysis": list(item_analysis.values()),
         "gold_total": round(gold_total, 2),
         "diamond_total": round(diamond_total, 2),
+        "pure_diamond_total": round(pure_diamond_total, 2),
         "reference_analysis": {k: {"count": v["count"], "total": v["total"], "customers": len(v.get("_phones", set()))} for k, v in reference_analysis.items()},
         "daily_sales": sorted(daily_sales.values(), key=lambda x: x['date']),
         "branch_sales": list(branch_sales.values()),
