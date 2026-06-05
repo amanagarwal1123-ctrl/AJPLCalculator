@@ -51,9 +51,10 @@ Jewelry business management application with sales tracking, billing, customer m
 - **Dedicated NP tab**: Both AdminDashboard and ManagerDashboard now have a new red `NP (n)` tab between Drafts and All. NP'd bills automatically move out of Pending / Drafts tabs into this exclusive NP tab. Admin's NP tab inherits the existing cyclops date-wise pagination (8-day pages), so NP'd bills show grouped by date and paginated identically to other admin tabs.
 
 ### Reports Approved-Only + Pure Diamond Metric (Jun 2026)
-- **`GET /api/analytics/dashboard`** now filters `all_bills` by `status === 'approved'`. Pending/draft/edited/NP bills no longer pollute sales metrics (Total Sales, Total Bills, Total Customers, Gold Sales, Diamond Sales, KT analysis, daily/branch/executive sales, references).
-- **New `pure_diamond_total` + `pure_diamond_carats` fields**: iterates each diamond item's `studded_charges` and sums `carats × rate_per_carat` and `carats` *only* where `studded_charges[i].type === 'diamond'` (explicitly excluding `solitaire` and `colored_stones`).
-- **Reports.js** shows 6 summary cards: Total Sales (Approved only) · Total Customers · Total Bills · Gold Sales · **Diamond + Gold** (full diamond item value) · **Diamond Only** (sky-blue: pure-diamond value + total carats sold, with caption "Diamonds only · excl. solitaire & colored stones").
+- **`GET /api/analytics/dashboard`** now filters `all_bills` by `status === 'approved'`. Pending/draft/edited/NP bills no longer pollute sales metrics.
+- **New `pure_diamond_total` + `pure_diamond_carats` fields**: iterates each diamond item's `studded_charges` and sums `carats × rate_per_carat` and `carats` **only where `type` is `'diamond'` or `'solitaire'`** (solitaires count as diamonds; `colored_stones` excluded).
+- **Reports.js** shows 6 summary cards: Total Sales (Approved only) · Total Customers · Total Bills · Gold Sales · **Diamond + Gold** (full diamond item value) · **Diamond Only** (sky-blue: pure-diamond value + total carats sold, with caption "Diamonds + solitaires · excl. colored stones").
+- **Daily Sales Trend expand-on-click**: chart card now expands to a fullscreen overlay (`fixed inset-2 sm:inset-6 z-50`) on click of the chart, the "Expand" button, or to close via the "Close" (X) button. Implemented as a CSS-driven in-place expansion (same chart instance, larger container) to avoid the Radix Dialog + Recharts ResponsiveContainer measurement-race crash.
 
 ### Custom Numpad, Old Gold, Buyback Rates, Reference Normalization
 - All previously implemented features intact

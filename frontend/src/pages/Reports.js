@@ -11,7 +11,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3, Download, Filter, Calendar, Users, UserX, TrendingUp, AlertTriangle, MessageSquare, Star, ChevronDown, ChevronUp, ExternalLink, ShoppingBag, UserCheck, UserMinus } from 'lucide-react';
+import { BarChart3, Download, Filter, Calendar, Users, UserX, TrendingUp, AlertTriangle, MessageSquare, Star, ChevronDown, ChevronUp, ExternalLink, ShoppingBag, UserCheck, UserMinus, Maximize2, X } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend } from 'recharts';
 import NumericInput from '@/components/NumericInput';
 import { toast } from 'sonner';
@@ -32,6 +32,7 @@ export default function Reports() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
+  const [dailySalesZoomed, setDailySalesZoomed] = useState(false);
   
   // Feedback state
   const [feedbacks, setFeedbacks] = useState([]);
@@ -328,7 +329,7 @@ export default function Reports() {
               <p className="mono text-[11px] font-medium text-sky-300/80 mt-0.5" data-testid="pure-diamond-carats">
                 {(analytics?.pure_diamond_carats || 0).toFixed(2)} ct sold
               </p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Diamonds only · excl. solitaire & colored stones</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Diamonds + solitaires · excl. colored stones</p>
             </CardContent>
           </Card>
         </div>
@@ -348,28 +349,43 @@ export default function Reports() {
           {/* Overview */}
           <TabsContent value="overview" data-testid="tab-content-overview">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="bg-card border-border">
-                <CardHeader className="pb-2 flex flex-row items-center justify-between">
-                  <CardTitle className="text-base">Daily Sales Trend</CardTitle>
-                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => exportCSV(dailySales, 'daily-sales')}>
-                    <Download size={12} className="mr-1" /> CSV
-                  </Button>
+              <Card className={dailySalesZoomed ? 'fixed inset-2 sm:inset-6 z-50 bg-card border-border shadow-2xl overflow-auto' : 'bg-card border-border'} data-testid="daily-sales-card">
+                <CardHeader className="pb-2 flex flex-row items-center justify-between sticky top-0 bg-card z-10">
+                  <CardTitle className="text-base">Daily Sales Trend{dailySalesZoomed && <span className="ml-2 text-xs text-muted-foreground font-normal">· Expanded</span>}</CardTitle>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={(e) => { e.stopPropagation(); exportCSV(dailySales, 'daily-sales'); }}>
+                      <Download size={12} className="mr-1" /> CSV
+                    </Button>
+                    {dailySales.length > 0 && (
+                      <Button variant="ghost" size="sm" className="text-xs" onClick={() => setDailySalesZoomed(z => !z)} data-testid="daily-sales-expand-button" title={dailySalesZoomed ? 'Collapse chart' : 'Expand chart'}>
+                        {dailySalesZoomed ? (<><X size={12} className="mr-1" /> Close</>) : (<><Maximize2 size={12} className="mr-1" /> Expand</>)}
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64">
+                  <div
+                    className={`${dailySalesZoomed ? 'h-[calc(100vh-160px)]' : 'h-64'} ${!dailySalesZoomed && dailySales.length > 0 ? 'cursor-zoom-in transition-opacity hover:opacity-90' : ''}`}
+                    onClick={() => { if (!dailySalesZoomed && dailySales.length > 0) setDailySalesZoomed(true); }}
+                    data-testid="daily-sales-chart-container"
+                  >
                     {dailySales.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={dailySales}>
+                        <LineChart data={dailySales} margin={dailySalesZoomed ? { top: 12, right: 24, left: 12, bottom: 12 } : undefined}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(224, 30%, 30%)" />
-                          <XAxis dataKey="date" stroke="hsl(220, 15%, 75%)" fontSize={10} tickFormatter={v => v?.slice(5)} />
-                          <YAxis stroke="hsl(220, 15%, 75%)" fontSize={10} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
+                          <XAxis dataKey="date" stroke="hsl(220, 15%, 75%)" fontSize={dailySalesZoomed ? 12 : 10} tickFormatter={v => v?.slice(5)} />
+                          <YAxis stroke="hsl(220, 15%, 75%)" fontSize={dailySalesZoomed ? 12 : 10} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
                           <Tooltip content={<CustomTooltip />} />
-                          <Line type="monotone" dataKey="total" stroke={GOLD_COLOR} strokeWidth={2} dot={false} name="Sales" />
-                          <Line type="monotone" dataKey="count" stroke={TEAL_COLOR} strokeWidth={1.5} dot={false} name="Bills" />
+                          {dailySalesZoomed && <Legend />}
+                          <Line type="monotone" dataKey="total" stroke={GOLD_COLOR} strokeWidth={dailySalesZoomed ? 2.5 : 2} dot={dailySalesZoomed ? { r: 4, strokeWidth: 0, fill: GOLD_COLOR } : false} activeDot={{ r: 6 }} name="Sales" />
+                          <Line type="monotone" dataKey="count" stroke={TEAL_COLOR} strokeWidth={dailySalesZoomed ? 2 : 1.5} dot={dailySalesZoomed ? { r: 3, strokeWidth: 0, fill: TEAL_COLOR } : false} activeDot={{ r: 5 }} name="Bills" />
                         </LineChart>
                       </ResponsiveContainer>
                     ) : <div className="flex items-center justify-center h-full text-muted-foreground">No data yet</div>}
                   </div>
+                  {!dailySalesZoomed && dailySales.length > 0 && (
+                    <p className="text-[10px] text-muted-foreground text-center mt-1">Click chart to expand</p>
+                  )}
                 </CardContent>
               </Card>
 

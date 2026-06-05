@@ -2118,9 +2118,10 @@ async def get_dashboard_analytics(
                 
                 if item_type == 'diamond':
                     diamond_total += amount
-                    # Pure diamond: only studded_charges with type == 'diamond' (exclude solitaire / colored_stones)
+                    # Pure diamond: studded_charges of type 'diamond' or 'solitaire' (solitaires are diamonds too). Excludes 'colored_stones'.
                     for sc in item.get('studded_charges', []) or []:
-                        if str(sc.get('type', '') or '').strip().lower() == 'diamond':
+                        sc_type = str(sc.get('type', '') or '').strip().lower()
+                        if sc_type in ('diamond', 'solitaire'):
                             sc_carats = float(sc.get('carats', 0) or 0)
                             sc_rate = float(sc.get('rate_per_carat', 0) or 0)
                             pure_diamond_total += sc_carats * sc_rate
