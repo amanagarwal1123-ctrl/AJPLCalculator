@@ -2071,7 +2071,8 @@ async def get_dashboard_analytics(
     item_analysis = {}
     gold_total = 0
     diamond_total = 0
-    pure_diamond_total = 0  # Diamond stones (studded) portion only, excludes gold base of diamond items
+    pure_diamond_total = 0  # Diamond-type studded entries only (excludes solitaire/colored stones)
+    pure_diamond_carats = 0  # Total carat weight of diamond-type studded entries
     mrp_total = 0
     reference_analysis = {}
     
@@ -2117,7 +2118,13 @@ async def get_dashboard_analytics(
                 
                 if item_type == 'diamond':
                     diamond_total += amount
-                    pure_diamond_total += float(item.get('total_studded') or 0)
+                    # Pure diamond: only studded_charges with type == 'diamond' (exclude solitaire / colored_stones)
+                    for sc in item.get('studded_charges', []) or []:
+                        if str(sc.get('type', '') or '').strip().lower() == 'diamond':
+                            sc_carats = float(sc.get('carats', 0) or 0)
+                            sc_rate = float(sc.get('rate_per_carat', 0) or 0)
+                            pure_diamond_total += sc_carats * sc_rate
+                            pure_diamond_carats += sc_carats
                 else:
                     gold_total += amount
     
@@ -2175,6 +2182,7 @@ async def get_dashboard_analytics(
         "gold_total": round(gold_total, 2),
         "diamond_total": round(diamond_total, 2),
         "pure_diamond_total": round(pure_diamond_total, 2),
+        "pure_diamond_carats": round(pure_diamond_carats, 3),
         "reference_analysis": {k: {"count": v["count"], "total": v["total"], "customers": len(v.get("_phones", set()))} for k, v in reference_analysis.items()},
         "daily_sales": sorted(daily_sales.values(), key=lambda x: x['date']),
         "branch_sales": list(branch_sales.values()),
