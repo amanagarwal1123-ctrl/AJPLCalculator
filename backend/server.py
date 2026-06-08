@@ -1994,6 +1994,62 @@ async def bulk_delete_bills(req: dict, user=Depends(get_current_user)):
     logger.info(f"Bulk-delete bills by admin={user.get('full_name')} statuses={safe_statuses} count={result.deleted_count}")
     return {"status": "deleted", "deleted_count": result.deleted_count, "statuses": safe_statuses}
 
+@api_router.get("/admin/debug/diamond-entries-audit")
+async def debug_diamond_entries_audit(user=Depends(get_current_user), limit: int = 50):
+    """Diagnostic: returns diamond/solitaire studded_charges entries from approved bills
+    that have suspicious values (carats > 100 OR rate_per_carat <= 0 OR carats <= 0).
+    Use this to find legacy data-entry bugs polluting the Pure Diamond carats metric."""
+    await require_role(user, ["admin"])
+    approved = await db.bills.find({"status": "approved"}, {"_id": 0}).to_list(20000)
+    suspicious = []
+    total_pure_carats_raw = 0.0
+    total_pure_carats_clean = 0.0
+    for b in approved:
+        for it in b.get('items', []) or []:
+            if (it.get('item_type') or '').lower() != 'diamond':
+                continue
+            for sc in it.get('studded_charges', []) or []:
+                sc_type = str(sc.get('type', '') or '').strip().lower()
+                if sc_type not in ('diamond', 'solitaire'):
+                    continue
+                try:
+                    c = float(sc.get('carats') or 0)
+                    r = float(sc.get('rate_per_carat') or 0)
+                except Exception:
+                    c, r = 0.0, 0.0
+                total_pure_carats_raw += c
+                is_bad = (c <= 0 or c > 100 or r <= 0)
+                if is_bad:
+                    suspicious.append({
+                        "bill_id": b.get('id'),
+                        "bill_number": b.get('bill_number'),
+                        "customer_name": b.get('customer_name'),
+                        "customer_phone": b.get('customer_phone'),
+                        "created_at": b.get('created_at'),
+                        "item_name": it.get('item_name'),
+                        "studded_type": sc_type,
+                        "carats": c,
+                        "rate_per_carat": r,
+                        "implied_value": c * r,
+                        "item_total_studded": it.get('total_studded'),
+                        "reason": (
+                            "carats <= 0" if c <= 0
+                            else ("carats > 100 (implausible)" if c > 100
+                                  else "rate_per_carat <= 0")
+                        ),
+                    })
+                else:
+                    total_pure_carats_clean += c
+    suspicious.sort(key=lambda x: x.get('carats') or 0, reverse=True)
+    return {
+        "approved_bills_scanned": len(approved),
+        "suspicious_entries_count": len(suspicious),
+        "total_pure_carats_raw": round(total_pure_carats_raw, 3),
+        "total_pure_carats_clean": round(total_pure_carats_clean, 3),
+        "explanation": "raw = sum of every diamond/solitaire entry's carats. clean = same, but excluding suspicious entries (the same logic the dashboard now uses).",
+        "top_suspicious": suspicious[:limit],
+    }
+
 # ============ CALCULATE ENDPOINT ============
 @api_router.post("/calculate/item")
 async def calculate_item(item: dict, user=Depends(get_current_user)):
@@ -2124,6 +2180,11 @@ async def get_dashboard_analytics(
                         if sc_type in ('diamond', 'solitaire'):
                             sc_carats = float(sc.get('carats', 0) or 0)
                             sc_rate = float(sc.get('rate_per_carat', 0) or 0)
+                            # Sanity guards: ignore obviously corrupt entries where carats is implausibly high
+                            # (cut diamonds in jewelry are typically < 50 ct; we cap at 100 ct per entry) or rate
+                            # is zero/negative (data-entry mistake). This stops legacy bad data from inflating totals.
+                            if sc_carats <= 0 or sc_carats > 100 or sc_rate <= 0:
+                                continue
                             pure_diamond_total += sc_carats * sc_rate
                             pure_diamond_carats += sc_carats
                 else:
