@@ -52,9 +52,16 @@ Jewelry business management application with sales tracking, billing, customer m
 
 ### Reports Approved-Only + Pure Diamond Metric (Jun 2026)
 - **`GET /api/analytics/dashboard`** now filters `all_bills` by `status === 'approved'`. Pending/draft/edited/NP bills no longer pollute sales metrics.
-- **New `pure_diamond_total` + `pure_diamond_carats` fields**: iterates each diamond item's `studded_charges` and sums `carats × rate_per_carat` and `carats` **only where `type` is `'diamond'` or `'solitaire'`** (solitaires count as diamonds; `colored_stones` excluded).
-- **Reports.js** shows 6 summary cards: Total Sales (Approved only) · Total Customers · Total Bills · Gold Sales · **Diamond + Gold** (full diamond item value) · **Diamond Only** (sky-blue: pure-diamond value + total carats sold, with caption "Diamonds + solitaires · excl. colored stones").
-- **Daily Sales Trend expand-on-click**: chart card now expands to a fullscreen overlay (`fixed inset-2 sm:inset-6 z-50`) on click of the chart, the "Expand" button, or to close via the "Close" (X) button. Implemented as a CSS-driven in-place expansion (same chart instance, larger container) to avoid the Radix Dialog + Recharts ResponsiveContainer measurement-race crash.
+- **`pure_diamond_total` + `pure_diamond_carats` fields**: includes `studded_charges` entries where `type` is `'diamond'` or `'solitaire'`. Excludes `colored_stones`. Applies sanity guard (skip entries where `carats <= 0`, `carats > 100`, or `rate_per_carat <= 0`) to prevent corrupt legacy data from inflating totals.
+- **Diagnostic endpoint** `GET /api/admin/debug/diamond-entries-audit`: returns suspicious diamond entries with bill_number, customer info, and reason — admin uses this to locate the bad bills.
+- **Daily Sales Trend expand-on-click**: CSS-driven in-place expansion (avoids Radix Dialog + Recharts measurement crash).
+
+### Customer Reference & Visit Origin Tracking (Jun 2026)
+- **Backend `/analytics/customers`**: now derives `initial_reference` and `first_visit` per customer by scanning their oldest bill. No schema migration needed — works retroactively against existing data.
+- **POST /customers**: stopped overwriting the existing `reference` field on repeat saves (was destroying the original attribution). New behaviour: only fills `reference` when the customer doesn't already have one set.
+- **CustomerListPage**: Reference column reworked as a stacked cell — top row shows current state (`New` or `Repeat ×N` badge + last visit date), bottom row shows the initial reference + first visit date (e.g., `Facebook · since 14 Feb 2026`).
+- **Visit-count filter chips**: All / 1 visit / 2-4 visits / 5+ visits with live counts.
+- **Sort dropdown**: Last visit (newest/oldest), First visit (newest/oldest), Total spent, Visit count.
 
 ### Custom Numpad, Old Gold, Buyback Rates, Reference Normalization
 - All previously implemented features intact

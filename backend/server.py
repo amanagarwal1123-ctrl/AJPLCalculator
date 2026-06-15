@@ -1227,15 +1227,20 @@ async def get_customer_detail(customer_id: str, user=Depends(get_current_user)):
 async def create_or_get_customer(req: CustomerCreate, user=Depends(get_current_user)):
     existing = await db.customers.find_one({"phone": req.phone})
     if existing:
-        # Update info
+        # Update info — but PRESERVE the original first reference (don't overwrite the historical attribution).
+        # The customer's current/latest reference can change visit-to-visit, but `reference` was historically a
+        # one-time attribution. We now treat it as immutable so the initial source stays accurate.
+        update_fields = {
+            "name": req.name,
+            "location": req.location,
+            "last_visit": datetime.now(timezone.utc).isoformat(),
+        }
+        # Only set reference if the existing customer doesn't already have one set
+        if not existing.get('reference') and req.reference:
+            update_fields['reference'] = normalize_reference(req.reference)
         await db.customers.update_one(
             {"phone": req.phone},
-            {"$set": {
-                "name": req.name,
-                "location": req.location,
-                "reference": normalize_reference(req.reference or ""),
-                "last_visit": datetime.now(timezone.utc).isoformat(),
-            }}
+            {"$set": update_fields}
         )
         updated = await db.customers.find_one({"phone": req.phone})
         return serialize_doc(updated)
@@ -2501,22 +2506,33 @@ async def get_customer_analytics(user=Depends(get_current_user)):
     
     all_bills = await db.bills.find(bill_query).to_list(10000)
     
-    # Aggregate spending by customer_id (preferred) or phone
+    # Aggregate spending by customer_id (preferred) or phone, and find oldest bill per customer for initial reference
     scoped_phones = set()
     customer_id_spending = {}  # customer_id -> total
     phone_spending = {}  # phone -> total (fallback for bills without customer_id)
     scoped_customer_ids = set()
+    # Track oldest bill per customer (by customer_id, falling back to phone) -> (created_at_iso, reference)
+    customer_id_origin = {}  # customer_id -> {'first_visit': iso, 'initial_reference': str}
+    phone_origin = {}        # phone -> same
     for bill in all_bills:
         phone = bill.get('customer_phone', '')
         cust_id = bill.get('customer_id', '')
         amount = bill.get('grand_total', 0)
+        created_at = bill.get('created_at') or ''
+        bill_ref = normalize_reference(bill.get('customer_reference', '') or '')
         if phone:
             scoped_phones.add(phone)
         if cust_id:
             scoped_customer_ids.add(cust_id)
             customer_id_spending[cust_id] = customer_id_spending.get(cust_id, 0) + amount
+            origin = customer_id_origin.get(cust_id)
+            if not origin or (created_at and created_at < origin['first_visit']):
+                customer_id_origin[cust_id] = {'first_visit': created_at, 'initial_reference': bill_ref}
         elif phone:
             phone_spending[phone] = phone_spending.get(phone, 0) + amount
+            origin = phone_origin.get(phone)
+            if not origin or (created_at and created_at < origin['first_visit']):
+                phone_origin[phone] = {'first_visit': created_at, 'initial_reference': bill_ref}
     
     # For managers, only show customers who have bills in their branch
     if user.get('role') == 'manager' and user.get('branch_id'):
@@ -2538,6 +2554,13 @@ async def get_customer_analytics(user=Depends(get_current_user)):
         phone = c.get('phone', '')
         spent = customer_id_spending.get(cid, 0) + phone_spending.get(phone, 0)
         c_data['total_spent'] = round(spent, 2)
+        # Initial reference & first_visit: prefer the oldest bill's data; fall back to customer doc fields
+        origin = customer_id_origin.get(cid) or phone_origin.get(phone)
+        if origin and origin.get('first_visit'):
+            c_data['first_visit'] = c.get('first_visit') or origin['first_visit']
+            c_data['initial_reference'] = origin.get('initial_reference') or c.get('reference') or ''
+        else:
+            c_data['initial_reference'] = c.get('reference') or ''
         # Calculate days since last visit
         last_visit = c.get('last_visit', '')
         if last_visit:
