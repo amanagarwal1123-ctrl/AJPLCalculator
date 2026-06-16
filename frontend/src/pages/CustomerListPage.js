@@ -18,10 +18,10 @@ const VISIT_FILTERS = [
 ];
 
 const SORT_OPTIONS = [
-  { value: 'last_visit_desc', label: 'Last visit (newest)' },
-  { value: 'last_visit_asc', label: 'Last visit (oldest)' },
-  { value: 'first_visit_desc', label: 'First visit (newest)' },
-  { value: 'first_visit_asc', label: 'First visit (oldest)' },
+  { value: 'last_visit_desc', label: 'Last purchase (newest)' },
+  { value: 'last_visit_asc', label: 'Last purchase (oldest)' },
+  { value: 'first_visit_desc', label: 'First purchase (newest)' },
+  { value: 'first_visit_asc', label: 'First purchase (oldest)' },
   { value: 'spent_desc', label: 'Total spent (high → low)' },
   { value: 'visits_desc', label: 'Visit count (high → low)' },
 ];
@@ -172,8 +172,10 @@ export default function CustomerListPage() {
                   <TableBody>
                     {filteredCustomers.map((c, i) => {
                       const visits = c.total_visits || 1;
-                      const isRepeat = visits > 1;
-                      const initialRef = c.initial_reference || c.reference || '';
+                      const initialRef = (c.initial_reference || c.reference || '').trim() || 'Unknown';
+                      const firstDate = fmtDate(c.first_visit);
+                      const lastDate = fmtDate(c.last_visit);
+                      const hasMultiple = visits > 1 && firstDate !== lastDate && c.first_visit && c.last_visit;
                       return (
                         <TableRow
                           key={c.id || i}
@@ -185,28 +187,18 @@ export default function CustomerListPage() {
                           <TableCell className="mono text-sm">{c.phone}</TableCell>
                           <TableCell className="text-muted-foreground">{c.location || '-'}</TableCell>
                           <TableCell className="py-3" data-testid={`customer-ref-cell-${i}`}>
-                            <div className="flex flex-col gap-0.5">
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
-                                    isRepeat
-                                      ? 'bg-[hsl(160,52%,46%)]/20 text-[hsl(160,52%,46%)] border border-[hsl(160,52%,46%)]/30'
-                                      : 'bg-[hsl(196,70%,52%)]/20 text-[hsl(196,70%,52%)] border border-[hsl(196,70%,52%)]/30'
-                                  }`}
-                                  data-testid={`customer-state-${i}`}
-                                >
-                                  {isRepeat ? `Repeat ×${visits}` : 'New'}
+                            <div className="flex flex-col gap-0.5 leading-tight">
+                              <div className="flex items-baseline gap-1.5 flex-wrap">
+                                <span className="text-sm font-medium text-foreground capitalize" data-testid={`customer-origin-${i}`}>{initialRef}</span>
+                                <span className="text-[11px] text-muted-foreground">·</span>
+                                <span className="mono text-[11px] text-[hsl(160,52%,46%)] font-medium" data-testid={`customer-visits-${i}`}>
+                                  {visits} {visits === 1 ? 'visit' : 'visits'}
                                 </span>
-                                <span className="mono text-xs text-foreground">{fmtDate(c.last_visit)}</span>
                               </div>
-                              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground" data-testid={`customer-origin-${i}`}>
-                                <span className="capitalize">{initialRef || 'Unknown'}</span>
-                                {isRepeat && c.first_visit && (
-                                  <>
-                                    <span className="opacity-50">·</span>
-                                    <span className="mono">since {fmtDate(c.first_visit)}</span>
-                                  </>
-                                )}
+                              <div className="mono text-[11px] text-muted-foreground" data-testid={`customer-dates-${i}`}>
+                                {hasMultiple
+                                  ? <>{firstDate} <span className="opacity-50">→</span> {lastDate}</>
+                                  : firstDate}
                               </div>
                             </div>
                           </TableCell>

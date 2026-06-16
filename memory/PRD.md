@@ -57,11 +57,14 @@ Jewelry business management application with sales tracking, billing, customer m
 - **Daily Sales Trend expand-on-click**: CSS-driven in-place expansion (avoids Radix Dialog + Recharts measurement crash).
 
 ### Customer Reference & Visit Origin Tracking (Jun 2026)
-- **Backend `/analytics/customers`**: now derives `initial_reference` and `first_visit` per customer by scanning their oldest bill. No schema migration needed — works retroactively against existing data.
-- **POST /customers**: stopped overwriting the existing `reference` field on repeat saves (was destroying the original attribution). New behaviour: only fills `reference` when the customer doesn't already have one set.
-- **CustomerListPage**: Reference column reworked as a stacked cell — top row shows current state (`New` or `Repeat ×N` badge + last visit date), bottom row shows the initial reference + first visit date (e.g., `Facebook · since 14 Feb 2026`).
+- **Backend `/analytics/customers`**: derives `initial_reference` and `first_visit` per customer by scanning their oldest bill. No schema migration needed.
+- **POST /customers**: stopped overwriting the existing `reference` on repeat saves; only fills it when not already set.
+- **CustomerListPage** — Reference column is a 2-line elegant cell (no redundant "Repeat" badge):
+  - Line 1: `{initial_reference} · {N} visits` (e.g., `Facebook · 8 visits`)
+  - Line 2: For multi-visit customers `{first_date} → {last_date}`; for single-visit `{date}` only
+  - If the original reference truly was "Repeat Customer" it appears as-is — no double labeling.
 - **Visit-count filter chips**: All / 1 visit / 2-4 visits / 5+ visits with live counts.
-- **Sort dropdown**: Last visit (newest/oldest), First visit (newest/oldest), Total spent, Visit count.
+- **Sort options** (purchase-based terminology): Last purchase (newest/oldest), First purchase (newest/oldest), Total spent, Visit count.
 
 ### Custom Numpad, Old Gold, Buyback Rates, Reference Normalization
 - All previously implemented features intact
