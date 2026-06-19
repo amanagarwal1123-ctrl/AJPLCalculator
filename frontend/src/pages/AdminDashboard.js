@@ -14,6 +14,7 @@ export default function AdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [analytics, setAnalytics] = useState(null);
   const [bills, setBills] = useState([]);
+  const [rateChanges, setRateChanges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pendingOtps, setPendingOtps] = useState([]);
   const [copiedOtp, setCopiedOtp] = useState(null);
@@ -83,12 +84,14 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      const [analyticsRes, billsRes] = await Promise.all([
+      const [analyticsRes, billsRes, rateChangesRes] = await Promise.all([
         apiClient.get('/analytics/dashboard'),
-        apiClient.get('/bills'),
+        apiClient.get('/bills?lightweight=true'),
+        apiClient.get('/admin/rates/today-changes').catch(() => ({ data: { entries: [] } })),
       ]);
       setAnalytics(analyticsRes.data);
       setBills(billsRes.data);
+      setRateChanges(rateChangesRes.data?.entries || []);
     } catch (err) { toast.error('Failed to load dashboard data'); }
     finally { setLoading(false); }
   };
@@ -203,6 +206,7 @@ export default function AdminDashboard() {
   };
 
   const getDiamondAmount = (bill) => {
+    if (bill?.diamond_amount != null) return Number(bill.diamond_amount);
     if (!bill?.items?.length) return 0;
     return bill.items.reduce((sum, it) => {
       if ((it.item_type || '').toLowerCase() === 'diamond') {
@@ -338,8 +342,9 @@ export default function AdminDashboard() {
     { label: 'Data Safety', icon: Shield, to: '/admin/data-safety' },
   ];
 
-  // Total weight helper
+  // Total weight helper - prefer pre-computed lightweight field, fall back to client calculation
   const getBillWeight = (bill) => {
+    if (bill?.total_weight != null) return Number(bill.total_weight).toFixed(2);
     return (bill.items || []).reduce((sum, it) => sum + (it.gross_weight || 0), 0).toFixed(2);
   };
 
@@ -501,6 +506,44 @@ export default function AdminDashboard() {
           ))}
         </div>
 
+        {/* Today's 24KT Rate Changes Audit */}
+        {rateChanges.length > 0 && (
+          <Card className="bg-card border-primary/30 shadow-[var(--shadow-elev-1)]" data-testid="rate-changes-panel">
+            <CardHeader className="pb-2">
+              <CardTitle className="heading text-base flex items-center gap-2">
+                <TrendingUp size={16} className="text-primary" /> Today's 24KT Rate Changes
+                <span className="ml-1 px-2 py-0.5 rounded-full bg-primary/15 text-primary text-xs font-semibold">{rateChanges.length}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1.5">
+              {rateChanges.map((rc) => {
+                const time = (rc.timestamp_ist || '').slice(11, 16); // HH:MM
+                const typeColor = rc.rate_type === 'normal' ? 'text-primary' : rc.rate_type === 'ajpl' ? 'text-[hsl(196,70%,52%)]' : 'text-[hsl(160,52%,46%)]';
+                const delta = (rc.new_24kt_rate || 0) - (rc.old_24kt_rate || 0);
+                return (
+                  <div key={rc.id} className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-secondary/30 border border-border/50" data-testid={`rate-change-${rc.id}`}>
+                    <div className="flex items-center gap-3 min-w-0 flex-1 flex-wrap">
+                      <span className="mono text-xs font-bold text-foreground shrink-0">{time}</span>
+                      <span className={`uppercase text-[10px] font-bold tracking-widest ${typeColor} shrink-0`}>{rc.rate_type}</span>
+                      <span className="mono text-sm font-bold text-foreground">₹{Number(rc.new_24kt_rate || 0).toLocaleString('en-IN')}</span>
+                      <span className="text-[10px] text-muted-foreground">/10g · 24KT</span>
+                      {rc.old_24kt_rate > 0 && delta !== 0 && (
+                        <span className={`text-[10px] font-medium ${delta > 0 ? 'text-[hsl(160,52%,46%)]' : 'text-[hsl(0,72%,60%)]'}`}>
+                          {delta > 0 ? '▲' : '▼'} {Math.abs(delta).toLocaleString('en-IN')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-0 text-[11px] shrink-0">
+                      <span className="text-foreground font-medium truncate max-w-[140px]">{rc.user_name}</span>
+                      <span className="text-muted-foreground truncate max-w-[140px]">{rc.device}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Pending Edit Requests Panel */}
         {editRequests.length > 0 && (
           <Card className="bg-card border-yellow-500/30 shadow-[var(--shadow-elev-1)]" data-testid="edit-requests-panel">
@@ -622,7 +665,7 @@ export default function AdminDashboard() {
                                   <span>Exec: <span className="text-foreground">{bill.executive_name}</span></span>
                                   {bill.salesperson_name && <span>SP: <span className="text-foreground">{bill.salesperson_name}</span></span>}
                                   {bill.customer_reference && <span>Ref: <span className="text-foreground">{bill.customer_reference}</span></span>}
-                                  <span>Items: <span className="text-foreground">{bill.items?.length || 0}</span></span>
+                                  <span>Items: <span className="text-foreground">{bill.items_count ?? (bill.items?.length || 0)}</span></span>
                                   <span>Wt: <span className="mono text-foreground">{getBillWeight(bill)}g</span></span>
                                   <span>Phone: <span className="mono text-foreground">{bill.customer_phone}</span></span>
                                   {bill.old_gold?.enabled && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[hsl(30,50%,25%)] text-[hsl(30,70%,55%)] border border-[hsl(30,60%,35%)]/40" data-testid={`og-badge-${bill.id}`}>OG {formatCurrency(bill.old_gold.value)}</span>}

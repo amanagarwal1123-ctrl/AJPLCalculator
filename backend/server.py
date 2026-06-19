@@ -626,6 +626,7 @@ async def startup_event():
     await db.users.create_index("username", unique=True)
     await db.users.create_index("id", unique=True)
     await db.bills.create_index("created_at")
+    await db.bills.create_index("status")
     await db.bills.create_index("branch_id")
     await db.bills.create_index("executive_id")
     await db.bills.create_index("customer_phone")
@@ -992,8 +993,41 @@ async def get_rate_by_type(rate_type: str, user=Depends(get_current_user)):
             await db.rate_cards.update_one({"rate_type": rate_type}, {"$set": {"purities": synced}})
     return r_data
 
+def _parse_device_label(user_agent: str) -> str:
+    """Lightweight UA parser → 'Browser · OS' label for distinguishing admin machines."""
+    if not user_agent:
+        return "Unknown device"
+    ua = user_agent.lower()
+    # Browser
+    if 'edg/' in ua: browser = 'Edge'
+    elif 'opr/' in ua or 'opera' in ua: browser = 'Opera'
+    elif 'chrome' in ua and 'safari' in ua: browser = 'Chrome'
+    elif 'firefox' in ua: browser = 'Firefox'
+    elif 'safari' in ua: browser = 'Safari'
+    else: browser = 'Browser'
+    # OS
+    if 'iphone' in ua: os_label = 'iPhone'
+    elif 'ipad' in ua: os_label = 'iPad'
+    elif 'android' in ua: os_label = 'Android'
+    elif 'windows' in ua: os_label = 'Windows'
+    elif 'mac os' in ua or 'macintosh' in ua: os_label = 'Mac'
+    elif 'linux' in ua: os_label = 'Linux'
+    else: os_label = 'Device'
+    return f"{browser} · {os_label}"
+
+def _extract_24kt_rate(purities: list) -> Optional[float]:
+    """Return the 24KT rate_per_10g from a purities list, or None if absent."""
+    for p in purities or []:
+        name = str(p.get('purity_name', '') or '').upper()
+        if name.startswith('24'):
+            try:
+                return float(p.get('rate_per_10g') or 0)
+            except Exception:
+                return None
+    return None
+
 @api_router.put("/rates/{rate_type}")
-async def update_rates(rate_type: str, req: RateCardUpdate, user=Depends(get_current_user)):
+async def update_rates(rate_type: str, req: RateCardUpdate, request: Request, user=Depends(get_current_user)):
     await require_role(user, ["admin"])
     purities_to_save = [dict(p) for p in req.purities]
     # Guard: never save empty purities if purities collection has data
@@ -1001,6 +1035,10 @@ async def update_rates(rate_type: str, req: RateCardUpdate, user=Depends(get_cur
         all_purities = await db.purities.find({}).to_list(100)
         if all_purities:
             purities_to_save = [{"purity_id": p["id"], "purity_name": p["name"], "purity_percent": p["percent"], "rate_per_10g": 0} for p in all_purities]
+    # Capture OLD 24KT rate before overwrite (for audit log)
+    existing_card = await db.rate_cards.find_one({"rate_type": rate_type}, {"_id": 0})
+    old_24kt = _extract_24kt_rate((existing_card or {}).get('purities')) if existing_card else None
+    new_24kt = _extract_24kt_rate(purities_to_save)
     await db.rate_cards.update_one(
         {"rate_type": rate_type},
         {"$set": {
@@ -1009,6 +1047,20 @@ async def update_rates(rate_type: str, req: RateCardUpdate, user=Depends(get_cur
             "updated_by": user.get('full_name', 'admin'),
         }}
     )
+    # Audit log: append a per-change entry. Includes timestamp, user, device (UA-derived), and the new 24KT.
+    device_label = _parse_device_label(request.headers.get('user-agent', ''))
+    await db.rate_change_log.insert_one({
+        "id": str(uuid.uuid4()),
+        "timestamp_ist": ist_now_str(),
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "rate_type": rate_type,
+        "old_24kt_rate": old_24kt,
+        "new_24kt_rate": new_24kt,
+        "user_id": user.get('id'),
+        "user_name": user.get('full_name', 'admin'),
+        "device": device_label,
+        "user_agent": (request.headers.get('user-agent', '') or '')[:300],
+    })
     # Sync dynamic rates into all non-approved bills (draft, sent, edited)
     synced_bills = 0
     if rate_type in ("normal", "ajpl"):
@@ -1059,6 +1111,22 @@ async def admin_zero_all_rates(user=Depends(get_current_user)):
     await require_role(user, ["admin"])
     count = await _zero_all_rate_cards(triggered_by=f"manual:{user.get('full_name', 'admin')}")
     return {"status": "zeroed", "rate_cards_updated": count}
+
+@api_router.get("/admin/rates/today-changes")
+async def admin_today_rate_changes(user=Depends(get_current_user)):
+    """Returns the rate change audit log for the current IST day, newest first.
+    Each entry shows the user, device, time and the new 24KT rate that was set."""
+    await require_role(user, ["admin", "manager"])
+    # Start of today in IST → convert to UTC ISO for comparison with timestamp_utc
+    now_ist = datetime.now(IST)
+    start_ist = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_utc_iso = start_ist.astimezone(timezone.utc).isoformat()
+    cursor = db.rate_change_log.find(
+        {"timestamp_utc": {"$gte": start_utc_iso}},
+        {"_id": 0, "user_agent": 0}
+    ).sort("timestamp_utc", -1).limit(200)
+    entries = await cursor.to_list(200)
+    return {"date_ist": start_ist.strftime("%Y-%m-%d"), "entries": entries}
 
 # ============ ITEM NAMES MANAGEMENT ============
 @api_router.get("/item-names")
@@ -1918,6 +1986,7 @@ async def list_bills(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     customer_phone: Optional[str] = None,
+    lightweight: bool = False,
     user=Depends(get_current_user)
 ):
     query = {}
@@ -1944,11 +2013,58 @@ async def list_bills(
     if date_to:
         query.setdefault('created_at', {})
         query['created_at']['$lte'] = date_to
-    
-    bills = await db.bills.find(query).sort("created_at", -1).to_list(5000)
+
+    if lightweight:
+        # Server-side projection: drop heavy unbounded fields before sending to client.
+        # Keeps everything the dashboard needs (status, totals, customer info, np/og badges, items summary).
+        projection = {
+            "change_log": 0,
+            "feedback": 0,
+            "items.making_charges": 0,
+            "items.stone_charges": 0,
+            "items.studded_charges": 0,
+            "items.studded_weights": 0,
+            "items.discounts": 0,
+            "items.photos": 0,
+            "items.tag_number": 0,
+            "old_gold.items_used": 0,
+        }
+        cursor = db.bills.find(query, projection).sort("created_at", -1).limit(5000)
+    else:
+        cursor = db.bills.find(query).sort("created_at", -1).limit(5000)
+    bills = await cursor.to_list(5000)
     serialized = [serialize_doc(b) for b in bills]
     serialized = await apply_dynamic_rates_many(serialized, persist=False)
-    return await enrich_bills_with_customer_data(serialized)
+    enriched = await enrich_bills_with_customer_data(serialized)
+    if lightweight:
+        # Pre-compute lightweight aggregates so the dashboard doesn't have to recompute them on every render.
+        for b in enriched:
+            items = b.get('items') or []
+            items_count = len(items)
+            total_weight = 0.0
+            diamond_amount = 0.0
+            slim_items = []
+            for it in items:
+                it_type = (it.get('item_type') or '').lower()
+                nw = float(it.get('net_weight') or 0)
+                if it_type != 'mrp':
+                    total_weight += nw
+                if it_type == 'diamond':
+                    diamond_amount += float(it.get('total_studded') or 0)
+                slim_items.append({
+                    'item_type': it.get('item_type'),
+                    'item_name': it.get('item_name'),
+                    'total_amount': it.get('total_amount'),
+                    'total_studded': it.get('total_studded'),
+                    'net_weight': it.get('net_weight'),
+                    'gross_weight': it.get('gross_weight'),
+                    'purity_name': it.get('purity_name'),
+                })
+            b['items_count'] = items_count
+            b['total_weight'] = round(total_weight, 3)
+            b['diamond_amount'] = round(diamond_amount, 2)
+            b['items'] = slim_items
+    return enriched
 
 @api_router.get("/bills/{bill_id}/summary")
 async def get_bill_summary(bill_id: str, user=Depends(get_current_user)):

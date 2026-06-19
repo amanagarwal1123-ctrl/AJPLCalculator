@@ -56,6 +56,13 @@ Jewelry business management application with sales tracking, billing, customer m
 - **Diagnostic endpoint** `GET /api/admin/debug/diamond-entries-audit`: returns suspicious diamond entries with bill_number, customer info, and reason — admin uses this to locate the bad bills.
 - **Daily Sales Trend expand-on-click**: CSS-driven in-place expansion (avoids Radix Dialog + Recharts measurement crash).
 
+### Dashboard Performance + 24KT Rate Audit (Jun 2026)
+- **Dashboard lightweight mode**: `GET /api/bills?lightweight=true` applies a MongoDB projection that excludes heavy fields (`change_log`, `feedback`, `items.making_charges`, `items.stone_charges`, `items.studded_charges`, `items.studded_weights`, `items.discounts`, `items.photos`, `items.tag_number`, `old_gold.items_used`) and adds pre-computed `items_count`, `total_weight`, `diamond_amount` per bill. AdminDashboard now requests this mode by default — payload reduced ~5x, dashboard load ≈1.3s with current data.
+- New index on `bills.status` for tab filtering.
+- **24KT Rate Change Audit Log**: every `PUT /api/rates/{rate_type}` writes an entry to the new `rate_change_log` collection with `timestamp_ist`, `timestamp_utc`, `rate_type`, `old_24kt_rate`, `new_24kt_rate`, `user_id`, `user_name`, parsed `device` label (browser · OS from User-Agent), and the raw user-agent (truncated).
+- `GET /api/admin/rates/today-changes`: returns today's entries (start-of-day IST window), newest first.
+- **AdminDashboard widget** "Today's 24KT Rate Changes": shows time, category color-coded, the new 24KT rate, delta from previous, user name, and device label. Visible only when there are entries for today.
+
 ### Daily Rate Reset at 2 AM IST (Jun 2026)
 - `_zero_all_rate_cards()`: sets `rate_per_10g = 0` for every purity across all rate cards (normal/ajpl/buyback), stamps `updated_by = system:<trigger>`.
 - `_daily_rate_reset_loop()`: asyncio background loop launched on FastAPI startup. Computes `seconds_until_next 02:00 IST`, sleeps, runs the zero job, loops forever. Catches and retries (60s backoff) on transient errors.
