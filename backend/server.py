@@ -27,6 +27,7 @@ from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas as pdf_canvas
 from reportlab.lib import colors as rl_colors
 import pytz
+import asyncio
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -523,6 +524,50 @@ class TierSettingsUpdate(BaseModel):
     tiers: List[Dict[str, Any]]  # [{name, min_amount, max_amount}]
 
 # ============ SEED DATA ============
+# ============ DAILY RATE RESET (2 AM IST) ============
+RATE_RESET_HOUR_IST = 2  # 2 AM IST
+
+async def _zero_all_rate_cards(triggered_by: str = "scheduler") -> int:
+    """Zero out rate_per_10g for every purity in every rate card (normal, ajpl, buyback).
+    Returns the number of rate_cards updated."""
+    updated = 0
+    async for rc in db.rate_cards.find({}):
+        purities = rc.get('purities') or []
+        zeroed = [{**p, 'rate_per_10g': 0} for p in purities]
+        await db.rate_cards.update_one(
+            {"id": rc['id']},
+            {"$set": {
+                "purities": zeroed,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "updated_by": f"system:{triggered_by}",
+            }}
+        )
+        updated += 1
+    logger.info(f"[rate-reset] zeroed {updated} rate cards (trigger={triggered_by})")
+    return updated
+
+def _seconds_until_next_ist_hour(target_hour: int) -> float:
+    """Return seconds from now until the next occurrence of target_hour:00 IST (today or tomorrow)."""
+    now_ist = datetime.now(IST)
+    next_run = now_ist.replace(hour=target_hour, minute=0, second=0, microsecond=0)
+    if next_run <= now_ist:
+        next_run = next_run + timedelta(days=1)
+    return (next_run - now_ist).total_seconds()
+
+async def _daily_rate_reset_loop():
+    """Background loop: sleeps until next 2 AM IST and zeroes all rate cards. Loops forever."""
+    while True:
+        try:
+            wait = _seconds_until_next_ist_hour(RATE_RESET_HOUR_IST)
+            logger.info(f"[rate-reset] next run in {wait/3600:.2f}h (at {RATE_RESET_HOUR_IST:02d}:00 IST)")
+            await asyncio.sleep(wait)
+            await _zero_all_rate_cards(triggered_by="daily-2am-ist")
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            logger.exception(f"[rate-reset] loop error: {e}; retrying in 60s")
+            await asyncio.sleep(60)
+
 @app.on_event("startup")
 async def startup_event():
     # Create default admin if not exists
@@ -596,6 +641,10 @@ async def startup_event():
     await db.notifications.create_index("target_user_id")
     await db.notifications.create_index("due_date")
     logger.info("Database indexes created")
+
+    # Launch the daily rate-reset scheduler (zeroes all rate cards at 2 AM IST every day)
+    asyncio.create_task(_daily_rate_reset_loop())
+    logger.info("[rate-reset] scheduler started")
 
     # Backfill old bills missing daily_serial/created_date or with old bill_number format
     old_bills = await db.bills.find({
@@ -1003,6 +1052,13 @@ async def update_rates(rate_type: str, req: RateCardUpdate, user=Depends(get_cur
                 )
                 synced_bills += 1
     return {"status": "updated", "synced_bills": synced_bills}
+
+@api_router.post("/admin/rates/zero-all")
+async def admin_zero_all_rates(user=Depends(get_current_user)):
+    """Manually zero out every rate card immediately. Mirrors the daily 2 AM IST scheduler."""
+    await require_role(user, ["admin"])
+    count = await _zero_all_rate_cards(triggered_by=f"manual:{user.get('full_name', 'admin')}")
+    return {"status": "zeroed", "rate_cards_updated": count}
 
 # ============ ITEM NAMES MANAGEMENT ============
 @api_router.get("/item-names")

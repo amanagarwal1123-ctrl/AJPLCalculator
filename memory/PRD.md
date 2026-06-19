@@ -56,6 +56,12 @@ Jewelry business management application with sales tracking, billing, customer m
 - **Diagnostic endpoint** `GET /api/admin/debug/diamond-entries-audit`: returns suspicious diamond entries with bill_number, customer info, and reason — admin uses this to locate the bad bills.
 - **Daily Sales Trend expand-on-click**: CSS-driven in-place expansion (avoids Radix Dialog + Recharts measurement crash).
 
+### Daily Rate Reset at 2 AM IST (Jun 2026)
+- `_zero_all_rate_cards()`: sets `rate_per_10g = 0` for every purity across all rate cards (normal/ajpl/buyback), stamps `updated_by = system:<trigger>`.
+- `_daily_rate_reset_loop()`: asyncio background loop launched on FastAPI startup. Computes `seconds_until_next 02:00 IST`, sleeps, runs the zero job, loops forever. Catches and retries (60s backoff) on transient errors.
+- Manual override: `POST /api/admin/rates/zero-all` (admin only) — for emergencies / testing. Verified manually: 3 rate cards updated, all purities → 0.
+- Scheduler uses `pytz.timezone('Asia/Kolkata')`, so DST/timezone never drifts.
+
 ### Customer Reference & Visit Origin Tracking (Jun 2026)
 - **Backend `/analytics/customers`**: derives `initial_reference` and `first_visit` per customer by scanning their oldest bill. No schema migration needed.
 - **POST /customers**: stopped overwriting the existing `reference` on repeat saves; only fills it when not already set.
