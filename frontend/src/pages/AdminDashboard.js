@@ -342,10 +342,10 @@ export default function AdminDashboard() {
     { label: 'Data Safety', icon: Shield, to: '/admin/data-safety' },
   ];
 
-  // Total weight helper - prefer pre-computed lightweight field, fall back to client calculation
+  // Total weight helper - prefer pre-computed lightweight field, fall back to client calculation. Always 3 decimals (mg precision).
   const getBillWeight = (bill) => {
-    if (bill?.total_weight != null) return Number(bill.total_weight).toFixed(2);
-    return (bill.items || []).reduce((sum, it) => sum + (it.gross_weight || 0), 0).toFixed(2);
+    if (bill?.total_weight != null) return Number(bill.total_weight).toFixed(3);
+    return (bill.items || []).reduce((sum, it) => sum + (it.gross_weight || 0), 0).toFixed(3);
   };
 
   return (

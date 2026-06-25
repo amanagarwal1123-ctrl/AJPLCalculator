@@ -252,9 +252,11 @@ def calculate_diamond_item(item: Dict[str, Any]) -> Dict[str, Any]:
             studded_less_grams += carats * CARAT_TO_GRAM
     studded_less_grams_float = float(studded_less_grams.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP))
     
-    # Adjust the item's "less" to include studded less before calculating gold portion
+    # Adjust the item's "less" to include studded less before calculating gold portion.
+    # IMPORTANT: keep weight precision at 3 decimals (1 mg). Never round weights to currency precision
+    # or the third digit will be lost (e.g. 0.036 → 0.04, turning 0.320 - 0.036 = 0.284 into 0.28).
     original_less = to_decimal(item.get('less', 0))
-    adjusted_less = float(round_currency(original_less + studded_less_grams))
+    adjusted_less = float((original_less + studded_less_grams).quantize(Decimal('0.001'), rounding=ROUND_HALF_UP))
     gross_weight = item.get('gross_weight', 0)
     rate_per_10g = item.get('rate_per_10g', 0)
     purity_percent = item.get('purity_percent', 100)

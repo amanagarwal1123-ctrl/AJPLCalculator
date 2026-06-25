@@ -327,7 +327,7 @@ export default function Reports() {
               <p className="text-xs uppercase tracking-widest text-muted-foreground">Diamond Only</p>
               <p className="mono text-lg font-bold text-sky-400 mt-1">{formatCurrency(analytics?.pure_diamond_total)}</p>
               <p className="mono text-[11px] font-medium text-sky-300/80 mt-0.5" data-testid="pure-diamond-carats">
-                {(analytics?.pure_diamond_carats || 0).toFixed(2)} ct sold
+                {(analytics?.pure_diamond_carats || 0).toFixed(3)} ct sold
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">Diamonds + solitaires · excl. colored stones</p>
             </CardContent>

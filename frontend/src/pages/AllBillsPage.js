@@ -147,7 +147,7 @@ export default function AllBillsPage() {
                             {(bill.items || []).map((item, idx) => (
                               <div key={idx} className="text-xs">
                                 <span className="font-medium">{item.item_name}</span>
-                                <span className="text-muted-foreground"> {item.purity_name} {item.net_weight?.toFixed(2)}g</span>
+                                <span className="text-muted-foreground"> {item.purity_name} {item.net_weight?.toFixed(3)}g</span>
                                 <span className="mono text-primary ml-1">{formatCurrency(item.total_amount)}</span>
                               </div>
                             ))}

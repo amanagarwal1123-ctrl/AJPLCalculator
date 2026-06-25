@@ -3663,7 +3663,7 @@ async def calculate_mrp_item(item: dict, user=Depends(get_current_user)):
         **item,
         "item_type": "mrp",
         "net_weight": round(net_weight, 3),
-        "total_studded_carats": round(total_studded_carats, 2),
+        "total_studded_carats": round(total_studded_carats, 3),
         "total_studded_weight": total_studded_grams,
         "mrp": mrp,
         "total_discount": round(total_discount, 2),

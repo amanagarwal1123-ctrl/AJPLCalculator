@@ -40,8 +40,8 @@ export default function ItemBreakdown({ item }) {
         <Row label="Gross Weight" value={`${gross.toFixed(3)} g`} />
         {num(item.total_studded_carats) > 0 && (
           <>
-            <Row label="Studded (carats)" formula={`1 ct = 0.2 g`} value={`${num(item.total_studded_carats).toFixed(2)} ct`} indent={1} />
-            <Row label="Studded deduction (g)" formula={`${num(item.total_studded_carats).toFixed(2)} × 0.2`} value={`−${num(item.total_studded_weight).toFixed(3)} g`} indent={1} />
+            <Row label="Studded (carats)" formula={`1 ct = 0.2 g`} value={`${num(item.total_studded_carats).toFixed(3)} ct`} indent={1} />
+            <Row label="Studded deduction (g)" formula={`${num(item.total_studded_carats).toFixed(3)} × 0.2`} value={`−${num(item.total_studded_weight).toFixed(3)} g`} indent={1} />
           </>
         )}
         <Row label="Net Weight" formula={`gross − studded (g)`} value={`${net.toFixed(3)} g`} highlight />
@@ -72,7 +72,7 @@ export default function ItemBreakdown({ item }) {
             <Row
               key={`lss-${i}`}
               label={`Diamond less — ${sc.type?.replace('_', ' ') || 'studded'}`}
-              formula={`${num(sc.carats).toFixed(2)} ct × 0.2 g/ct`}
+              formula={`${num(sc.carats).toFixed(3)} ct × 0.2 g/ct`}
               value={`−${num(sc.weight_grams || num(sc.carats) * 0.2).toFixed(3)} g`}
               indent={2}
             />
@@ -137,7 +137,7 @@ export default function ItemBreakdown({ item }) {
             <Row
               key={`st-${i}`}
               label={`Diamond ${i + 1} (${sc.type?.replace('_', ' ')})${sc.less_type === 'L' ? ' · L' : ''}`}
-              formula={`${num(sc.carats).toFixed(2)} ct × ${fmt(sc.rate_per_carat)}/ct`}
+              formula={`${num(sc.carats).toFixed(3)} ct × ${fmt(sc.rate_per_carat)}/ct`}
               value={fmt(sc.calculated_amount ?? 0)}
               indent={1}
             />

@@ -56,6 +56,13 @@ Jewelry business management application with sales tracking, billing, customer m
 - **Diagnostic endpoint** `GET /api/admin/debug/diamond-entries-audit`: returns suspicious diamond entries with bill_number, customer info, and reason — admin uses this to locate the bad bills.
 - **Daily Sales Trend expand-on-click**: CSS-driven in-place expansion (avoids Radix Dialog + Recharts measurement crash).
 
+### Weight Precision Fix (Jun 2026)
+- **Root cause**: in `calc_engine.calculate_diamond_item`, `adjusted_less = round_currency(original_less + studded_less_grams)` was rounding *weights* to **currency** precision (2 decimals), so a `0.036 g` studded deduction became `0.04 g`. Net then became `0.32 − 0.04 = 0.28` instead of the correct `0.284`.
+- **Fix**: `adjusted_less` now quantizes to `0.001` (1 mg / 3 decimals). All weight aggregations and displays standardised to 3 decimals.
+- **Frontend pieces normalised to `.toFixed(3)`**: `AdminDashboard.getBillWeight`, `AllBillsPage` item summary, `ItemBreakdown` carats & studded ct, `Reports` pure-diamond carats card.
+- **Backend `total_studded_carats`** rounding changed from 2 → 3 decimals.
+- Verified `POST /api/calculate/item` with `gross=0.32 less=0 diamond=0.18ct` → `net_weight=0.284`, `studded_less_grams=0.036`.
+
 ### Dashboard Performance + 24KT Rate Audit (Jun 2026)
 - **Dashboard lightweight mode**: `GET /api/bills?lightweight=true` applies a MongoDB projection that excludes heavy fields (`change_log`, `feedback`, `items.making_charges`, `items.stone_charges`, `items.studded_charges`, `items.studded_weights`, `items.discounts`, `items.photos`, `items.tag_number`, `old_gold.items_used`) and adds pre-computed `items_count`, `total_weight`, `diamond_amount` per bill. AdminDashboard now requests this mode by default — payload reduced ~5x, dashboard load ≈1.3s with current data.
 - New index on `bills.status` for tab filtering.
