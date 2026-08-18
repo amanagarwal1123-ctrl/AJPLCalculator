@@ -1308,10 +1308,11 @@ async def get_customer_bills(customer_id: str, user=Depends(get_current_user)):
     bills = await db.bills.find(bill_query).sort("created_at", -1).to_list(10000)
 
     # Enrich bills with current customer data (guaranteed fresh names)
+    # NOTE: customer_reference is intentionally NOT overridden — it is per-bill
+    # (origin on first visit, "Repeat Customer" afterwards)
     current_name = customer.get("name", "")
     current_phone = customer.get("phone", "")
     current_location = customer.get("location", "")
-    current_reference = customer.get("reference", "")
     serialized_bills = []
     for b in bills:
         sb = serialize_doc(b)
@@ -1321,8 +1322,6 @@ async def get_customer_bills(customer_id: str, user=Depends(get_current_user)):
             sb["customer_phone"] = current_phone
         if current_location:
             sb["customer_location"] = current_location
-        if current_reference:
-            sb["customer_reference"] = current_reference
         serialized_bills.append(sb)
 
     # Only count approved/sent/edited bills for total_spent
@@ -1395,6 +1394,16 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
     customer = await db.customers.find_one({"phone": req.customer_phone})
     if not customer:
         customer = await db.customers.find_one({"phones": req.customer_phone})
+    # Enforce: any bill after the customer's first is always "Repeat Customer"
+    bill_reference = normalize_reference(req.customer_reference or "")
+    if customer:
+        known_phones = [p for p in [customer.get("phone", "")] + (customer.get("phones") or []) if p]
+        prev_bills = await db.bills.count_documents({"$or": [
+            {"customer_id": customer.get("id", "")},
+            {"customer_phone": {"$in": known_phones}},
+        ]})
+        if prev_bills > 0:
+            bill_reference = "Repeat Customer"
     if not customer:
         customer = {
             "id": str(uuid.uuid4()),
@@ -1446,7 +1455,7 @@ async def create_bill(req: BillCreate, user=Depends(get_current_user)):
         "customer_name": req.customer_name,
         "customer_phone": req.customer_phone,
         "customer_location": req.customer_location,
-        "customer_reference": normalize_reference(req.customer_reference or ""),
+        "customer_reference": bill_reference,
         "salesperson_name": req.salesperson_name,
         "narration": req.narration or "",
         "bill_mode": req.bill_mode,
@@ -3326,13 +3335,35 @@ async def update_customer(customer_id: str, req: CustomerUpdate, user=Depends(ge
     old_phone = customer.get("phone") or ""
     old_phones = customer.get("phones") or []
     update_data = {k: v for k, v in req.dict(exclude_none=True).items()}
-    # Normalize reference at write time
+    # Reference: only apply if actually changed, and only admin may change it
+    reference_changed = False
+    new_ref = None
     if "reference" in update_data:
-        update_data["reference"] = normalize_reference(update_data["reference"])
+        new_ref = normalize_reference(update_data["reference"])
+        old_ref = normalize_reference(customer.get("reference") or "")
+        if new_ref == old_ref:
+            update_data.pop("reference")
+        else:
+            if user.get("role") != "admin":
+                raise HTTPException(status_code=403, detail="Only admin can change customer reference")
+            update_data["reference"] = new_ref
+            reference_changed = True
     if update_data:
         await db.customers.update_one({"id": cust_id}, {"$set": update_data})
 
-    # Propagate changes to all associated bills
+    # Collect all possible phone identifiers for this customer
+    all_phones = set()
+    if old_phone:
+        all_phones.add(old_phone)
+    for p in old_phones:
+        if p:
+            all_phones.add(p)
+    # Also include the URL parameter if it looks like a phone (not a UUID)
+    if customer_id != cust_id and customer_id:
+        all_phones.add(customer_id)
+    all_phones = list(all_phones)
+
+    # Propagate name/phone/location changes to all associated bills
     bill_update = {}
     if req.name is not None:
         bill_update["customer_name"] = req.name
@@ -3340,21 +3371,7 @@ async def update_customer(customer_id: str, req: CustomerUpdate, user=Depends(ge
         bill_update["customer_phone"] = req.phone
     if req.location is not None:
         bill_update["customer_location"] = req.location
-    if req.reference is not None:
-        bill_update["customer_reference"] = normalize_reference(req.reference)
     if bill_update:
-        # Collect all possible phone identifiers for this customer
-        all_phones = set()
-        if old_phone:
-            all_phones.add(old_phone)
-        for p in old_phones:
-            if p:
-                all_phones.add(p)
-        # Also include the URL parameter if it looks like a phone (not a UUID)
-        if customer_id != cust_id and customer_id:
-            all_phones.add(customer_id)
-        all_phones = list(all_phones)
-
         total_modified = 0
         try:
             # Strategy 1: Update by customer_id
@@ -3371,6 +3388,37 @@ async def update_customer(customer_id: str, req: CustomerUpdate, user=Depends(ge
             logger.info(f"Customer {cust_id} update propagated to {total_modified} bill(s). Phones: {all_phones}")
         except Exception as e:
             logger.error(f"Bill propagation failed for customer {cust_id}: {e}")
+
+    # Reference change (admin-only): update origin bills only, never "Repeat Customer" bills,
+    # and write an audit entry into each affected bill's change_log
+    if reference_changed:
+        or_clauses = []
+        if cust_id:
+            or_clauses.append({"customer_id": cust_id})
+        if all_phones:
+            or_clauses.append({"customer_phone": {"$in": all_phones}})
+        if or_clauses:
+            refs_modified = 0
+            async for b in db.bills.find({"$or": or_clauses}, {"_id": 1, "customer_reference": 1}):
+                current_ref = normalize_reference(b.get("customer_reference") or "")
+                if current_ref in (new_ref, "Repeat Customer"):
+                    continue
+                change_entry = {
+                    "timestamp": ist_now_str(),
+                    "user": user.get('full_name', ''),
+                    "role": user.get('role', ''),
+                    "action": "reference_update",
+                    "old_reference": b.get("customer_reference", ""),
+                    "new_reference": new_ref,
+                    "details": {"source": "customer_profile_edit"},
+                }
+                await db.bills.update_one(
+                    {"_id": b["_id"]},
+                    {"$set": {"customer_reference": new_ref, "updated_at": ist_now_str()},
+                     "$push": {"change_log": change_entry}}
+                )
+                refs_modified += 1
+            logger.info(f"Customer {cust_id} reference change propagated to {refs_modified} origin bill(s)")
 
     updated = await db.customers.find_one({"id": cust_id})
     return serialize_doc(updated)

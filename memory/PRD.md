@@ -89,6 +89,15 @@ Jewelry business management application with sales tracking, billing, customer m
 ### Custom Numpad, Old Gold, Buyback Rates, Reference Normalization
 - All previously implemented features intact
 
+### Repeat Customer Integrity (June 2026)
+Root cause of "walk-in on 2nd visit" (Ishtaa Jain case) — 4 leaks fixed:
+1. **Backend enforcement** in `POST /bills`: if customer has any previous bills, `customer_reference` is force-set to "Repeat Customer" server-side, regardless of what the form sends.
+2. **PUT /customers/{id}**: reference only applied/propagated if actually CHANGED (normalized compare); unchanged reference in payload is ignored. Changing reference is **admin-only** (403 otherwise).
+3. **Audit trail**: admin reference change propagates only to origin bills (skips "Repeat Customer" bills) and pushes a `reference_update` change_log entry (`details.source: customer_profile_edit`) on each affected bill.
+4. **GET /customers/{id}/bills**: no longer display-overrides each bill's `customer_reference` with the customer-level reference (name/phone/location enrichment kept).
+Frontend `CustomerProfilePage.js`: only sends `reference` when admin AND changed; field read-only for non-admins with hint text.
+NOTE: production (ajpl-calc.emergent.host) needs a redeploy to pick these up; existing mislabeled bills are NOT auto-corrected (user chose 4b).
+
 ## Prioritized Backlog
 ### P1 - Refactoring
 - [ ] Break `backend/server.py` into modular FastAPI routers

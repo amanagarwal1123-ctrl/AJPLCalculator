@@ -48,16 +48,19 @@ export default function CustomerProfilePage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await apiClient.put(`/customers/${customerId}`, {
+      const payload = {
         name: form.name,
         email: form.email,
         location: form.location,
-        reference: form.reference,
         dob: form.dob,
         anniversary: form.anniversary,
         address: form.address,
         notes: form.notes,
-      });
+      };
+      if (user?.role === 'admin' && (form.reference || '') !== (customer?.reference || '')) {
+        payload.reference = form.reference;
+      }
+      await apiClient.put(`/customers/${customerId}`, payload);
       toast.success('Customer details saved');
       setEditing(false);
       loadData();
@@ -145,7 +148,8 @@ export default function CustomerProfilePage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs flex items-center gap-1"><Star size={12} /> Reference</Label>
-                  <Input value={form.reference || ''} onChange={e => setForm({...form, reference: e.target.value})} readOnly={!editing} className={`h-10 ${!editing ? 'bg-muted/50' : 'bg-secondary/50'}`} data-testid="customer-reference" />
+                  <Input value={form.reference || ''} onChange={e => setForm({...form, reference: e.target.value})} readOnly={!editing || user?.role !== 'admin'} className={`h-10 ${(!editing || user?.role !== 'admin') ? 'bg-muted/50' : 'bg-secondary/50'}`} data-testid="customer-reference" />
+                  {editing && user?.role !== 'admin' && <p className="text-[10px] text-muted-foreground">Only admin can change reference</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs flex items-center gap-1"><Calendar size={12} /> Date of Birth</Label>
